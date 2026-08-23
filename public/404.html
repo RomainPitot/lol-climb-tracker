@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CLIMB.EUW</title>
+    <script>
+      // GitHub Pages renvoie 404.html pour toute URL inconnue.
+      // L'app est une SPA sans routeur : on redirige simplement vers la racine du site.
+      var base = location.pathname.split("/")[1];
+      location.replace(location.origin + (base ? "/" + base + "/" : "/"));
+    </script>
+  </head>
+  <body></body>
+</html>

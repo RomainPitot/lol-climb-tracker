@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0d13;
+  --bg-elevated: #10141c;
+  --card: #131826;
+  --border: #232a3a;
+  --text: #e9ebf1;
+  --dim: #8b93a9;
+  --win: #0fd68a;
+  --loss: #ff5c5c;
+  --gold: #d4af37;
+  --yone: #a970ff;
+  --tahm: #2ec4b6;
+  --display: "Rajdhani", sans-serif;
+  --body: "Inter", sans-serif;
+
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+}
+
+::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--gold) !important;
+}
+
+button {
+  font-family: var(--body);
+}
+
+input,
+select,
+textarea {
+  color-scheme: dark;
+}
