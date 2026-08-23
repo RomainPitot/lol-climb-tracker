@@ -31,7 +31,11 @@ jobs:
 
       - run: npm run build
 
+      # enablement: active GitHub Pages au premier run, ce qui évite d'aller
+      # cocher « Source: GitHub Actions » à la main dans les réglages du repo.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
