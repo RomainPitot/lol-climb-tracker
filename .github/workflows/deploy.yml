@@ -24,18 +24,17 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
 
       - run: npm run build
 
-      # enablement: active GitHub Pages au premier run, ce qui évite d'aller
-      # cocher « Source: GitHub Actions » à la main dans les réglages du repo.
+      # Pages doit être activé une fois dans Settings → Pages (Source: GitHub Actions).
+      # `enablement: true` ne peut pas le faire à notre place : le GITHUB_TOKEN d'un
+      # dépôt personnel est plafonné en lecture seule et se voit refuser pages:write.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
