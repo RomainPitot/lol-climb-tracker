@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Sparkles, Upload, ChevronRight } from "lucide-react";
+import { Sparkles, Upload, ChevronRight, KeyRound, ExternalLink } from "lucide-react";
 import { Field, Input, Select, TextArea, Btn } from "../ui/primitives.jsx";
 import { RIOT_REGIONS, WORKER_CODE } from "../../constants/riot.js";
-import { fetchRiotGames, diagnoseRiotError } from "../../lib/riotApi.js";
+import { fetchRiotGames, diagnoseRiotError, rotateRiotKey, diagnoseRotateError } from "../../lib/riotApi.js";
 import { riotMatchToGame } from "../../lib/importers.js";
 import { rankLabel } from "../../lib/rank.js";
 
@@ -29,6 +29,7 @@ const FIELD_TO_SETTING = {
   tagLine: "riotTagLine",
   platform: "riotPlatform",
   count: "riotCount",
+  adminToken: "riotAdminToken",
 };
 
 export default function RiotImportSection({ data, setSettings, importGames, importRiotResult }) {
@@ -42,6 +43,7 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
     tagLine: s.riotTagLine || "EUW",
     platform: s.riotPlatform || "euw1",
     count: s.riotCount || 20,
+    adminToken: s.riotAdminToken || "",
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -49,6 +51,12 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
   const [matchJsonText, setMatchJsonText] = useState("");
   const [manualPuuid, setManualPuuid] = useState(s.riotPuuid || "");
   const [showWorkerGuide, setShowWorkerGuide] = useState(false);
+
+  // La nouvelle clé n'est jamais persistée : elle ne sert qu'une fois, pour cet appel.
+  const [newRiotKey, setNewRiotKey] = useState("");
+  const [rotating, setRotating] = useState(false);
+  const [rotateMsg, setRotateMsg] = useState("");
+  const [rotateError, setRotateError] = useState("");
 
   // Persiste chaque champ dès sa saisie (pas seulement au clic sur "Récupérer") : sans ça,
   // remplir le formulaire puis changer de page sans lancer l'import perdait tout.
@@ -90,6 +98,21 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const rotateKey = async () => {
+    setRotating(true);
+    setRotateMsg("");
+    setRotateError("");
+    try {
+      await rotateRiotKey({ proxyUrl: form.proxyUrl, adminToken: form.adminToken }, newRiotKey.trim());
+      setRotateMsg("Clé mise à jour sur le Worker. Tu peux relancer une récupération.");
+      setNewRiotKey("");
+    } catch (e) {
+      setRotateError(`Échec de la mise à jour (${e.message}). ${diagnoseRotateError(e)}`);
+    } finally {
+      setRotating(false);
     }
   };
 
@@ -215,6 +238,57 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
       {msg && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{msg}</div>}
       {error && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{error}</div>}
 
+      {form.mode === "proxy" && (
+        <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
+            Renouveler la clé Riot
+          </div>
+          <p style={{ fontSize: 12, color: "var(--dim)", marginBottom: 10 }}>
+            Une clé de dev Riot expire toutes les 24h. Régénère-la sur le portail Riot (un clic, une fois connecté),
+            colle la nouvelle ici : elle est poussée directement dans les secrets du Worker, sans passer par le
+            dashboard Cloudflare. Nécessite d'avoir configuré <code>ADMIN_TOKEN</code>, <code>CF_API_TOKEN</code> et{" "}
+            <code>CF_ACCOUNT_ID</code> sur le Worker — voir <code>docs/RIOT_PROXY.md</code>.
+          </p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <a
+              href="https://developer.riotgames.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "none" }}
+            >
+              <Btn type="button">
+                <ExternalLink size={14} /> Ouvrir developer.riotgames.com
+              </Btn>
+            </a>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 10 }}>
+            <Field label="Admin token (ADMIN_TOKEN du Worker)">
+              <Input
+                value={form.adminToken}
+                onChange={(e) => patch({ adminToken: e.target.value })}
+                placeholder="différent du token du proxy"
+              />
+            </Field>
+            <Field label="Nouvelle clé Riot">
+              <Input
+                value={newRiotKey}
+                onChange={(e) => setNewRiotKey(e.target.value)}
+                placeholder="RGAPI-..."
+              />
+            </Field>
+          </div>
+          <Btn
+            variant="primary"
+            onClick={rotateKey}
+            disabled={rotating || !form.proxyUrl || !form.adminToken || !newRiotKey.trim()}
+          >
+            <KeyRound size={14} /> {rotating ? "Mise à jour…" : "Mettre à jour la clé sur le Worker"}
+          </Btn>
+          {rotateMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{rotateMsg}</div>}
+          {rotateError && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{rotateError}</div>}
+        </div>
+      )}
+
       <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
           Repli manuel (si la récupération auto échoue)
@@ -268,7 +342,8 @@ function WorkerGuide() {
         </li>
         <li>
           Ta clé Riot expirant toutes les 24h (clé de dev), reviens mettre à jour le secret{" "}
-          <span style={em}>RIOT_API_KEY</span> régulièrement.
+          <span style={em}>RIOT_API_KEY</span> régulièrement — ou configure la rotation automatique (section{" "}
+          <span style={em}>Renouveler la clé Riot</span> plus bas, voir <span style={em}>docs/RIOT_PROXY.md</span>).
         </li>
       </ol>
       <pre

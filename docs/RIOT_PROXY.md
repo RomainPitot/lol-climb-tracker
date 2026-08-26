@@ -25,9 +25,29 @@ L'app fonctionne très bien **sans** proxy — la saisie manuelle et l'import CS
 4. Note l'URL du Worker (`https://<nom>.<toncompte>.workers.dev`).
 5. Dans l'app : **Paramètres → Import automatique (Riot API)**, mode *Via mon proxy*, colle l'URL et le token, renseigne ton Riot ID et ta région, puis lance la récupération.
 
+## Rotation automatique de la clé
+
+Une clé de dev Riot expire toutes les 24h. Régénérer la clé sur developer.riotgames.com reste manuel (Riot n'expose aucune API pour ça, et ce n'est qu'un unique clic une fois connecté) — mais l'app peut ensuite pousser la nouvelle clé dans le Worker à ta place, sans passer par le dashboard Cloudflare.
+
+Ça demande trois secrets supplémentaires, une seule fois :
+
+1. Sur [dash.cloudflare.com](https://dash.cloudflare.com), va dans **My Profile → API Tokens → Create Token → Create Custom Token**. Donne-lui la permission **Account → Workers Scripts → Edit**, restreinte à ton compte. Ne choisis rien de plus large — ce jeton ne doit pouvoir toucher que les Workers, rien d'autre sur ton compte Cloudflare.
+2. Note l'**Account ID** (visible dans l'URL du dashboard : `dash.cloudflare.com/<account-id>/...`, ou dans la sidebar du Worker).
+3. Ajoute trois secrets sur le Worker (**Settings → Variables and Secrets**) :
+
+   | Nom | Valeur |
+   | --- | --- |
+   | `CF_API_TOKEN` | le jeton créé à l'étape 1 |
+   | `CF_ACCOUNT_ID` | l'Account ID de l'étape 2 |
+   | `ADMIN_TOKEN` | une **nouvelle** chaîne aléatoire, différente de `PROXY_TOKEN` |
+
+`ADMIN_TOKEN` est volontairement séparé de `PROXY_TOKEN` : ce dernier circule dans chaque requête d'import (donc plus exposé — historique du navigateur, etc.), alors que l'admin token n'est utilisé que lors d'une rotation de clé et donne le droit de réécrire les secrets du Worker. Sans ces trois secrets, le reste de l'app continue de fonctionner normalement — seul le bouton de rotation reste inactif.
+
+Une fois configuré : **Paramètres → Import automatique → Renouveler la clé Riot**, ouvre le portail Riot, régénère ta clé, colle-la dans le champ prévu et valide — le Worker met à jour son propre secret `RIOT_API_KEY` via l'API Cloudflare, sans que la clé transite jamais par un service tiers autre que Riot et Cloudflare.
+
 ## Points d'attention
 
-- **Une clé de développement Riot expire toutes les 24h.** Il faut la régénérer et mettre à jour le secret `RIOT_API_KEY` du Worker. Pour un usage durable, demande une *Personal API Key* à Riot.
+- **Une clé de développement Riot expire toutes les 24h.** Sans la rotation automatique ci-dessus, il faut la régénérer et mettre à jour le secret `RIOT_API_KEY` du Worker à la main. Pour un usage durable, demande une *Personal API Key* à Riot.
 - **Le `PROXY_TOKEN` n'est pas un secret fort** : il est visible dans les requêtes du navigateur si quelqu'un a accès à ta machine. Il sert à empêcher un inconnu de consommer ton quota Riot, pas à protéger des données sensibles.
 - **Le Worker ne relaie que vers `*.api.riotgames.com`** — cette vérification est ce qui l'empêche d'être utilisé comme proxy ouvert. Ne la retire pas.
 - **Le gain/perte de LP n'existe pas dans l'API Riot.** Les games importées ont `lpChange = 0` et doivent être corrigées à la main depuis l'historique.

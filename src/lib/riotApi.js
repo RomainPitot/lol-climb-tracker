@@ -6,18 +6,24 @@ import { riotMatchToGame } from "./importers.js";
 const QUEUE_SOLO_RANKED = 420;
 
 /**
+ * Une URL de Worker collée sans son schéma (ex: "lol-proxy.x.workers.dev") devient une
+ * URL RELATIVE pour `fetch` : le navigateur l'interprète alors comme un chemin de la page
+ * en cours. Piège vécu : ça retourne le 404 du site (GitHub Pages), pas celui de Riot —
+ * message trompeur ("compte introuvable") pour un problème qui n'a rien à voir. On corrige
+ * ici en amont plutôt que de compter sur une saisie toujours parfaite.
+ */
+export function normalizeProxyUrl(proxyUrl) {
+  const withScheme = /^https?:\/\//i.test(proxyUrl) ? proxyUrl : `https://${proxyUrl}`;
+  return withScheme.replace(/\/$/, "");
+}
+
+/**
  * En mode proxy, la clé Riot vit côté Worker : on ne transmet que le token du proxy.
  * En mode direct, la clé part depuis le navigateur (bloqué par CORS dans la majorité des cas).
  */
 export function buildRiotRequestUrl(riotUrl, conn) {
   if (conn.mode === "proxy") {
-    // Une URL de Worker collée sans son schéma (ex: "lol-proxy.x.workers.dev") devient une
-    // URL RELATIVE pour `fetch` : le navigateur l'interprète alors comme un chemin de la page
-    // en cours. Piège vécu : ça retourne le 404 du site (GitHub Pages), pas celui de Riot —
-    // message trompeur ("compte introuvable") pour un problème qui n'a rien à voir. On corrige
-    // ici en amont plutôt que de compter sur une saisie toujours parfaite.
-    const withScheme = /^https?:\/\//i.test(conn.proxyUrl) ? conn.proxyUrl : `https://${conn.proxyUrl}`;
-    const base = withScheme.replace(/\/$/, "");
+    const base = normalizeProxyUrl(conn.proxyUrl);
     return `${base}?token=${encodeURIComponent(conn.proxyToken || "")}&url=${encodeURIComponent(riotUrl)}`;
   }
   const sep = riotUrl.includes("?") ? "&" : "?";
@@ -99,6 +105,44 @@ export async function fetchRiotGames(conn, existingMatchIds) {
   return { games, rank, totalFound: ids.length, newFound: newIds.length, puuid };
 }
 
+/**
+ * Pousse une nouvelle clé Riot directement dans les secrets du Worker, via son endpoint
+ * /rotate-key. Le jeton Cloudflare (CF_API_TOKEN) qui autorise cette écriture ne quitte
+ * jamais le Worker — seuls l'admin token et la nouvelle clé transitent par le navigateur.
+ */
+export async function rotateRiotKey({ proxyUrl, adminToken }, newKey) {
+  const base = normalizeProxyUrl(proxyUrl);
+  let res;
+  try {
+    res = await fetch(`${base}/rotate-key`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": adminToken || "" },
+      body: JSON.stringify({ riotApiKey: newKey }),
+    });
+  } catch {
+    const err = new Error("la requête n'a même pas atteint le Worker (échec réseau/CORS)");
+    err.kind = "network";
+    throw err;
+  }
+
+  let body = {};
+  try {
+    body = await res.json();
+  } catch {
+    // réponse non-JSON : on se contente du code HTTP
+  }
+
+  if (!res.ok) {
+    const detail = body?.error || body?.errors?.[0]?.message || "";
+    const err = new Error(`${res.status}${detail ? ` — ${detail}` : ""}`);
+    err.kind = "http";
+    err.status = res.status;
+    throw err;
+  }
+
+  return body;
+}
+
 /** Message d'aide contextuel à afficher quand la récupération échoue. */
 export function diagnoseRiotError(err, mode) {
   if (err.kind === "network") {
@@ -117,5 +161,24 @@ export function diagnoseRiotError(err, mode) {
       return "→ Erreur 429 : trop de requêtes envoyées en peu de temps — attends une minute et réessaie.";
     default:
       return "→ Réponse inattendue — regarde la console du navigateur (F12) pour le détail complet.";
+  }
+}
+
+/** Message d'aide contextuel pour un échec de rotation de clé (endpoint /rotate-key). */
+export function diagnoseRotateError(err) {
+  if (err.kind === "network") {
+    return "→ Le navigateur n'a pas réussi à joindre ton proxy : vérifie l'URL du Worker.";
+  }
+  switch (err.status) {
+    case 401:
+      return "→ Erreur 401 : l'admin token ne correspond pas au secret ADMIN_TOKEN configuré côté Worker.";
+    case 400:
+      return "→ Erreur 400 : la clé collée n'a pas le format attendu (elle doit commencer par RGAPI-).";
+    case 404:
+      return "→ Erreur 404 : le Worker déployé ne connaît pas encore /rotate-key — redéploie le code du Worker mis à jour.";
+    case 500:
+      return "→ La rotation n'est pas configurée sur ce Worker : il manque le secret CF_API_TOKEN ou CF_ACCOUNT_ID.";
+    default:
+      return "→ Cloudflare a refusé la mise à jour — vérifie que le jeton CF_API_TOKEN a bien le scope \"Workers Scripts: Edit\" et n'a pas expiré.";
   }
 }
