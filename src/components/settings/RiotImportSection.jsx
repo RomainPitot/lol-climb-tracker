@@ -19,6 +19,18 @@ const MODES = [
   },
 ];
 
+/** Correspondance entre les clés du formulaire local et celles persistées dans `settings`. */
+const FIELD_TO_SETTING = {
+  mode: "riotMode",
+  apiKey: "riotApiKey",
+  proxyUrl: "riotProxyUrl",
+  proxyToken: "riotProxyToken",
+  gameName: "riotGameName",
+  tagLine: "riotTagLine",
+  platform: "riotPlatform",
+  count: "riotCount",
+};
+
 export default function RiotImportSection({ data, setSettings, importGames, importRiotResult }) {
   const s = data.settings;
   const [form, setForm] = useState({
@@ -29,7 +41,7 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
     gameName: s.riotGameName || "",
     tagLine: s.riotTagLine || "EUW",
     platform: s.riotPlatform || "euw1",
-    count: 20,
+    count: s.riotCount || 20,
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -38,23 +50,21 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
   const [manualPuuid, setManualPuuid] = useState(s.riotPuuid || "");
   const [showWorkerGuide, setShowWorkerGuide] = useState(false);
 
-  const patch = (p) => setForm((prev) => ({ ...prev, ...p }));
+  // Persiste chaque champ dès sa saisie (pas seulement au clic sur "Récupérer") : sans ça,
+  // remplir le formulaire puis changer de page sans lancer l'import perdait tout.
+  const patch = (p) => {
+    setForm((prev) => ({ ...prev, ...p }));
+    const settingsPatch = {};
+    for (const [key, value] of Object.entries(p)) {
+      if (FIELD_TO_SETTING[key]) settingsPatch[FIELD_TO_SETTING[key]] = value;
+    }
+    if (Object.keys(settingsPatch).length) setSettings(settingsPatch);
+  };
 
   const run = async () => {
     setLoading(true);
     setMsg("");
     setError("");
-
-    // On mémorise la config avant l'appel : elle reste utile même si celui-ci échoue.
-    setSettings({
-      riotMode: form.mode,
-      riotApiKey: form.apiKey,
-      riotProxyUrl: form.proxyUrl,
-      riotProxyToken: form.proxyToken,
-      riotGameName: form.gameName,
-      riotTagLine: form.tagLine,
-      riotPlatform: form.platform,
-    });
 
     const region = RIOT_REGIONS.find((r) => r.platform === form.platform) || RIOT_REGIONS[0];
     const existingMatchIds = new Set(data.games.map((g) => g.matchId).filter(Boolean));
