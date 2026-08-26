@@ -2,7 +2,14 @@ import { useEffect, useRef } from "react";
 import { fetchRiotGames } from "../lib/riotApi.js";
 import { RIOT_REGIONS } from "../constants/riot.js";
 
-const POLL_INTERVAL_MS = 5 * 60 * 1000;
+// Le scheduler tourne à ce rythme fixe et décide, à chaque passage, si le délai voulu
+// (variable selon riotSessionActive) est écoulé — plutôt qu'un setInterval à durée fixe,
+// qui ne pourrait pas s'adapter si l'utilisateur change les réglages en cours de route.
+const SCHEDULER_TICK_MS = 30 * 1000;
+// Exportées pour que l'UI (RiotImportSection) affiche les mêmes valeurs par défaut que
+// celles réellement utilisées ici en l'absence de réglage explicite — une seule source de vérité.
+export const DEFAULT_ACTIVE_INTERVAL_MIN = 5;
+export const DEFAULT_IDLE_INTERVAL_MIN = 60;
 // Lots volontairement petits en vérification auto : ici la fraîcheur prime sur le
 // rattrapage — un gros compte serait redondant avec l'import manuel (voir Paramètres).
 const AUTO_CHECK_COUNT = 5;
@@ -10,7 +17,9 @@ const AUTO_CHECK_COUNT = 5;
 /**
  * Vérifie périodiquement (tant que l'onglet reste ouvert — ce n'est pas un service en
  * arrière-plan) si de nouvelles games SoloQ sont disponibles, et les importe silencieusement.
- * Activé via le réglage `riotAutoImport`.
+ * Activé via le réglage `riotAutoImport`. L'intervalle dépend de `riotSessionActive` (coché
+ * quand une partie est en cours, décoché sinon) : `riotActiveIntervalMin` dans le premier
+ * cas, `riotIdleIntervalMin` dans le second — tous deux réglables dans Paramètres.
  *
  * Le vrai bénéfice n'est pas la fraîcheur pour elle-même : en vérifiant souvent, chaque lot
  * importé ne contient presque jamais plus d'une game neuve, ce qui rend le LP estimé (voir
@@ -19,18 +28,25 @@ const AUTO_CHECK_COUNT = 5;
  */
 export function useAutoRiotImport(data, actions) {
   // Toujours à jour, contrairement à des valeurs capturées par le rendu au moment où
-  // l'effet s'est monté : sans ça, le tick planifié à t+5min agirait sur un état périmé.
-  const ref = useRef({ data, actions, running: false, didInitialCheck: false });
+  // l'effet s'est monté : sans ça, un tick planifié agirait sur un état périmé.
+  const ref = useRef({ data, actions, running: false });
   ref.current.data = data;
   ref.current.actions = actions;
 
   useEffect(() => {
-    const tick = async () => {
+    const check = async () => {
       const { data: cur, actions: act, running } = ref.current;
       if (running || !cur || !act) return;
 
       const s = cur.settings;
       if (!s.riotAutoImport) return;
+
+      const intervalMin = s.riotSessionActive
+        ? Number(s.riotActiveIntervalMin) || DEFAULT_ACTIVE_INTERVAL_MIN
+        : Number(s.riotIdleIntervalMin) || DEFAULT_IDLE_INTERVAL_MIN;
+      const lastCheck = s.riotLastAutoCheck ? new Date(s.riotLastAutoCheck).getTime() : 0;
+      if (Date.now() - lastCheck < intervalMin * 60 * 1000) return;
+
       if (!s.riotGameName || !s.riotTagLine) return;
       if (s.riotMode === "direct" ? !s.riotApiKey : !s.riotProxyUrl) return;
 
@@ -58,26 +74,16 @@ export function useAutoRiotImport(data, actions) {
           riotLastAutoCount: importedCount,
         });
       } catch (e) {
-        // Échec silencieux (pas d'alerte intrusive) : la prochaine vérification réessaiera
-        // dans 5 minutes. Le détail reste consultable dans Paramètres si besoin.
+        // Échec silencieux (pas d'alerte intrusive) : le prochain passage réessaiera. Le
+        // détail reste consultable dans Paramètres si besoin.
         act.setSettings({ riotLastAutoCheck: new Date().toISOString(), riotLastAutoError: e.message || "échec" });
       } finally {
         ref.current.running = false;
       }
     };
 
-    // Un check immédiat dès que `data` est chargé (utile si le réglage était déjà activé la
-    // dernière fois) — pas au tout premier rendu, où `data` vaut encore `null` le temps que
-    // useTrackerData lise le localStorage — puis un toutes les POLL_INTERVAL_MS tant que
-    // l'onglet reste ouvert. Le tableau de dépendances [Boolean(data)] fait justement
-    // re-tourner cet effet (donc relancer ce check immédiat) au moment précis où `data`
-    // passe de `null` à sa vraie valeur.
-    if (data && !ref.current.didInitialCheck) {
-      ref.current.didInitialCheck = true;
-      tick();
-    }
-    const id = setInterval(tick, POLL_INTERVAL_MS);
+    check();
+    const id = setInterval(check, SCHEDULER_TICK_MS);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Boolean(data)]);
+  }, []);
 }

@@ -5,6 +5,7 @@ import { RIOT_REGIONS, WORKER_CODE } from "../../constants/riot.js";
 import { fetchRiotGames, diagnoseRiotError, rotateRiotKey, diagnoseRotateError } from "../../lib/riotApi.js";
 import { riotMatchToGame } from "../../lib/importers.js";
 import { rankLabel } from "../../lib/rank.js";
+import { DEFAULT_ACTIVE_INTERVAL_MIN, DEFAULT_IDLE_INTERVAL_MIN } from "../../hooks/useAutoRiotImport.js";
 
 const MODES = [
   {
@@ -31,6 +32,9 @@ const FIELD_TO_SETTING = {
   count: "riotCount",
   adminToken: "riotAdminToken",
   autoImport: "riotAutoImport",
+  sessionActive: "riotSessionActive",
+  activeIntervalMin: "riotActiveIntervalMin",
+  idleIntervalMin: "riotIdleIntervalMin",
 };
 
 export default function RiotImportSection({ data, setSettings, importGames, importRiotResult }) {
@@ -46,6 +50,9 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
     count: s.riotCount || 20,
     adminToken: s.riotAdminToken || "",
     autoImport: s.riotAutoImport || false,
+    sessionActive: s.riotSessionActive || false,
+    activeIntervalMin: s.riotActiveIntervalMin || DEFAULT_ACTIVE_INTERVAL_MIN,
+    idleIntervalMin: s.riotIdleIntervalMin || DEFAULT_IDLE_INTERVAL_MIN,
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -216,12 +223,14 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
               placeholder="le PROXY_TOKEN que tu as choisi"
             />
           </Field>
+          <SessionActiveField checked={form.sessionActive} onChange={(v) => patch({ sessionActive: v })} />
         </div>
       ) : (
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
           <Field label="Clé API Riot">
             <Input value={form.apiKey} onChange={(e) => patch({ apiKey: e.target.value })} placeholder="RGAPI-..." />
           </Field>
+          <SessionActiveField checked={form.sessionActive} onChange={(v) => patch({ sessionActive: v })} />
         </div>
       )}
 
@@ -261,16 +270,40 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
           />
           <span>
             <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
-              Vérifier automatiquement toutes les 5 minutes
+              Vérifier automatiquement (toutes les {form.sessionActive ? form.activeIntervalMin : form.idleIntervalMin} min
+              en ce moment)
             </span>
             <br />
             <span style={{ fontSize: 11.5, color: "var(--dim)" }}>
               Tant que ce site reste ouvert dans un onglet — les petits lots (souvent une seule game) donnent un LP
-              exact plutôt qu'estimé. Ne remplace pas un import manuel après une longue absence.
+              exact plutôt qu'estimé. Ne remplace pas un import manuel après une longue absence. La fréquence dépend
+              de "Session active" ci-dessus, réglable juste en dessous.
             </span>
           </span>
         </label>
-        {form.autoImport && <AutoImportStatus settings={s} />}
+        {form.autoImport && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 12 }}>
+              <Field label="Intervalle en session active (min)">
+                <Input
+                  type="number"
+                  min={1}
+                  value={form.activeIntervalMin}
+                  onChange={(e) => patch({ activeIntervalMin: Number(e.target.value) })}
+                />
+              </Field>
+              <Field label="Intervalle hors session (min)">
+                <Input
+                  type="number"
+                  min={1}
+                  value={form.idleIntervalMin}
+                  onChange={(e) => patch({ idleIntervalMin: Number(e.target.value) })}
+                />
+              </Field>
+            </div>
+            <AutoImportStatus settings={s} />
+          </>
+        )}
       </div>
 
       {form.mode === "proxy" && (
@@ -352,6 +385,34 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
     </>
   );
 }
+
+/** Bascule "session en cours" — détermine quel intervalle de vérification auto s'applique. */
+function SessionActiveField({ checked, onChange }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, color: "var(--dim)", fontWeight: 500 }}>
+      <span>Session active</span>
+      <span
+        style={{
+          ...inputBoxStyle,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+        }}
+      >
+        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+        <span style={{ fontSize: 12.5, color: "var(--text)" }}>{checked ? "Oui, je joue" : "Non"}</span>
+      </span>
+    </label>
+  );
+}
+
+const inputBoxStyle = {
+  background: "var(--bg-elevated)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  padding: "9px 10px",
+};
 
 /** Statut de la dernière vérification automatique (voir useAutoRiotImport.js). */
 function AutoImportStatus({ settings }) {

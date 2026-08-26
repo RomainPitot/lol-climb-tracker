@@ -60,7 +60,17 @@ Riot ne fournit jamais le LP gagné/perdu par game, seulement le résultat (vict
 
 La différence entre les deux est un fait mesuré ; il ne reste qu'à la répartir sur les games du lot, en supposant que chaque victoire rapporte autant que chaque défaite en fait perdre (hypothèse qui casse en cas de série de promotion, de bonus de première victoire du jour, etc. — d'où le mot *estimation*). Si le lot a autant de victoires que de défaites, cette hypothèse ne suffit même pas à expliquer un delta non nul : l'app retombe alors sur une valeur par défaut (±17 LP) et absorbe l'écart restant sur la game la plus récente, pour que le total reste au moins exact.
 
-Chaque valeur estimée est marquée **≈** dans l'historique (survole pour le rappel) et n'est plus considérée comme une estimation dès que tu la corriges à la main via **Modifier**.
+Chaque valeur estimée est marquée **≈** dans l'historique (survole pour le rappel) et n'est plus considérée comme une estimation dès que tu la corriges à la main via **Modifier**. Un lot d'**une seule game** n'a rien à répartir — la valeur devient alors exacte, pas une estimation.
+
+## Vérification automatique
+
+Puisque la précision du LP dépend directement de la taille des lots importés (voir ci-dessus), l'app peut vérifier elle-même, à intervalle régulier et tant que l'onglet reste ouvert, si de nouvelles games sont disponibles — **Paramètres → Import automatique → Vérifier automatiquement**.
+
+La fréquence dépend de la case **Session active**, juste à côté des champs de connexion (URL du Worker / clé) :
+- cochée → intervalle **"en session active"** (5 min par défaut) : à cocher quand tu es en train de jouer, pour des lots quasi toujours d'une seule game (donc un LP exact).
+- décochée → intervalle **"hors session"** (60 min par défaut) : suffisant pour ne pas laisser le rang traîner trop longtemps sans qu'un import massif inutile ne consomme le quota de la clé pour rien.
+
+Les deux intervalles sont réglables juste en dessous de la case à cocher. Limite à garder en tête : ce n'est pas un service en arrière-plan — ferme l'onglet et les vérifications s'arrêtent ; à la réouverture, un gros lot en attente redevient une estimation plutôt qu'une valeur exacte.
 
 ## Que fait l'app avec l'API
 
