@@ -7,6 +7,7 @@ import SessionsPage from "./pages/SessionsPage.jsx";
 import CoachPage from "./pages/CoachPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import { useTrackerData } from "./hooks/useTrackerData.js";
+import { useAutoRiotImport } from "./hooks/useAutoRiotImport.js";
 
 const PAGES = {
   dashboard: Dashboard,
@@ -20,6 +21,10 @@ const PAGES = {
 export default function App() {
   const { data, sorted, actions, loaded } = useTrackerData();
   const [page, setPage] = useState("dashboard");
+
+  // Tourne indépendamment de la page affichée (pas seulement quand Paramètres est monté) :
+  // tant que ce site reste ouvert dans un onglet, voir useAutoRiotImport.js.
+  useAutoRiotImport(data, actions);
 
   if (!loaded) {
     return (

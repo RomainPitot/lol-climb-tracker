@@ -30,6 +30,7 @@ const FIELD_TO_SETTING = {
   platform: "riotPlatform",
   count: "riotCount",
   adminToken: "riotAdminToken",
+  autoImport: "riotAutoImport",
 };
 
 export default function RiotImportSection({ data, setSettings, importGames, importRiotResult }) {
@@ -44,6 +45,7 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
     platform: s.riotPlatform || "euw1",
     count: s.riotCount || 20,
     adminToken: s.riotAdminToken || "",
+    autoImport: s.riotAutoImport || false,
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -249,6 +251,28 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
       {msg && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{msg}</div>}
       {error && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{error}</div>}
 
+      <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={form.autoImport}
+            onChange={(e) => patch({ autoImport: e.target.checked })}
+            style={{ marginTop: 2 }}
+          />
+          <span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
+              Vérifier automatiquement toutes les 5 minutes
+            </span>
+            <br />
+            <span style={{ fontSize: 11.5, color: "var(--dim)" }}>
+              Tant que ce site reste ouvert dans un onglet — les petits lots (souvent une seule game) donnent un LP
+              exact plutôt qu'estimé. Ne remplace pas un import manuel après une longue absence.
+            </span>
+          </span>
+        </label>
+        {form.autoImport && <AutoImportStatus settings={s} />}
+      </div>
+
       {form.mode === "proxy" && (
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
@@ -326,6 +350,31 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
         </div>
       </div>
     </>
+  );
+}
+
+/** Statut de la dernière vérification automatique (voir useAutoRiotImport.js). */
+function AutoImportStatus({ settings }) {
+  if (!settings.riotLastAutoCheck) {
+    return (
+      <div style={{ marginTop: 8, fontSize: 11.5, color: "var(--dim)" }}>
+        Pas encore de vérification automatique effectuée — la première aura lieu sous peu.
+      </div>
+    );
+  }
+  const time = new Date(settings.riotLastAutoCheck).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  if (settings.riotLastAutoError) {
+    return (
+      <div style={{ marginTop: 8, fontSize: 11.5, color: "var(--loss)" }}>
+        Dernière vérification à {time} : échec ({settings.riotLastAutoError}).
+      </div>
+    );
+  }
+  const count = settings.riotLastAutoCount || 0;
+  return (
+    <div style={{ marginTop: 8, fontSize: 11.5, color: "var(--dim)" }}>
+      Dernière vérification à {time} : {count > 0 ? `${count} nouvelle(s) game(s) importée(s).` : "rien de nouveau."}
+    </div>
   );
 }
 
