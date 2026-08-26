@@ -73,9 +73,13 @@ export async function riotFetch(riotUrl, conn) {
  * connaître) : on retombe sur une magnitude par défaut, et l'écart restant est absorbé par
  * la game la plus récente pour que le total reste exact.
  *
- * Que V = D ou non, il ne s'agit jamais que d'une estimation — pas la vraie valeur Riot :
- * promos, séries de rétrogradation ou bonus de première victoire du jour ne sont pas connus
- * ici. Chaque game estimée porte `lpEstimated: true` pour que l'UI l'indique clairement.
+ * Cas particulier important : si le lot ne contient qu'UNE SEULE game, il n'y a rien à
+ * répartir — le delta mesuré s'applique à elle seule sans aucune hypothèse. Ce n'est alors
+ * plus une estimation mais la vraie valeur (d'où l'intérêt d'importer souvent : plus les
+ * lots sont petits, plus le calcul se rapproche de l'exact). Dès que le lot contient
+ * plusieurs games, le modèle symétrique (V ≠ D) ou par défaut (V = D) entre en jeu, et promos,
+ * séries de rétrogradation ou bonus de première victoire du jour restent invisibles ici.
+ * `lpEstimated` reflète cette distinction : `false` pour un lot d'une game, `true` sinon.
  */
 const DEFAULT_LP_MAGNITUDE = 17;
 
@@ -115,7 +119,8 @@ function estimateLpChanges(games, beforeRank, afterRank) {
     g.rankAfterTier = after.tier;
     g.rankAfterDiv = after.div;
     g.lpAfter = after.lp;
-    g.lpEstimated = true;
+    // Une seule game dans le lot : aucune répartition à faire, la valeur est exacte.
+    g.lpEstimated = chronological.length > 1;
     cursor = after;
   });
 }

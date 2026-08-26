@@ -88,14 +88,20 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
       if (result.puuid) setManualPuuid(result.puuid);
 
       const hasEstimate = result.games.some((g) => g.lpEstimated);
+      let lpNote = " Le gain/perte de LP n'est pas fourni par l'API Riot — pense à corriger les LP des games importées si besoin (bouton Modifier dans l'historique).";
+      if (result.rank && hasEstimate) {
+        lpNote =
+          " Le LP par game n'est pas fourni par l'API Riot — les valeurs affichées (marquées ≈) sont une estimation basée sur ton rang avant/après ce lot, pas la vraie donnée Riot. Astuce : importe plus souvent (idéalement après chaque game) pour des lots plus petits, donc plus précis — avec une seule game par lot, la valeur devient exacte. Corrige-les à la main si tu les connais précisément (bouton Modifier dans l'historique).";
+      } else if (result.rank && importedCount === 1) {
+        lpNote = " Une seule game dans ce lot : le LP affiché est la vraie valeur (pas une estimation), déduite de ton rang avant/après.";
+      }
+
       setMsg(
         `${importedCount} nouvelle(s) game(s) SoloQ importée(s) sur ${result.totalFound} trouvées.` +
           (result.rank
             ? ` Rang resynchronisé : ${rankLabel(result.rank.tier, result.rank.div)} — ${result.rank.lp} LP.`
             : "") +
-          (hasEstimate
-            ? " Le LP par game n'est pas fourni par l'API Riot — les valeurs affichées (marquées ≈) sont une estimation basée sur ton rang avant/après ce lot, pas la vraie donnée Riot. Corrige-les à la main si tu les connais précisément (bouton Modifier dans l'historique)."
-            : " Le gain/perte de LP n'est pas fourni par l'API Riot — pense à corriger les LP des games importées si besoin (bouton Modifier dans l'historique).")
+          lpNote
       );
     } catch (e) {
       setError(
