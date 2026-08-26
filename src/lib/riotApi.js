@@ -11,7 +11,13 @@ const QUEUE_SOLO_RANKED = 420;
  */
 export function buildRiotRequestUrl(riotUrl, conn) {
   if (conn.mode === "proxy") {
-    const base = conn.proxyUrl.replace(/\/$/, "");
+    // Une URL de Worker collée sans son schéma (ex: "lol-proxy.x.workers.dev") devient une
+    // URL RELATIVE pour `fetch` : le navigateur l'interprète alors comme un chemin de la page
+    // en cours. Piège vécu : ça retourne le 404 du site (GitHub Pages), pas celui de Riot —
+    // message trompeur ("compte introuvable") pour un problème qui n'a rien à voir. On corrige
+    // ici en amont plutôt que de compter sur une saisie toujours parfaite.
+    const withScheme = /^https?:\/\//i.test(conn.proxyUrl) ? conn.proxyUrl : `https://${conn.proxyUrl}`;
+    const base = withScheme.replace(/\/$/, "");
     return `${base}?token=${encodeURIComponent(conn.proxyToken || "")}&url=${encodeURIComponent(riotUrl)}`;
   }
   const sep = riotUrl.includes("?") ? "&" : "?";
