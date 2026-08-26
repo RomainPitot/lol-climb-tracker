@@ -51,7 +51,8 @@ export function csvToGames(text) {
 /**
  * Convertit un match Riot (Match-V5) en game du tracker, du point de vue du joueur `puuid`.
  * Renvoie null si le puuid n'apparaît pas dans le match.
- * Note : l'API ne fournit pas le gain/perte de LP — il reste à 0 et se corrige à la main.
+ * Note : l'API ne fournit pas le gain/perte de LP — `lpChange` reste à 0 ici ; c'est
+ * `estimateLpChanges` (riotApi.js) qui le remplace ensuite par une estimation si possible.
  */
 export function riotMatchToGame(match, puuid) {
   const info = match?.info;

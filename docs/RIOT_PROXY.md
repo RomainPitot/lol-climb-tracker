@@ -50,7 +50,17 @@ Une fois configuré : **Paramètres → Import automatique → Renouveler la cl�
 - **Une clé de développement Riot expire toutes les 24h.** Sans la rotation automatique ci-dessus, il faut la régénérer et mettre à jour le secret `RIOT_API_KEY` du Worker à la main. Pour un usage durable, demande une *Personal API Key* à Riot.
 - **Le `PROXY_TOKEN` n'est pas un secret fort** : il est visible dans les requêtes du navigateur si quelqu'un a accès à ta machine. Il sert à empêcher un inconnu de consommer ton quota Riot, pas à protéger des données sensibles.
 - **Le Worker ne relaie que vers `*.api.riotgames.com`** — cette vérification est ce qui l'empêche d'être utilisé comme proxy ouvert. Ne la retire pas.
-- **Le gain/perte de LP n'existe pas dans l'API Riot.** Les games importées ont `lpChange = 0` et doivent être corrigées à la main depuis l'historique.
+- **Le gain/perte de LP n'existe pas dans l'API Riot.** L'app en *estime* un (voir ci-dessous) plutôt que de mettre `lpChange = 0` — mais reste une approximation, à corriger à la main depuis l'historique si tu connais la vraie valeur.
+
+## Estimation du LP par game
+
+Riot ne fournit jamais le LP gagné/perdu par game, seulement le résultat (victoire/défaite). L'app en déduit une estimation en comparant :
+- le rang connu de l'app **avant** l'import (ton rang courant au moment du clic),
+- le rang **réellement resynchronisé** depuis Riot juste après (`league/v4/entries`).
+
+La différence entre les deux est un fait mesuré ; il ne reste qu'à la répartir sur les games du lot, en supposant que chaque victoire rapporte autant que chaque défaite en fait perdre (hypothèse qui casse en cas de série de promotion, de bonus de première victoire du jour, etc. — d'où le mot *estimation*). Si le lot a autant de victoires que de défaites, cette hypothèse ne suffit même pas à expliquer un delta non nul : l'app retombe alors sur une valeur par défaut (±17 LP) et absorbe l'écart restant sur la game la plus récente, pour que le total reste au moins exact.
+
+Chaque valeur estimée est marquée **≈** dans l'historique (survole pour le rappel) et n'est plus considérée comme une estimation dès que tu la corriges à la main via **Modifier**.
 
 ## Que fait l'app avec l'API
 

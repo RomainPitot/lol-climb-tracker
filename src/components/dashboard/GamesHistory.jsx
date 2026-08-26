@@ -118,7 +118,11 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                   <Pill tone={g.win ? "win" : "loss"}>{g.win ? "Victoire" : "Défaite"}</Pill>
                 </td>
                 <td style={{ ...cell, color: "var(--dim)" }}>{rankLabel(g.rankAfterTier, g.rankAfterDiv)}</td>
-                <td style={{ ...cell, color: g.lpChange >= 0 ? "var(--win)" : "var(--loss)", fontWeight: 600 }}>
+                <td
+                  style={{ ...cell, color: g.lpChange >= 0 ? "var(--win)" : "var(--loss)", fontWeight: 600 }}
+                  title={g.lpEstimated ? "Estimation : l'API Riot ne fournit pas le LP par game" : undefined}
+                >
+                  {g.lpEstimated ? "≈" : ""}
                   {g.lpChange >= 0 ? "+" : ""}
                   {g.lpChange}
                 </td>

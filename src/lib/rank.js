@@ -10,6 +10,15 @@ export function rankValue(tier, div) {
   return ti * 4 + (DIV_NUM[div] || 1);
 }
 
+/**
+ * Score continu comparable entre paliers (contrairement à rankValue seul, qui ignore le LP
+ * dans la division). Sert à mesurer un delta de progression entre deux rangs quelconques —
+ * ex: estimer le LP gagné/perdu sur un lot de games importées automatiquement.
+ */
+export function rankScore(tier, div, lp) {
+  return rankValue(tier, div) * 100 + (Number(lp) || 0);
+}
+
 export function rankLabel(tier, div) {
   if (!tier) return "—";
   return APEX.includes(tier) ? tier : `${tier} ${div || ""}`.trim();

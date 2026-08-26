@@ -79,18 +79,23 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
     const conn = { ...form, platform: region.platform, continent: region.continent };
 
     try {
-      const result = await fetchRiotGames(conn, existingMatchIds);
+      // beforeRank sert à estimer un LP par game (voir estimateLpChanges dans riotApi.js) :
+      // c'est le rang tel que l'app le connaît juste avant ce lot de games.
+      const result = await fetchRiotGames(conn, existingMatchIds, data.currentRank);
       // Un seul appel qui combine games + rang + PUUID : voir le commentaire sur
       // importRiotResult dans useTrackerData.js pour la raison (bug d'écrasement corrigé).
       const importedCount = importRiotResult({ puuid: result.puuid, games: result.games, rank: result.rank });
       if (result.puuid) setManualPuuid(result.puuid);
 
+      const hasEstimate = result.games.some((g) => g.lpEstimated);
       setMsg(
         `${importedCount} nouvelle(s) game(s) SoloQ importée(s) sur ${result.totalFound} trouvées.` +
           (result.rank
             ? ` Rang resynchronisé : ${rankLabel(result.rank.tier, result.rank.div)} — ${result.rank.lp} LP.`
             : "") +
-          " Le gain/perte de LP n'est pas fourni par l'API Riot — pense à corriger les LP des games importées si besoin (bouton Modifier dans l'historique)."
+          (hasEstimate
+            ? " Le LP par game n'est pas fourni par l'API Riot — les valeurs affichées (marquées ≈) sont une estimation basée sur ton rang avant/après ce lot, pas la vraie donnée Riot. Corrige-les à la main si tu les connais précisément (bouton Modifier dans l'historique)."
+            : " Le gain/perte de LP n'est pas fourni par l'API Riot — pense à corriger les LP des games importées si besoin (bouton Modifier dans l'historique).")
       );
     } catch (e) {
       setError(

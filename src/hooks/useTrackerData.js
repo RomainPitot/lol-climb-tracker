@@ -62,7 +62,9 @@ export function useTrackerData() {
         const cur = dataRef.current;
         const games = cur.games.map((g) => {
           if (g.id !== id) return g;
-          const merged = { ...g, ...patch };
+          // Une correction manuelle remplace une éventuelle estimation automatique (import
+          // Riot) : la game devient une valeur confirmée par l'utilisateur, plus une estimation.
+          const merged = { ...g, ...patch, lpEstimated: false };
           // Le rang de départ de la game est figé : seul le rang d'arrivée se recalcule.
           const before = { tier: g.rankBeforeTier, div: g.rankBeforeDiv, lp: g.lpBefore };
           const after = applyLpChange(before, merged.lpChange);

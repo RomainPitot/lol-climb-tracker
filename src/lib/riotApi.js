@@ -1,6 +1,8 @@
 import { APEX } from "../constants/ranks.js";
 import { RIOT_TIER_TO_FR } from "../constants/riot.js";
 import { riotMatchToGame } from "./importers.js";
+import { applyLpChange, rankScore } from "./rank.js";
+import { gameTime } from "./format.js";
 
 /** Queue ID de la SoloQ classée. */
 const QUEUE_SOLO_RANKED = 420;
@@ -58,10 +60,72 @@ export async function riotFetch(riotUrl, conn) {
 }
 
 /**
- * Récupère les dernières games SoloQ non encore importées, plus le rang actuel.
- * `existingMatchIds` évite de re-télécharger les matchs déjà en base.
+ * L'API Riot ne donne jamais le LP gagné/perdu par game — seulement le résultat (win/loss)
+ * et, séparément, un instantané du rang *actuel*. On peut quand même approcher un LP par
+ * game : on connaît le rang juste avant ce lot de games (`beforeRank`, le rang courant de
+ * l'app avant l'import) et le rang juste après (`afterRank`, resynchronisé depuis Riot) — la
+ * différence entre les deux est la vérité mesurée, il ne reste qu'à la répartir sur les games.
+ *
+ * Hypothèse simplificatrice : les victoires rapportent un LP symétrique aux défaites (`+x`
+ * / `-x`). Avec V victoires et D défaites, `total = x·(V − D)` se résout tant que V ≠ D. Si
+ * V = D, l'équation à une inconnue n'a pas de solution (un delta non nul avec autant de
+ * victoires que de défaites ne peut s'expliquer que par une asymétrie qu'on ne peut pas
+ * connaître) : on retombe sur une magnitude par défaut, et l'écart restant est absorbé par
+ * la game la plus récente pour que le total reste exact.
+ *
+ * Que V = D ou non, il ne s'agit jamais que d'une estimation — pas la vraie valeur Riot :
+ * promos, séries de rétrogradation ou bonus de première victoire du jour ne sont pas connus
+ * ici. Chaque game estimée porte `lpEstimated: true` pour que l'UI l'indique clairement.
  */
-export async function fetchRiotGames(conn, existingMatchIds) {
+const DEFAULT_LP_MAGNITUDE = 17;
+
+function estimateLpChanges(games, beforeRank, afterRank) {
+  if (!games.length || !beforeRank || !afterRank) return;
+
+  const chronological = [...games].sort((a, b) => gameTime(a) - gameTime(b));
+  const totalDelta = rankScore(afterRank.tier, afterRank.div, afterRank.lp) - rankScore(beforeRank.tier, beforeRank.div, beforeRank.lp);
+  const wins = chronological.filter((g) => g.win).length;
+  const losses = chronological.length - wins;
+
+  let perWin;
+  let perLoss;
+  if (wins !== losses) {
+    const magnitude = totalDelta / (wins - losses);
+    perWin = magnitude;
+    perLoss = -magnitude;
+  } else {
+    perWin = DEFAULT_LP_MAGNITUDE;
+    perLoss = -DEFAULT_LP_MAGNITUDE;
+  }
+
+  let cursor = beforeRank;
+  let assigned = 0;
+  chronological.forEach((g, i) => {
+    const isLast = i === chronological.length - 1;
+    // La dernière game absorbe l'arrondi (et, si V = D, tout l'écart non expliqué par le
+    // modèle symétrique) pour que la somme colle exactement au delta mesuré par Riot.
+    const delta = isLast ? Math.round(totalDelta - assigned) : Math.round(g.win ? perWin : perLoss);
+    assigned += delta;
+
+    const after = applyLpChange(cursor, delta);
+    g.rankBeforeTier = cursor.tier;
+    g.rankBeforeDiv = cursor.div;
+    g.lpBefore = cursor.lp;
+    g.lpChange = delta;
+    g.rankAfterTier = after.tier;
+    g.rankAfterDiv = after.div;
+    g.lpAfter = after.lp;
+    g.lpEstimated = true;
+    cursor = after;
+  });
+}
+
+/**
+ * Récupère les dernières games SoloQ non encore importées, plus le rang actuel.
+ * `existingMatchIds` évite de re-télécharger les matchs déjà en base. `beforeRank` (le rang
+ * courant de l'app avant l'import) sert à estimer un LP par game — voir estimateLpChanges.
+ */
+export async function fetchRiotGames(conn, existingMatchIds, beforeRank) {
   const { gameName, tagLine, platform, continent, count } = conn;
 
   const account = await riotFetch(
@@ -101,6 +165,10 @@ export async function fetchRiotGames(conn, existingMatchIds) {
   } catch {
     // la resynchro du rang est optionnelle : un échec ici ne doit pas perdre les games
   }
+
+  // Sans rang de départ ou d'arrivée, impossible d'estimer quoi que ce soit — les games
+  // gardent alors lpChange: 0 comme avant (comportement inchangé dans ce cas).
+  if (beforeRank && rank) estimateLpChanges(games, beforeRank, rank);
 
   return { games, rank, totalFound: ids.length, newFound: newIds.length, puuid };
 }
