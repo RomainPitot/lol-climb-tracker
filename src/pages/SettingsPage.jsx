@@ -16,7 +16,7 @@ const HIST_FIELDS = [
 
 export default function SettingsPage({
   data, sorted, currentRank, addGoal, deleteGoal, setHistorical,
-  setThresholds, setCurrentRank, setSettings, importGames, resetAll,
+  setThresholds, setCurrentRank, setSettings, importGames, importRiotResult, resetAll,
 }) {
   const [hist, setHist] = useState(data.historical);
   const [th, setTh] = useState(data.thresholds);
@@ -130,8 +130,8 @@ export default function SettingsPage({
         <RiotImportSection
           data={data}
           setSettings={setSettings}
-          setCurrentRank={setCurrentRank}
           importGames={importGames}
+          importRiotResult={importRiotResult}
         />
       </Collapsible>
 

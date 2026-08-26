@@ -19,7 +19,7 @@ const MODES = [
   },
 ];
 
-export default function RiotImportSection({ data, setSettings, setCurrentRank, importGames }) {
+export default function RiotImportSection({ data, setSettings, importGames, importRiotResult }) {
   const s = data.settings;
   const [form, setForm] = useState({
     mode: s.riotMode || "proxy",
@@ -62,15 +62,13 @@ export default function RiotImportSection({ data, setSettings, setCurrentRank, i
 
     try {
       const result = await fetchRiotGames(conn, existingMatchIds);
-      if (result.puuid) {
-        setManualPuuid(result.puuid);
-        setSettings({ riotPuuid: result.puuid });
-      }
-      if (result.games.length) importGames(result.games);
-      if (result.rank) setCurrentRank(result.rank);
+      // Un seul appel qui combine games + rang + PUUID : voir le commentaire sur
+      // importRiotResult dans useTrackerData.js pour la raison (bug d'écrasement corrigé).
+      const importedCount = importRiotResult({ puuid: result.puuid, games: result.games, rank: result.rank });
+      if (result.puuid) setManualPuuid(result.puuid);
 
       setMsg(
-        `${result.games.length} nouvelle(s) game(s) SoloQ importée(s) sur ${result.totalFound} trouvées.` +
+        `${importedCount} nouvelle(s) game(s) SoloQ importée(s) sur ${result.totalFound} trouvées.` +
           (result.rank
             ? ` Rang resynchronisé : ${rankLabel(result.rank.tier, result.rank.div)} — ${result.rank.lp} LP.`
             : "") +
