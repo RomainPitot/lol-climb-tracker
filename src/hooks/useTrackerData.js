@@ -174,6 +174,15 @@ export function useTrackerData() {
         save({ ...cur, championWeights: { ...cur.championWeights, [role]: next } });
       },
 
+      /** Force le compteur de tirages ratés d'un champion — outil de test (panneau dev de
+       * TierlistPage), pour prévisualiser un palier de rareté sans accumuler de vrais tirages. */
+      setChampionWeight(role, champId, missCount) {
+        const cur = dataRef.current;
+        const weights = { ...(cur.championWeights[role] || {}) };
+        weights[champId] = Math.max(0, Math.round(Number(missCount) || 0));
+        save({ ...cur, championWeights: { ...cur.championWeights, [role]: weights } });
+      },
+
       resetAll() {
         save(emptyState());
       },

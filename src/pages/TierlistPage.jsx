@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Shuffle, X } from "lucide-react";
-import { Card, SectionTitle, Pill, Input, Btn } from "../components/ui/primitives.jsx";
+import { Shuffle, X, Wrench } from "lucide-react";
+import { Card, SectionTitle, Pill, Input, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { ROLES } from "../constants/game.js";
-import { rarityFor, weightedPick } from "../lib/rarity.js";
+import { RARITY_TIERS, rarityFor, weightedPick } from "../lib/rarity.js";
 
-export default function TierlistPage({ data, addToPool, removeFromPool, recordRouletteSpin }) {
+export default function TierlistPage({ data, addToPool, removeFromPool, recordRouletteSpin, setChampionWeight }) {
   const { champions, loading, error } = useChampionList();
   const byId = useMemo(() => Object.fromEntries(champions.map((c) => [c.id, c.name])), [champions]);
 
@@ -39,6 +39,15 @@ export default function TierlistPage({ data, addToPool, removeFromPool, recordRo
         byId={byId}
         recordRouletteSpin={recordRouletteSpin}
       />
+
+      <div style={{ marginTop: 20 }}>
+        <DevPanel
+          championPool={data.championPool}
+          championWeights={data.championWeights}
+          byId={byId}
+          setChampionWeight={setChampionWeight}
+        />
+      </div>
     </div>
   );
 }
@@ -426,5 +435,152 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
         </Btn>
       </div>
     </Card>
+  );
+}
+
+/**
+ * Panneau de test : prévisualiser l'effet d'atterrissage de chaque palier instantanément
+ * (sans accumuler de vrais tirages ratés), et forcer le compteur d'un champion précis pour
+ * vérifier son liseré. N'affecte que championWeights — jamais les games ni le reste de l'app.
+ */
+function DevPanel({ championPool, championWeights, byId, setChampionWeight }) {
+  const [role, setRole] = useState(ROLES[0]);
+  const [previewTierId, setPreviewTierId] = useState(null);
+  const [previewKey, setPreviewKey] = useState(0);
+
+  const pool = championPool[role] || [];
+  const weights = championWeights[role] || {};
+  const previewChamp = pool[0];
+
+  const triggerPreview = (tierId) => {
+    setPreviewTierId(tierId);
+    setPreviewKey((k) => k + 1);
+  };
+
+  return (
+    <Collapsible
+      title={
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Wrench size={13} /> Panneau de test (dev)
+        </span>
+      }
+      sub="Prévisualiser les effets de rareté et forcer des compteurs, sans attendre de vrais tirages."
+    >
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>
+          Aperçu instantané de l'effet d'atterrissage
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+          {RARITY_TIERS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => triggerPreview(t.id)}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 7,
+                fontSize: 11.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: "var(--bg-elevated)",
+                color: t.id === "normal" ? "var(--dim)" : t.color,
+                border: `1px solid ${t.id === "normal" ? "var(--border)" : t.color}`,
+              }}
+            >
+              {t.label || "Normal"}
+            </button>
+          ))}
+        </div>
+
+        {previewTierId && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 0" }}>
+            <div
+              key={previewKey}
+              style={{
+                width: 76,
+                height: 76,
+                borderRadius: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                animation: `${PULSE_BY_TIER[previewTierId].animation} ${PULSE_BY_TIER[previewTierId].duration}s ease-out`,
+              }}
+            >
+              <ChampAvatar ddragonId={previewChamp} size={64} />
+            </div>
+            <div style={{ fontSize: 11.5, color: "var(--dim)" }}>
+              {previewChamp ? byId[previewChamp] || previewChamp : "Ajoute un champion à un rôle pour un avatar réel"}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>
+          Forcer le compteur de tirages ratés d'un champion
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+          {ROLES.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRole(r)}
+              style={{
+                padding: "6px 12px",
+                borderRadius: 7,
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: role === r ? "var(--gold)" : "var(--card)",
+                color: role === r ? "#1a1406" : "var(--dim)",
+                border: `1px solid ${role === r ? "var(--gold)" : "var(--border)"}`,
+              }}
+            >
+              {r} ({(championPool[r] || []).length})
+            </button>
+          ))}
+        </div>
+
+        {pool.length === 0 ? (
+          <div style={{ fontSize: 12, color: "var(--dim)" }}>Ajoute des champions à ce rôle pour pouvoir tester leur compteur.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {pool.map((id) => {
+              const tier = rarityFor(weights[id]);
+              return (
+                <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <RarityFrame tier={tier} size={28}>
+                    <ChampAvatar ddragonId={id} size={28} />
+                  </RarityFrame>
+                  <span style={{ fontSize: 12.5, color: "var(--text)", minWidth: 100 }}>{byId[id] || id}</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={weights[id] || 0}
+                    onChange={(e) => setChampionWeight(role, id, e.target.value)}
+                    style={{ width: 70 }}
+                  />
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {RARITY_TIERS.map((t) => (
+                      <button
+                        key={t.id}
+                        title={`Passer à ${t.label || "Normal"} (${t.min} misses)`}
+                        onClick={() => setChampionWeight(role, id, t.min)}
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 4,
+                          border: `1px solid ${t.id === "normal" ? "var(--border)" : t.color}`,
+                          background: t.id === "normal" ? "transparent" : `${t.color}33`,
+                          cursor: "pointer",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </Collapsible>
   );
 }
