@@ -1,10 +1,15 @@
-import { DEFAULT_HISTORICAL, DEFAULT_THRESHOLDS } from "../constants/game.js";
+import { DEFAULT_HISTORICAL, DEFAULT_THRESHOLDS, ROLES } from "../constants/game.js";
 import { recomputeCurrentRank } from "./rank.js";
 
 export const STORAGE_KEY = "lol-climb-tracker-v2";
 
 /** Ancienne clé utilisée par le prototype — migrée automatiquement au premier chargement. */
 const LEGACY_KEYS = ["lol-tracker-v2"];
+
+/** Pool de champions "à essayer/apprendre" par rôle — voir TierlistPage. */
+export function emptyChampionPool() {
+  return Object.fromEntries(ROLES.map((r) => [r, []]));
+}
 
 export function emptyState() {
   return {
@@ -14,6 +19,7 @@ export function emptyState() {
     thresholds: DEFAULT_THRESHOLDS,
     settings: { seasonStart: new Date().toISOString().slice(0, 10) },
     currentRank: recomputeCurrentRank([], DEFAULT_HISTORICAL),
+    championPool: emptyChampionPool(),
   };
 }
 
@@ -26,6 +32,8 @@ function normalize(state) {
   if (!d.thresholds) d.thresholds = DEFAULT_THRESHOLDS;
   if (!d.settings) d.settings = { seasonStart: new Date().toISOString().slice(0, 10) };
   if (!d.currentRank) d.currentRank = recomputeCurrentRank(d.games, d.historical);
+  if (!d.championPool) d.championPool = emptyChampionPool();
+  else for (const r of ROLES) if (!Array.isArray(d.championPool[r])) d.championPool[r] = [];
   return d;
 }
 

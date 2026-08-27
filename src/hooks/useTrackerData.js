@@ -138,6 +138,21 @@ export function useTrackerData() {
         save({ ...cur, settings: { ...cur.settings, ...patch } });
       },
 
+      /** Ajoute un champion à la pool "à essayer" d'un rôle (voir TierlistPage). Sans effet
+       * s'il y est déjà — évite les doublons plutôt que de les filtrer à l'affichage. */
+      addToPool(role, champId) {
+        const cur = dataRef.current;
+        const list = cur.championPool[role] || [];
+        if (list.includes(champId)) return;
+        save({ ...cur, championPool: { ...cur.championPool, [role]: [...list, champId] } });
+      },
+
+      removeFromPool(role, champId) {
+        const cur = dataRef.current;
+        const list = cur.championPool[role] || [];
+        save({ ...cur, championPool: { ...cur.championPool, [role]: list.filter((c) => c !== champId) } });
+      },
+
       resetAll() {
         save(emptyState());
       },

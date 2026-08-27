@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import AddGame from "./pages/AddGame.jsx";
 import ChampionsPage from "./pages/ChampionsPage.jsx";
+import TierlistPage from "./pages/TierlistPage.jsx";
 import SessionsPage from "./pages/SessionsPage.jsx";
 import CoachPage from "./pages/CoachPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
@@ -13,6 +14,7 @@ const PAGES = {
   dashboard: Dashboard,
   add: AddGame,
   champions: ChampionsPage,
+  tierlist: TierlistPage,
   sessions: SessionsPage,
   coach: CoachPage,
   settings: SettingsPage,

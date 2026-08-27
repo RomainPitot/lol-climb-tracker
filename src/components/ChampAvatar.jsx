@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { DDRAGON_VERSION, CHAMP_DDRAGON, champColor } from "../constants/roster.js";
 
-/** Icône Data Dragon du champion, avec repli sur les initiales colorées. */
-export default function ChampAvatar({ name, size = 32 }) {
+/**
+ * Icône Data Dragon du champion, avec repli sur les initiales colorées.
+ * `ddragonId` (identifiant Data Dragon direct, ex: "MonkeyKing") prend le pas sur `name` —
+ * utile pour un champion hors du roster suivi par l'app (ex: TierlistPage), où il n'y a pas
+ * d'entrée dans CHAMP_DDRAGON pour le retrouver à partir de son nom affiché.
+ */
+export default function ChampAvatar({ name, ddragonId, size = 32 }) {
   const [failed, setFailed] = useState(false);
-  const ddragon = CHAMP_DDRAGON[name];
-  const color = champColor(name);
+  const ddragon = ddragonId || CHAMP_DDRAGON[name];
+  const color = ddragonId ? "var(--gold)" : champColor(name);
 
   if (!ddragon || failed) {
     return (
