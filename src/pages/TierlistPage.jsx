@@ -152,14 +152,18 @@ function RolePoolEditor({ role, poolIds, champions, byId, loading, error, addToP
 // Le bandeau défile comme une machine à sous : une longue bande d'avatars aléatoires se
 // termine par le champion gagnant, positionné pour s'arrêter pile sous le repère central
 // grâce à un `transform: translateX` animé en CSS (décélération via cubic-bezier).
+// Des champions supplémentaires après le gagnant (REEL_TRAILING_COUNT) évitent que le
+// bandeau ne s'arrête pile à sa dernière case : sans ça, plus rien à afficher après le
+// gagnant trahissait à l'avance où le tirage allait s'arrêter.
 const REEL_ITEM_WIDTH = 78;
-const REEL_ITEM_COUNT = 34;
+const REEL_LEADING_COUNT = 34;
+const REEL_TRAILING_COUNT = 10;
 const REEL_DURATION_MS = 3200;
 
 function RouletteSection({ championPool, byId }) {
   const [role, setRole] = useState(ROLES[0]);
   const [spinning, setSpinning] = useState(false);
-  const [reel, setReel] = useState(null); // { items, offset, animate }
+  const [reel, setReel] = useState(null); // { items, winnerIndex, offset, animate }
   const [result, setResult] = useState(null);
   const containerRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -180,20 +184,24 @@ function RouletteSection({ championPool, byId }) {
     setSpinning(true);
     setResult(null);
 
-    const winner = pool[Math.floor(Math.random() * pool.length)];
-    const items = Array.from({ length: REEL_ITEM_COUNT - 1 }, () => pool[Math.floor(Math.random() * pool.length)]);
-    items.push(winner);
+    const pick = () => pool[Math.floor(Math.random() * pool.length)];
+    const winner = pick();
+    const leading = Array.from({ length: REEL_LEADING_COUNT }, pick);
+    const trailing = Array.from({ length: REEL_TRAILING_COUNT }, pick);
+    const items = [...leading, winner, ...trailing];
+    const winnerIndex = leading.length;
 
     const containerWidth = containerRef.current?.offsetWidth || 320;
-    const finalOffset = -(REEL_ITEM_WIDTH * (items.length - 1) + REEL_ITEM_WIDTH / 2 - containerWidth / 2);
+    const winnerCenterX = REEL_ITEM_WIDTH * winnerIndex + REEL_ITEM_WIDTH / 2;
+    const finalOffset = -(winnerCenterX - containerWidth / 2);
 
     // Étape 1 : poser la bande à son point de départ sans transition. Étape 2 (deux frames
     // plus tard, pour laisser le navigateur peindre l'état de départ) : appliquer la position
     // finale AVEC transition — c'est ce delta qui produit l'animation de défilement.
-    setReel({ items, offset: 0, animate: false });
+    setReel({ items, winnerIndex, offset: 0, animate: false });
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        setReel({ items, offset: finalOffset, animate: true });
+        setReel({ items, winnerIndex, offset: finalOffset, animate: true });
       });
     });
 
@@ -284,7 +292,7 @@ function RouletteSection({ championPool, byId }) {
             }}
           >
             {reel.items.map((id, i) => {
-              const isWinner = result && i === reel.items.length - 1;
+              const isWinner = result && i === reel.winnerIndex;
               return (
                 <div
                   key={i}
