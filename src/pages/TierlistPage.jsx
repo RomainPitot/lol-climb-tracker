@@ -4,7 +4,7 @@ import { Card, SectionTitle, Pill, Input, Btn, Collapsible } from "../components
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { ROLES } from "../constants/game.js";
-import { RARITY_TIERS, rarityFor, weightedPick } from "../lib/rarity.js";
+import { RARITY_TIERS, rarityFor, thresholdFor, weightedPick } from "../lib/rarity.js";
 
 export default function TierlistPage({ data, addToPool, removeFromPool, recordRouletteSpin, setChampionWeight }) {
   const { champions, loading, error } = useChampionList();
@@ -164,7 +164,7 @@ function RolePoolEditor({ role, poolIds, weights, champions, byId, loading, erro
           <span style={{ fontSize: 12, color: "var(--dim)" }}>Aucun champion pour ce rôle pour l'instant.</span>
         )}
         {selected.map((c) => {
-          const tier = rarityFor(weights[c.id]);
+          const tier = rarityFor(weights[c.id], poolIds.length);
           return (
             <div
               key={c.id}
@@ -257,7 +257,7 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
     // sur "normal".
     const weightsSnapshot = weights;
     const winner = weightedPick(pool, weightsSnapshot);
-    const winnerTier = rarityFor(weightsSnapshot[winner]);
+    const winnerTier = rarityFor(weightsSnapshot[winner], pool.length);
     const randomFiller = () => pool[Math.floor(Math.random() * pool.length)];
     const leading = Array.from({ length: REEL_LEADING_COUNT }, randomFiller);
     const trailing = Array.from({ length: REEL_TRAILING_COUNT }, randomFiller);
@@ -271,10 +271,10 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
     // Étape 1 : poser la bande à son point de départ sans transition. Étape 2 (deux frames
     // plus tard, pour laisser le navigateur peindre l'état de départ) : appliquer la position
     // finale AVEC transition — c'est ce delta qui produit l'animation de défilement.
-    setReel({ items, winnerIndex, weightsSnapshot, offset: 0, animate: false });
+    setReel({ items, winnerIndex, weightsSnapshot, poolSize: pool.length, offset: 0, animate: false });
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        setReel({ items, winnerIndex, weightsSnapshot, offset: finalOffset, animate: true });
+        setReel({ items, winnerIndex, weightsSnapshot, poolSize: pool.length, offset: finalOffset, animate: true });
       });
     });
 
@@ -369,7 +369,7 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
           >
             {reel.items.map((id, i) => {
               const isWinner = result && i === reel.winnerIndex;
-              const tier = rarityFor(reel.weightsSnapshot[id]);
+              const tier = rarityFor(reel.weightsSnapshot[id], reel.poolSize);
               const pulse = isWinner ? PULSE_BY_TIER[resultTier?.id] || PULSE_BY_TIER.normal : null;
               return (
                 <div
@@ -544,7 +544,7 @@ function DevPanel({ championPool, championWeights, byId, setChampionWeight }) {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {pool.map((id) => {
-              const tier = rarityFor(weights[id]);
+              const tier = rarityFor(weights[id], pool.length);
               return (
                 <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <RarityFrame tier={tier} size={28}>
@@ -559,11 +559,13 @@ function DevPanel({ championPool, championWeights, byId, setChampionWeight }) {
                     style={{ width: 70 }}
                   />
                   <div style={{ display: "flex", gap: 4 }}>
-                    {RARITY_TIERS.map((t) => (
+                    {RARITY_TIERS.map((t) => {
+                      const threshold = Math.ceil(thresholdFor(t, pool.length));
+                      return (
                       <button
                         key={t.id}
-                        title={`Passer à ${t.label || "Normal"} (${t.min} misses)`}
-                        onClick={() => setChampionWeight(role, id, t.min)}
+                        title={`Passer à ${t.label || "Normal"} (${threshold} misses pour cette pool de ${pool.length})`}
+                        onClick={() => setChampionWeight(role, id, threshold)}
                         style={{
                           width: 22,
                           height: 22,
@@ -573,7 +575,8 @@ function DevPanel({ championPool, championWeights, byId, setChampionWeight }) {
                           cursor: "pointer",
                         }}
                       />
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
