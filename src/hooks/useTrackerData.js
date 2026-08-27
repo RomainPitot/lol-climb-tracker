@@ -161,9 +161,10 @@ export function useTrackerData() {
 
       /**
        * Système de "pity" de la roulette (voir lib/rarity.js) : à chaque tirage, le gagnant
-       * revient à 0 et tous les autres champions du rôle gagnent +1 miss (donc +1% de chance
-       * relative la prochaine fois). Appelé au moment du tirage, pas à la fin de l'animation —
-       * la probabilité doit être mise à jour même si l'utilisateur change de page en cours de route.
+       * revient à 0 et tous les autres champions du rôle gagnent +1 miss — leur poids grimpe
+       * ensuite de façon exponentielle avec ce compteur (voir weightFor). Appelé au moment du
+       * tirage, pas à la fin de l'animation — la probabilité doit être mise à jour même si
+       * l'utilisateur change de page en cours de route.
        */
       recordRouletteSpin(role, winnerId) {
         const cur = dataRef.current;

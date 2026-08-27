@@ -12,7 +12,7 @@ export default function TierlistPage({ data, addToPool, removeFromPool, recordRo
 
   return (
     <div>
-      <SectionTitle sub="Choisis les champions que tu veux essayer ou apprendre, par rôle — puis laisse la roulette décider pour ta prochaine game. Un champion boudé gagne 1% de chance en plus à chaque tirage raté, cumulable, jusqu'à sortir.">
+      <SectionTitle sub="Choisis les champions que tu veux essayer ou apprendre, par rôle — puis laisse la roulette décider pour ta prochaine game. Un champion boudé voit ses chances grimper de façon exponentielle à chaque tirage raté, jusqu'à sortir.">
         Tierlist
       </SectionTitle>
 
