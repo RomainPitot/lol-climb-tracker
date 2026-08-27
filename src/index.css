@@ -58,3 +58,19 @@ select,
 textarea {
   color-scheme: dark;
 }
+
+/* Halo du champion tiré à la roulette (TierlistPage) une fois le bandeau immobile. */
+@keyframes roulette-win-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.55);
+    transform: scale(1);
+  }
+  60% {
+    box-shadow: 0 0 0 14px rgba(212, 175, 55, 0);
+    transform: scale(1.06);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+    transform: scale(1);
+  }
+}

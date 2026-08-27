@@ -149,42 +149,58 @@ function RolePoolEditor({ role, poolIds, champions, byId, loading, error, addToP
   );
 }
 
-const SPIN_DURATION_MS = 1200;
-const SPIN_STEP_MS = 80;
+// Le bandeau défile comme une machine à sous : une longue bande d'avatars aléatoires se
+// termine par le champion gagnant, positionné pour s'arrêter pile sous le repère central
+// grâce à un `transform: translateX` animé en CSS (décélération via cubic-bezier).
+const REEL_ITEM_WIDTH = 78;
+const REEL_ITEM_COUNT = 34;
+const REEL_DURATION_MS = 3200;
 
 function RouletteSection({ championPool, byId }) {
   const [role, setRole] = useState(ROLES[0]);
   const [spinning, setSpinning] = useState(false);
-  const [displayId, setDisplayId] = useState(null);
-  const [landed, setLanded] = useState(false);
-  const intervalRef = useRef(null);
+  const [reel, setReel] = useState(null); // { items, offset, animate }
+  const [result, setResult] = useState(null);
+  const containerRef = useRef(null);
+  const timeoutRef = useRef(null);
 
-  useEffect(() => () => clearInterval(intervalRef.current), []);
+  useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
   const pool = championPool[role] || [];
 
   const changeRole = (r) => {
     if (spinning) return;
     setRole(r);
-    setDisplayId(null);
-    setLanded(false);
+    setReel(null);
+    setResult(null);
   };
 
   const spin = () => {
     if (!pool.length || spinning) return;
     setSpinning(true);
-    setLanded(false);
-    let elapsed = 0;
-    intervalRef.current = setInterval(() => {
-      setDisplayId(pool[Math.floor(Math.random() * pool.length)]);
-      elapsed += SPIN_STEP_MS;
-      if (elapsed >= SPIN_DURATION_MS) {
-        clearInterval(intervalRef.current);
-        setDisplayId(pool[Math.floor(Math.random() * pool.length)]);
-        setLanded(true);
-        setSpinning(false);
-      }
-    }, SPIN_STEP_MS);
+    setResult(null);
+
+    const winner = pool[Math.floor(Math.random() * pool.length)];
+    const items = Array.from({ length: REEL_ITEM_COUNT - 1 }, () => pool[Math.floor(Math.random() * pool.length)]);
+    items.push(winner);
+
+    const containerWidth = containerRef.current?.offsetWidth || 320;
+    const finalOffset = -(REEL_ITEM_WIDTH * (items.length - 1) + REEL_ITEM_WIDTH / 2 - containerWidth / 2);
+
+    // Étape 1 : poser la bande à son point de départ sans transition. Étape 2 (deux frames
+    // plus tard, pour laisser le navigateur peindre l'état de départ) : appliquer la position
+    // finale AVEC transition — c'est ce delta qui produit l'animation de défilement.
+    setReel({ items, offset: 0, animate: false });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setReel({ items, offset: finalOffset, animate: true });
+      });
+    });
+
+    timeoutRef.current = setTimeout(() => {
+      setResult(winner);
+      setSpinning(false);
+    }, REEL_DURATION_MS);
   };
 
   return (
@@ -213,24 +229,109 @@ function RouletteSection({ championPool, byId }) {
         ))}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "20px 0" }}>
-        {displayId ? (
-          <>
-            <ChampAvatar ddragonId={displayId} size={96} />
-            <div
-              style={{
-                fontFamily: "var(--display)",
-                fontWeight: 700,
-                fontSize: 22,
-                color: landed ? "var(--gold)" : "var(--text)",
-              }}
-            >
-              {byId[displayId] || displayId}
-            </div>
-          </>
+      <div
+        ref={containerRef}
+        style={{
+          position: "relative",
+          height: 100,
+          overflow: "hidden",
+          borderRadius: 12,
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border)",
+          marginBottom: 16,
+        }}
+      >
+        {/* Repère central : le champion qui s'arrête dessous est le gagnant. */}
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: 0,
+            bottom: 0,
+            width: 2,
+            background: "var(--gold)",
+            transform: "translateX(-1px)",
+            zIndex: 2,
+            boxShadow: "0 0 10px var(--gold)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: -1,
+            width: 0,
+            height: 0,
+            borderLeft: "7px solid transparent",
+            borderRight: "7px solid transparent",
+            borderTop: "9px solid var(--gold)",
+            transform: "translateX(-7px)",
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        />
+
+        {reel ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              height: "100%",
+              transform: `translateX(${reel.offset}px)`,
+              transition: reel.animate ? `transform ${REEL_DURATION_MS}ms cubic-bezier(0.1, 0.7, 0.15, 1)` : "none",
+              willChange: "transform",
+            }}
+          >
+            {reel.items.map((id, i) => {
+              const isWinner = result && i === reel.items.length - 1;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    width: REEL_ITEM_WIDTH,
+                    flexShrink: 0,
+                    display: "flex",
+                    justifyContent: "center",
+                    animation: isWinner ? "roulette-win-pulse 0.8s ease-out" : "none",
+                    borderRadius: 10,
+                  }}
+                >
+                  <ChampAvatar ddragonId={id} size={60} />
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <div style={{ fontSize: 13, color: "var(--dim)", textAlign: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              fontSize: 13,
+              color: "var(--dim)",
+              textAlign: "center",
+              padding: "0 16px",
+            }}
+          >
             {pool.length ? "Prêt à tirer." : `Ajoute des champions au rôle ${role} ci-dessus pour pouvoir tirer.`}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+        {result && (
+          <div
+            style={{
+              fontFamily: "var(--display)",
+              fontWeight: 700,
+              fontSize: 22,
+              color: "var(--gold)",
+              textShadow: "0 0 20px rgba(212,175,55,0.45)",
+            }}
+          >
+            {byId[result] || result}
           </div>
         )}
 
