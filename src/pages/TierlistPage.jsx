@@ -43,9 +43,11 @@ export default function TierlistPage({ data, addToPool, removeFromPool, recordRo
   );
 }
 
-/** Cadre coloré autour d'un avatar selon son palier de rareté (voir lib/rarity.js). */
+/** Cadre coloré autour d'un avatar selon son palier de rareté (voir lib/rarity.js). Le
+ * palier le plus haut ("Transcendant") scintille en continu, même au repos dans la pool. */
 function RarityFrame({ tier, size, pulseKey, children }) {
   const isNormal = tier.id === "normal";
+  const isTranscendent = tier.id === "transcendent";
   return (
     <div
       key={pulseKey}
@@ -58,6 +60,7 @@ function RarityFrame({ tier, size, pulseKey, children }) {
         justifyContent: "center",
         border: isNormal ? "none" : `2px solid ${tier.color}`,
         boxShadow: isNormal ? "none" : `0 0 8px ${tier.color}99`,
+        animation: isTranscendent ? "rarity-transcendent-idle 3s linear infinite" : "none",
         flexShrink: 0,
       }}
       title={tier.label ? `${tier.label} — n'est pas sorti depuis longtemps` : undefined}
@@ -207,6 +210,8 @@ const PULSE_BY_TIER = {
   rare: { animation: "roulette-win-pulse-rare", duration: 1 },
   epic: { animation: "roulette-win-pulse-epic", duration: 1.3 },
   legendary: { animation: "roulette-win-pulse-legendary", duration: 1.8 },
+  mythic: { animation: "roulette-win-pulse-mythic", duration: 2.2 },
+  transcendent: { animation: "roulette-win-pulse-transcendent", duration: 2.6 },
 };
 
 function RouletteSection({ championPool, championWeights, byId, recordRouletteSpin }) {

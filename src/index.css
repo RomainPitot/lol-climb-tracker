@@ -99,3 +99,31 @@ textarea {
   80% { box-shadow: 0 0 0 20px rgba(255, 209, 102, 0); transform: scale(1) rotate(1deg); }
   100% { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0); transform: scale(1) rotate(0deg); }
 }
+
+@keyframes roulette-win-pulse-mythic {
+  0% { box-shadow: 0 0 0 0 rgba(255, 77, 141, 0.85); transform: scale(1) rotate(0deg); }
+  18% { box-shadow: 0 0 0 14px rgba(255, 77, 141, 0.35); transform: scale(1.2) rotate(-3deg); }
+  36% { box-shadow: 0 0 0 30px rgba(255, 77, 141, 0); transform: scale(1) rotate(3deg); }
+  54% { box-shadow: 0 0 0 8px rgba(255, 77, 141, 0.55); transform: scale(1.18) rotate(-2deg); }
+  72% { box-shadow: 0 0 0 24px rgba(255, 77, 141, 0); transform: scale(1.05) rotate(2deg); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 77, 141, 0); transform: scale(1) rotate(0deg); }
+}
+
+/* Le palier ultime cumule le pulse et un balayage de teinte (filter: hue-rotate) sur tout
+   le spectre — le blanc de base de RARITY_TIERS laisse le hue-rotate produire l'arc-en-ciel. */
+@keyframes roulette-win-pulse-transcendent {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.9); transform: scale(1); filter: hue-rotate(0deg) brightness(1); }
+  15% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.4); transform: scale(1.2); filter: hue-rotate(70deg) brightness(1.35); }
+  30% { box-shadow: 0 0 0 26px rgba(255, 255, 255, 0); transform: scale(1.05); filter: hue-rotate(140deg) brightness(1); }
+  45% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.5); transform: scale(1.22); filter: hue-rotate(210deg) brightness(1.35); }
+  60% { box-shadow: 0 0 0 30px rgba(255, 255, 255, 0); transform: scale(1); filter: hue-rotate(280deg) brightness(1); }
+  80% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.45); transform: scale(1.12); filter: hue-rotate(340deg) brightness(1.25); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); transform: scale(1); filter: hue-rotate(360deg) brightness(1); }
+}
+
+/* Scintillement permanent du liseré "Transcendant" tant qu'il patiente dans la pool (pas
+   seulement à l'atterrissage) — le palier le plus rare mérite de se voir même au repos. */
+@keyframes rarity-transcendent-idle {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}

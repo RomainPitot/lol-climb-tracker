@@ -13,6 +13,10 @@ export const RARITY_TIERS = [
   { id: "rare", min: 12, label: "Rare", color: "#38BDF8" },
   { id: "epic", min: 25, label: "Épique", color: "#C084FC" },
   { id: "legendary", min: 40, label: "Légendaire", color: "#FFD166" },
+  { id: "mythic", min: 60, label: "Mythique", color: "#FF4D8D" },
+  // Le palier le plus haut scintille en continu (voir rarity-transcendent-idle dans
+  // index.css) : le blanc de base laisse le hue-rotate parcourir tout le spectre.
+  { id: "transcendent", min: 90, label: "Transcendant", color: "#FFFFFF" },
 ];
 
 /** Palier de rareté atteint pour un nombre de tirages ratés donné. */
