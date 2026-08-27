@@ -11,6 +11,11 @@ export function emptyChampionPool() {
   return Object.fromEntries(ROLES.map((r) => [r, []]));
 }
 
+/** Compteur de tirages ratés par champion et par rôle — système de "pity", voir lib/rarity.js. */
+export function emptyChampionWeights() {
+  return Object.fromEntries(ROLES.map((r) => [r, {}]));
+}
+
 export function emptyState() {
   return {
     games: [],
@@ -20,6 +25,7 @@ export function emptyState() {
     settings: { seasonStart: new Date().toISOString().slice(0, 10) },
     currentRank: recomputeCurrentRank([], DEFAULT_HISTORICAL),
     championPool: emptyChampionPool(),
+    championWeights: emptyChampionWeights(),
   };
 }
 
@@ -34,6 +40,8 @@ function normalize(state) {
   if (!d.currentRank) d.currentRank = recomputeCurrentRank(d.games, d.historical);
   if (!d.championPool) d.championPool = emptyChampionPool();
   else for (const r of ROLES) if (!Array.isArray(d.championPool[r])) d.championPool[r] = [];
+  if (!d.championWeights) d.championWeights = emptyChampionWeights();
+  else for (const r of ROLES) if (!d.championWeights[r] || typeof d.championWeights[r] !== "object") d.championWeights[r] = {};
   return d;
 }
 

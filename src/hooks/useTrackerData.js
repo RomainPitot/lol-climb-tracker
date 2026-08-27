@@ -150,7 +150,28 @@ export function useTrackerData() {
       removeFromPool(role, champId) {
         const cur = dataRef.current;
         const list = cur.championPool[role] || [];
-        save({ ...cur, championPool: { ...cur.championPool, [role]: list.filter((c) => c !== champId) } });
+        const weights = { ...(cur.championWeights[role] || {}) };
+        delete weights[champId];
+        save({
+          ...cur,
+          championPool: { ...cur.championPool, [role]: list.filter((c) => c !== champId) },
+          championWeights: { ...cur.championWeights, [role]: weights },
+        });
+      },
+
+      /**
+       * Système de "pity" de la roulette (voir lib/rarity.js) : à chaque tirage, le gagnant
+       * revient à 0 et tous les autres champions du rôle gagnent +1 miss (donc +1% de chance
+       * relative la prochaine fois). Appelé au moment du tirage, pas à la fin de l'animation —
+       * la probabilité doit être mise à jour même si l'utilisateur change de page en cours de route.
+       */
+      recordRouletteSpin(role, winnerId) {
+        const cur = dataRef.current;
+        const poolIds = cur.championPool[role] || [];
+        const prev = cur.championWeights[role] || {};
+        const next = {};
+        for (const id of poolIds) next[id] = id === winnerId ? 0 : (prev[id] || 0) + 1;
+        save({ ...cur, championWeights: { ...cur.championWeights, [role]: next } });
       },
 
       resetAll() {

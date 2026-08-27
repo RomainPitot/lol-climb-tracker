@@ -59,18 +59,43 @@ textarea {
   color-scheme: dark;
 }
 
-/* Halo du champion tiré à la roulette (TierlistPage) une fois le bandeau immobile. */
-@keyframes roulette-win-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.55);
-    transform: scale(1);
-  }
-  60% {
-    box-shadow: 0 0 0 14px rgba(212, 175, 55, 0);
-    transform: scale(1.06);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
-    transform: scale(1);
-  }
+/*
+ * Halo du champion tiré à la roulette (TierlistPage), une fois le bandeau immobile.
+ * Un palier par rareté (voir lib/rarity.js) : plus le champion s'est fait attendre, plus
+ * l'anneau est large et le "rebond" marqué — la légendaire est volontairement la plus longue
+ * et la plus démonstrative des cinq.
+ */
+@keyframes roulette-win-pulse-normal {
+  0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.55); transform: scale(1); }
+  60% { box-shadow: 0 0 0 14px rgba(212, 175, 55, 0); transform: scale(1.06); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); transform: scale(1); }
+}
+
+@keyframes roulette-win-pulse-uncommon {
+  0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); transform: scale(1); }
+  60% { box-shadow: 0 0 0 16px rgba(74, 222, 128, 0); transform: scale(1.08); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); transform: scale(1); }
+}
+
+@keyframes roulette-win-pulse-rare {
+  0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.65); transform: scale(1); }
+  55% { box-shadow: 0 0 0 18px rgba(56, 189, 248, 0); transform: scale(1.1); }
+  100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); transform: scale(1); }
+}
+
+@keyframes roulette-win-pulse-epic {
+  0% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.7); transform: scale(1); }
+  30% { box-shadow: 0 0 0 10px rgba(192, 132, 252, 0.25); transform: scale(1.12); }
+  60% { box-shadow: 0 0 0 22px rgba(192, 132, 252, 0); transform: scale(1); }
+  80% { box-shadow: 0 0 0 4px rgba(192, 132, 252, 0.35); transform: scale(1.08); }
+  100% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0); transform: scale(1); }
+}
+
+@keyframes roulette-win-pulse-legendary {
+  0% { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0.8); transform: scale(1) rotate(0deg); }
+  20% { box-shadow: 0 0 0 12px rgba(255, 209, 102, 0.3); transform: scale(1.16) rotate(-2deg); }
+  40% { box-shadow: 0 0 0 26px rgba(255, 209, 102, 0); transform: scale(1) rotate(2deg); }
+  60% { box-shadow: 0 0 0 6px rgba(255, 209, 102, 0.5); transform: scale(1.14) rotate(-1deg); }
+  80% { box-shadow: 0 0 0 20px rgba(255, 209, 102, 0); transform: scale(1) rotate(1deg); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0); transform: scale(1) rotate(0deg); }
 }
