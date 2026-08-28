@@ -3,6 +3,7 @@ import { Check, Upload, RotateCcw, Download } from "lucide-react";
 import { SectionTitle, Field, Input, Select, TextArea, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GoalsSection from "../components/settings/GoalsSection.jsx";
 import RiotImportSection from "../components/settings/RiotImportSection.jsx";
+import NotificationsSection from "../components/settings/NotificationsSection.jsx";
 import { TIERS, APEX, DIVS } from "../constants/ranks.js";
 import { rankLabel } from "../lib/rank.js";
 import { csvToGames } from "../lib/importers.js";
@@ -133,6 +134,13 @@ export default function SettingsPage({
           importGames={importGames}
           importRiotResult={importRiotResult}
         />
+      </Collapsible>
+
+      <Collapsible
+        title="Notifications"
+        sub="Configure le webhook Discord utilisé par le script local GameDetectorLol (ready check + début de partie)."
+      >
+        <NotificationsSection data={data} setSettings={setSettings} />
       </Collapsible>
 
       <Collapsible
