@@ -138,7 +138,7 @@ export default function SettingsPage({
 
       <Collapsible
         title="Notifications"
-        sub="Configure le webhook Discord utilisé par le script local GameDetectorLol (ready check + début de partie)."
+        sub="Configure le webhook Discord utilisé par le script local GameDetectorLol (ready check, début et fin de partie)."
       >
         <NotificationsSection data={data} setSettings={setSettings} />
       </Collapsible>
