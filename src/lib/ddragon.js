@@ -14,7 +14,10 @@ export async function fetchChampionList() {
   if (!res.ok) throw new Error(`Data Dragon a répondu ${res.status}`);
   const body = await res.json();
   cached = Object.values(body.data)
-    .map((c) => ({ id: c.id, name: c.name }))
+    // `champKey` (numérique) est ce que le client attend pour pick/ban via son API locale
+    // (ChampSelectPage) — différent de `id`, la clé Data Dragon textuelle utilisée pour les
+    // images et le reste de l'app (ex: "MonkeyKing" vs 62).
+    .map((c) => ({ id: c.id, name: c.name, champKey: Number(c.key) }))
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
   return cached;
 }
