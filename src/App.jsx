@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import AddGame from "./pages/AddGame.jsx";
@@ -29,6 +29,22 @@ export default function App() {
   // Tourne indépendamment de la page affichée (pas seulement quand Paramètres est monté) :
   // tant que ce site reste ouvert dans un onglet, voir useAutoRiotImport.js.
   useAutoRiotImport(data, actions);
+
+  // Lien de "pairing" envoyé par GameDetectorLol sur Discord (voir notifier.py,
+  // send_pairing_link_if_needed) : configure l'adresse/le token du téléphone en un tap
+  // au lieu de les faire ressaisir à la main, puis nettoie l'URL une fois consommé.
+  useEffect(() => {
+    if (!loaded) return;
+    const params = new URLSearchParams(window.location.search);
+    const host = params.get("champselect_host");
+    const token = params.get("champselect_token");
+    if (!host || !token) return;
+    actions.setSettings({ gameDetectorHost: host, gameDetectorToken: token });
+    setPage("champselect");
+    const url = new URL(window.location.href);
+    url.search = "";
+    window.history.replaceState({}, "", url);
+  }, [loaded, actions]);
 
   if (!loaded) {
     return (
