@@ -21,9 +21,15 @@ export default function SessionsPage({ data }) {
         </Card>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {sessions.map((s) => (
-          <Card key={s.id} className="p-4">
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {sessions.map((s) => {
+          const accent = s.wr >= 50 ? "var(--win)" : "var(--loss)";
+          return (
+          <Card
+            key={s.id}
+            className="p-5"
+            style={{ borderLeft: `3px solid ${accent}`, borderRadius: "var(--radius-lg)" }}
+          >
             <div
               style={{
                 display: "flex",
@@ -31,11 +37,11 @@ export default function SessionsPage({ data }) {
                 alignItems: "center",
                 flexWrap: "wrap",
                 gap: 8,
-                marginBottom: 10,
+                marginBottom: 12,
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 16, color: "var(--text)" }}>
+                <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 18, color: "var(--text)" }}>
                   {s.date}
                 </div>
                 <Pill>{s.games} games</Pill>
@@ -101,7 +107,8 @@ export default function SessionsPage({ data }) {
               <Metric label="Tilt moyen" value={`${round1(s.tilt)}/5`} />
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

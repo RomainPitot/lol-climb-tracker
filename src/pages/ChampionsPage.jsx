@@ -70,14 +70,15 @@ export default function ChampionsPage({ data, sorted }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-          gap: 10,
-          marginBottom: 22,
+          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+          gap: 12,
+          marginBottom: 28,
         }}
       >
         {ROSTER.map((c) => {
           const stats = champMap[c.name];
           const isActive = active === c.name;
+          const cc = champColor(c.name);
           return (
             <button
               key={c.name}
@@ -86,26 +87,27 @@ export default function ChampionsPage({ data, sorted }) {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 8,
-                padding: 12,
+                gap: 10,
+                padding: 14,
                 borderRadius: "var(--radius-lg)",
                 textAlign: "left",
                 cursor: "pointer",
-                background: isActive ? "rgba(212,175,55,0.1)" : "var(--card)",
-                border: `1px solid ${isActive ? "var(--gold)" : "var(--border)"}`,
+                background: isActive ? `${cc}1c` : "var(--card)",
+                border: `1.5px solid ${isActive ? cc : "var(--border)"}`,
+                boxShadow: isActive ? `0 6px 20px ${cc}30` : "var(--shadow-sm)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <ChampAvatar name={c.name} size={34} />
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <ChampAvatar name={c.name} size={38} />
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)" }}>{c.name}</div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text)" }}>{c.name}</div>
                   <div style={{ fontSize: 10.5, color: "var(--dim)" }}>{c.role}</div>
                 </div>
               </div>
               {stats ? (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5 }}>
-                  <span style={{ color: "var(--dim)" }}>{stats.games}g</span>
-                  <span style={{ color: getColor("wr", stats.wr, th), fontWeight: 700 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                  <span className="tnum" style={{ color: "var(--dim)" }}>{stats.games}g</span>
+                  <span className="tnum" style={{ color: getColor("wr", stats.wr, th), fontWeight: 700 }}>
                     {round1(stats.wr)}%
                   </span>
                 </div>
@@ -117,14 +119,14 @@ export default function ChampionsPage({ data, sorted }) {
         })}
       </div>
 
-      <Card className="p-5">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <ChampAvatar name={active} size={44} />
+      <Card className="hero-card p-6" style={{ "--hero-color": accent }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 22 }}>
+          <ChampAvatar name={active} size={64} />
           <div>
-            <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 22, color: accent }}>
+            <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 30, color: accent, lineHeight: 1.1 }}>
               {active}
             </div>
-            <div style={{ fontSize: 12, color: "var(--dim)" }}>
+            <div style={{ fontSize: 13, color: "var(--dim)", marginTop: 2 }}>
               {CHAMP_ROLE[active]}
               {sharePct !== null && ` — ~${sharePct}% des games trackées`}
             </div>

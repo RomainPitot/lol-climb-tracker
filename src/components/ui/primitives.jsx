@@ -3,10 +3,11 @@ import { AlertTriangle, ArrowUp, ArrowDown, Minus, ChevronDown, Inbox } from "lu
 
 export const Card = ({ children, className = "", style = {} }) => (
   <div
-    className={`rounded-xl ${className}`}
+    className={className}
     style={{
       background: "var(--card)",
       border: "1px solid var(--border)",
+      borderRadius: "var(--radius-lg)",
       boxShadow: "var(--shadow-sm)",
       ...style,
     }}
@@ -16,20 +17,33 @@ export const Card = ({ children, className = "", style = {} }) => (
 );
 
 export const SectionTitle = ({ children, sub }) => (
-  <div className="mb-4">
-    <h2
+  <div className="mb-5" style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+    <span
+      aria-hidden
       style={{
-        fontFamily: "var(--display)",
-        fontSize: 23,
-        fontWeight: 700,
-        color: "var(--text)",
-        letterSpacing: 0.3,
-        lineHeight: 1.2,
+        width: 4,
+        borderRadius: 3,
+        background: "linear-gradient(180deg, var(--gold), var(--gold-active))",
+        alignSelf: "stretch",
+        minHeight: 34,
+        flexShrink: 0,
       }}
-    >
-      {children}
-    </h2>
-    {sub && <p style={{ color: "var(--dim)", fontSize: 13, marginTop: 4, maxWidth: 640, lineHeight: 1.5 }}>{sub}</p>}
+    />
+    <div>
+      <h2
+        style={{
+          fontFamily: "var(--display)",
+          fontSize: 32,
+          fontWeight: 700,
+          color: "var(--text)",
+          letterSpacing: 0.2,
+          lineHeight: 1.15,
+        }}
+      >
+        {children}
+      </h2>
+      {sub && <p style={{ color: "var(--dim)", fontSize: 13.5, marginTop: 5, maxWidth: 640, lineHeight: 1.5 }}>{sub}</p>}
+    </div>
   </div>
 );
 
@@ -71,24 +85,29 @@ export const Pill = ({ children, tone = "neutral" }) => {
   );
 };
 
-export const StatCard = ({ label, value, sub, tone }) => (
-  <Card className="p-4">
-    <div className="eyebrow" style={{ marginBottom: 8 }}>
-      {label}
+export const StatCard = ({ label, value, sub, tone, icon: Icon }) => (
+  <Card className="stat-card p-5" style={{ "--accent-color": tone || "var(--border)" }}>
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+      <div className="eyebrow" style={{ marginBottom: 10 }}>
+        {label}
+      </div>
+      {Icon && (
+        <Icon size={16} color={tone || "var(--dim)"} style={{ opacity: 0.8, flexShrink: 0, marginTop: -1 }} />
+      )}
     </div>
     <div
       className="tnum"
       style={{
         fontFamily: "var(--display)",
-        fontSize: 26,
+        fontSize: 30,
         fontWeight: 700,
         color: tone || "var(--text)",
-        lineHeight: 1.15,
+        lineHeight: 1.1,
       }}
     >
       {value}
     </div>
-    {sub && <div style={{ fontSize: 12, color: "var(--dim)", marginTop: 4 }}>{sub}</div>}
+    {sub && <div style={{ fontSize: 12, color: "var(--dim)", marginTop: 6 }}>{sub}</div>}
   </Card>
 );
 

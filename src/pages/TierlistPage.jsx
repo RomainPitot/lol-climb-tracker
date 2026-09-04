@@ -97,9 +97,11 @@ function RolePoolEditor({ role, poolIds, weights, champions, byId, loading, erro
   );
 
   return (
-    <Card className="p-4" style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{role}</div>
+    <Card className="p-5" style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 17, color: "var(--text)" }}>
+          {role}
+        </div>
         <Pill tone={poolIds.length ? "gold" : "neutral"}>{poolIds.length} champion(s)</Pill>
       </div>
 
@@ -210,7 +212,7 @@ function RolePoolEditor({ role, poolIds, weights, champions, byId, loading, erro
 // Des champions supplémentaires après le gagnant (REEL_TRAILING_COUNT) évitent que le
 // bandeau ne s'arrête pile à sa dernière case : sans ça, plus rien à afficher après le
 // gagnant trahissait à l'avance où le tirage allait s'arrêter.
-const REEL_ITEM_WIDTH = 78;
+const REEL_ITEM_WIDTH = 94;
 const REEL_LEADING_COUNT = 34;
 const REEL_TRAILING_COUNT = 10;
 const REEL_DURATION_MS = 3200;
@@ -292,10 +294,14 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
   };
 
   return (
-    <Card className="p-5">
-      <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 12 }}>Roulette</div>
+    <Card className="p-6">
+      <div
+        style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 22, color: "var(--text)", marginBottom: 16 }}
+      >
+        Roulette
+      </div>
 
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 18 }}>
         {ROLES.map((r) => (
           <ToggleChip key={r} active={role === r} disabled={spinning} onClick={() => changeRole(r)}>
             {r} ({(championPool[r] || []).length})
@@ -307,12 +313,12 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
         ref={containerRef}
         style={{
           position: "relative",
-          height: 100,
+          height: 120,
           overflow: "hidden",
-          borderRadius: 12,
+          borderRadius: "var(--radius-lg)",
           background: "var(--bg-elevated)",
           border: "1px solid var(--border)",
-          marginBottom: 16,
+          marginBottom: 20,
         }}
       >
         {/* Repère central : le champion qui s'arrête dessous est le gagnant. */}
@@ -373,8 +379,8 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
                     borderRadius: 10,
                   }}
                 >
-                  <RarityFrame tier={tier} size={60}>
-                    <ChampAvatar ddragonId={id} size={60} />
+                  <RarityFrame tier={tier} size={76}>
+                    <ChampAvatar ddragonId={id} size={76} />
                   </RarityFrame>
                 </div>
               );
@@ -407,12 +413,13 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
               </div>
             )}
             <div
+              className="fade-in"
               style={{
                 fontFamily: "var(--display)",
                 fontWeight: 700,
-                fontSize: 22,
+                fontSize: 28,
                 color: resultTier?.label ? resultTier.color : "var(--gold)",
-                textShadow: `0 0 20px ${resultTier?.label ? resultTier.color : "rgba(212,175,55,0.45)"}`,
+                textShadow: `0 0 24px ${resultTier?.label ? resultTier.color : "rgba(212,175,55,0.45)"}`,
               }}
             >
               {byId[result] || result}
@@ -420,8 +427,8 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
           </div>
         )}
 
-        <Btn variant="primary" onClick={spin} disabled={!pool.length || spinning}>
-          <Shuffle size={14} /> {spinning ? "Ça tourne…" : "Tirer un champion"}
+        <Btn variant="primary" onClick={spin} disabled={!pool.length || spinning} style={{ fontSize: 14.5, padding: "12px 24px" }}>
+          <Shuffle size={15} /> {spinning ? "Ça tourne…" : "Tirer un champion"}
         </Btn>
       </div>
     </Card>

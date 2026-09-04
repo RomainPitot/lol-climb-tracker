@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Percent, Zap, Swords, Trophy, Layers } from "lucide-react";
 import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, ToggleChip } from "../components/ui/primitives.jsx";
 import RankBadge from "../components/RankBadge.jsx";
 import LadderTrack from "../components/LadderTrack.jsx";
@@ -8,7 +8,7 @@ import StatLadder from "../components/StatLadder.jsx";
 import ProgressionDetails from "../components/dashboard/ProgressionDetails.jsx";
 import GamesHistory from "../components/dashboard/GamesHistory.jsx";
 import { PERIODS } from "../constants/game.js";
-import { BENCHMARKS } from "../constants/ranks.js";
+import { BENCHMARKS, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
 import { computeAgg, filterByPeriod, getColor } from "../lib/stats.js";
 import { computeGeneralAchievements } from "../lib/achievements.js";
@@ -62,42 +62,44 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   );
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  const heroColor = TIER_COLORS[currentRank.tier] || "var(--gold)";
 
   return (
     <div>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 20,
-          flexWrap: "wrap",
-          gap: 12,
-        }}
-      >
-        <div>
-          <Eyebrow style={{ marginBottom: 8 }}>Situation actuelle</Eyebrow>
-          <RankBadge tier={currentRank.tier} div={currentRank.div} lp={currentRank.lp} />
-          <div style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <Pill tone={allAgg.wr >= 50 ? "win" : "loss"}>
-              {allAgg.wins}W / {allAgg.losses}L — {round1(allAgg.wr)}% WR
-            </Pill>
-            <Pill tone="gold">Objectif : {objectiveTier}</Pill>
+      <Card className="hero-card p-6 mb-6" style={{ "--hero-color": heroColor }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            gap: 16,
+          }}
+        >
+          <div>
+            <Eyebrow style={{ marginBottom: 10 }}>Situation actuelle</Eyebrow>
+            <RankBadge tier={currentRank.tier} div={currentRank.div} lp={currentRank.lp} />
+            <div style={{ marginTop: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <Pill tone={allAgg.wr >= 50 ? "win" : "loss"}>
+                {allAgg.wins}W / {allAgg.losses}L — {round1(allAgg.wr)}% WR
+              </Pill>
+              <Pill tone="gold">Objectif : {objectiveTier}</Pill>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            {PERIODS.map((p) => (
+              <ToggleChip key={p.id} active={period === p.id} onClick={() => setPeriod(p.id)}>
+                {p.label}
+              </ToggleChip>
+            ))}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {PERIODS.map((p) => (
-            <ToggleChip key={p.id} active={period === p.id} onClick={() => setPeriod(p.id)}>
-              {p.label}
-            </ToggleChip>
-          ))}
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
+          <Eyebrow style={{ marginBottom: 10 }}>Progression vers Master</Eyebrow>
+          <LadderTrack tier={currentRank.tier} div={currentRank.div} />
         </div>
-      </header>
-
-      <Card className="p-4 mb-5">
-        <Eyebrow style={{ marginBottom: 8 }}>Progression vers Master</Eyebrow>
-        <LadderTrack tier={currentRank.tier} div={currentRank.div} />
       </Card>
 
       <Collapsible
@@ -163,17 +165,20 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           value={`${round1(agg.wr)}%`}
           sub={`${agg.wins}W / ${agg.losses}L — ${agg.games} games`}
           tone={getColor("wr", agg.wr, th)}
+          icon={Percent}
         />
         <StatCard
           label="LP gagnés/perdus"
           value={`${agg.lpSum >= 0 ? "+" : ""}${round1(agg.lpSum)}`}
           tone={agg.lpSum >= 0 ? "var(--win)" : "var(--loss)"}
+          icon={Zap}
         />
         <StatCard
           label="KDA moyen"
           value={round2(agg.kda)}
           sub={`${round1(agg.kills)} / ${round1(agg.deaths)} / ${round1(agg.assists)}`}
           tone={getColor("kda", agg.kda, th)}
+          icon={Swords}
         />
         <StatCard label="LP moyen / victoire" value={`+${round1(lpPerWin)}`} tone="var(--win)" />
         <StatCard label="LP moyen / défaite" value={round1(lpPerLoss)} tone="var(--loss)" />
@@ -181,11 +186,13 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           label="Meilleur rang (saison)"
           value={rankLabel(bestRankEver.tier, bestRankEver.div)}
           tone="var(--gold)"
+          icon={Trophy}
         />
         <StatCard
           label="Games totales (tracking)"
           value={sorted.length}
           sub={`${data.historical.global.games} avant tracking`}
+          icon={Layers}
         />
       </div>
 
