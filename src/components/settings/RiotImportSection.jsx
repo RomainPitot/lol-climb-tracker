@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sparkles, Upload, ChevronRight, KeyRound, ExternalLink } from "lucide-react";
-import { Field, Input, Select, TextArea, Btn } from "../ui/primitives.jsx";
+import { Field, Input, Select, TextArea, Btn, Spinner } from "../ui/primitives.jsx";
 import { RIOT_REGIONS, WORKER_CODE } from "../../constants/riot.js";
 import { fetchRiotGames, diagnoseRiotError, rotateRiotKey, diagnoseRotateError } from "../../lib/riotApi.js";
 import { riotMatchToGame } from "../../lib/importers.js";
@@ -163,10 +163,11 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
           <button
             key={m.id}
             onClick={() => patch({ mode: m.id })}
+            className="hoverable"
             style={{
               flex: "1 1 220px",
               padding: "10px 12px",
-              borderRadius: 8,
+              borderRadius: "var(--radius-md)",
               cursor: "pointer",
               textAlign: "left",
               background: form.mode === m.id ? "rgba(212,175,55,0.1)" : "var(--bg-elevated)",
@@ -254,13 +255,13 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
       </div>
 
       <Btn variant="primary" onClick={run} disabled={loading || !canRun}>
-        <Sparkles size={14} /> {loading ? "Récupération en cours…" : "Récupérer mes dernières games SoloQ"}
+        {loading ? <Spinner /> : <Sparkles size={14} />} {loading ? "Récupération en cours…" : "Récupérer mes dernières games SoloQ"}
       </Btn>
 
-      {msg && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{msg}</div>}
-      {error && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{error}</div>}
+      {msg && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{msg}</div>}
+      {error && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{error}</div>}
 
-      <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+      <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
         <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
           <input
             type="checkbox"
@@ -307,7 +308,7 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
       </div>
 
       {form.mode === "proxy" && (
-        <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
             Renouveler la clé Riot
           </div>
@@ -350,14 +351,14 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
             onClick={rotateKey}
             disabled={rotating || !form.proxyUrl || !form.adminToken || !newRiotKey.trim()}
           >
-            <KeyRound size={14} /> {rotating ? "Mise à jour…" : "Mettre à jour la clé sur le Worker"}
+            {rotating ? <Spinner /> : <KeyRound size={14} />} {rotating ? "Mise à jour…" : "Mettre à jour la clé sur le Worker"}
           </Btn>
-          {rotateMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{rotateMsg}</div>}
-          {rotateError && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{rotateError}</div>}
+          {rotateMsg && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{rotateMsg}</div>}
+          {rotateError && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{rotateError}</div>}
         </div>
       )}
 
-      <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+      <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
           Repli manuel (si la récupération auto échoue)
         </div>

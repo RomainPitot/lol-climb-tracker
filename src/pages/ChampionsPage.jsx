@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Card, StatCard, SectionTitle, LowSample, EmptyChart } from "../components/ui/primitives.jsx";
+import { Card, StatCard, SectionTitle, LowSample, EmptyChart, Eyebrow } from "../components/ui/primitives.jsx";
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import ChartBlock from "../components/ChartBlock.jsx";
 import { ROSTER, CHAMP_ROLE, champColor } from "../constants/roster.js";
@@ -82,12 +82,13 @@ export default function ChampionsPage({ data, sorted }) {
             <button
               key={c.name}
               onClick={() => setActive(c.name)}
+              className="hoverable"
               style={{
                 display: "flex",
                 flexDirection: "column",
                 gap: 8,
                 padding: 12,
-                borderRadius: 10,
+                borderRadius: "var(--radius-lg)",
                 textAlign: "left",
                 cursor: "pointer",
                 background: isActive ? "rgba(212,175,55,0.1)" : "var(--card)",
@@ -224,9 +225,9 @@ function HistoricalBlock({ hist, accent }) {
 
   return (
     <Card className="p-4 my-5" style={{ borderColor: `${accent}44` }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: accent, marginBottom: 8 }}>
-        HISTORIQUE IMPORTÉ (avant le début du tracking — non mélangé)
-      </div>
+      <Eyebrow color={accent} style={{ marginBottom: 10 }}>
+        Historique importé (avant le début du tracking — non mélangé)
+      </Eyebrow>
       <div
         style={{
           display: "grid",

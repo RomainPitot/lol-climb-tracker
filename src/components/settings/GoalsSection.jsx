@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Target, Trash2 } from "lucide-react";
-import { Card, Pill, Field, Input, Select, Btn, EmptyChart } from "../ui/primitives.jsx";
+import { Card, Pill, Field, Input, Select, Btn, EmptyChart, IconBtn } from "../ui/primitives.jsx";
 import { TIERS, APEX, DIVS } from "../../constants/ranks.js";
 import { GOAL_TYPES } from "../../constants/game.js";
 import { ROSTER } from "../../constants/roster.js";
@@ -125,13 +125,9 @@ export default function GoalsSection({ data, sorted, addGoal, deleteGoal }) {
                   {GOAL_TYPES.find((t) => t.id === goal.type)?.label}
                   {p.met && <Pill tone="win">Atteint</Pill>}
                 </div>
-                <button
-                  onClick={() => deleteGoal(goal.id)}
-                  aria-label="Supprimer l'objectif"
-                  style={{ background: "none", border: "none", color: "var(--dim)", cursor: "pointer" }}
-                >
+                <IconBtn onClick={() => deleteGoal(goal.id)} aria-label="Supprimer l'objectif">
                   <Trash2 size={14} />
-                </button>
+                </IconBtn>
               </div>
 
               <div style={{ fontSize: 12, color: "var(--dim)", marginBottom: 6 }}>{p.label}</div>

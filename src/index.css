@@ -6,18 +6,41 @@
   --bg: #0a0d13;
   --bg-elevated: #10141c;
   --card: #131826;
+  --card-hover: #161c2c;
   --border: #232a3a;
+  --border-hover: #333d54;
   --text: #e9ebf1;
   --dim: #8b93a9;
   --win: #0fd68a;
   --loss: #ff5c5c;
   --gold: #d4af37;
+  --gold-hover: #e6c258;
+  --gold-active: #c19f2e;
   --yone: #a970ff;
   --tahm: #2ec4b6;
   --display: "Rajdhani", sans-serif;
   --body: "Inter", sans-serif;
 
+  /* Rayons partagés — un seul jeu de valeurs pour tous les composants. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Élévation : légère, jamais posée sur un fond déjà clair (les cards sont sombres). */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --fast: 140ms;
+
   color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html,
@@ -31,11 +54,25 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Chiffres alignés en colonne (LP, KDA, %) — évite le "gigotement" visuel entre deux
+   valeurs de largeurs différentes dans les stat cards et tableaux. */
+.tnum {
+  font-variant-numeric: tabular-nums;
 }
 
 ::-webkit-scrollbar {
-  height: 6px;
-  width: 6px;
+  height: 8px;
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -43,10 +80,8 @@ body {
   border-radius: 4px;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--gold) !important;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
 }
 
 button {
@@ -57,6 +92,311 @@ input,
 select,
 textarea {
   color-scheme: dark;
+  font-family: var(--body);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--dim);
+  opacity: 0.7;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+}
+
+/* Anneau de focus clavier cohérent, visible seulement à la navigation clavier (pas au
+   clic souris) — remplace l'ancien `border-color: gold !important` sur :focus, trop
+   agressif et déclenché même au clic souris. */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.field-input {
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+
+.field-input:hover:not(:disabled) {
+  border-color: var(--border-hover);
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+/* Levée subtile au survol pour tout élément cliquable qui n'est pas un <button> stylé
+   (cards de sélection, lignes de liste) — n'entre jamais en conflit avec les couleurs de
+   fond/bordure posées en inline selon l'état actif, puisqu'elle ne touche que
+   transform/shadow. */
+.hoverable {
+  transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.hoverable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.hoverable:active {
+  transform: translateY(0);
+}
+
+/* Petite pastille discrète, pour les libellés "eyebrow" (SITUATION ACTUELLE, OBLIGATOIRE…). */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fade-in-up 180ms var(--ease);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------------------
+   Bouton partagé (voir components/ui/primitives.jsx). Les couleurs de base vivent
+   ici pour que :hover/:active/:focus-visible soient de vrais états CSS plutôt que
+   des styles inline recalculés en JS.
+   --------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--body);
+  cursor: pointer;
+  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: #1a1406;
+  border: 1px solid var(--gold);
+  font-weight: 700;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--gold-hover);
+  border-color: var(--gold-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--gold-active);
+  border-color: var(--gold-active);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  border-color: var(--border-hover);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--loss);
+  border: 1px solid rgba(255, 92, 92, 0.35);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(255, 92, 92, 0.1);
+  border-color: rgba(255, 92, 92, 0.55);
+}
+
+/* Petit bouton icône seul (éditer/supprimer dans les tableaux, fermer une modale). */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+
+.icon-btn:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-elevated);
+}
+
+/* Chip bascule (rôle, période, preset) — un seul composant pour tous les groupes de
+   boutons "segmentés" du site (Dashboard, Tierlist, Coach IA…), au lieu de styles
+   dupliqués légèrement différents à chaque endroit. */
+.chip {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--dim);
+  border: 1px solid var(--border);
+  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+
+.chip:hover:not(:disabled):not(.chip-active) {
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.chip-active {
+  background: var(--gold);
+  color: #1a1406;
+  border-color: var(--gold);
+}
+
+/* Ligne de tableau / carte de liste cliquable. */
+.row-hover {
+  transition: background-color var(--fast) var(--ease);
+}
+
+.row-hover:hover {
+  background: var(--bg-elevated);
+}
+
+/* ---------------------------------------------------------------------------
+   Mise en page de l'application (Sidebar + contenu) et son repli en barre
+   horizontale sous 860px — le reste des pages reste fluide grâce aux grilles
+   `auto-fit`/`auto-fill` déjà utilisées partout ailleurs.
+   --------------------------------------------------------------------------- */
+.app-shell {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+}
+
+.app-sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  padding: 22px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-main {
+  flex: 1;
+  padding: 28px 32px;
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .app-sidebar-brand {
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .app-sidebar-nav {
+    flex-direction: row !important;
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .app-sidebar-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-sidebar-nav-item {
+    flex-direction: column !important;
+    gap: 2px !important;
+    padding: 6px 10px !important;
+    font-size: 10.5px !important;
+    white-space: nowrap;
+  }
+
+  .app-sidebar-rank {
+    display: none;
+  }
+
+  .app-main {
+    padding: 18px 16px;
+  }
 }
 
 /*

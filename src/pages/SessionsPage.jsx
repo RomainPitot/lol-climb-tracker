@@ -110,8 +110,10 @@ export default function SessionsPage({ data }) {
 function Metric({ label, value, labelColor = "var(--dim)" }) {
   return (
     <div>
-      <div style={{ color: labelColor }}>{label}</div>
-      <div style={{ fontWeight: 700 }}>{value}</div>
+      <div style={{ color: labelColor, fontSize: 11.5 }}>{label}</div>
+      <div className="tnum" style={{ fontWeight: 700, marginTop: 2 }}>
+        {value}
+      </div>
     </div>
   );
 }

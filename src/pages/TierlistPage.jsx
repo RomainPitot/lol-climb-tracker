@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Shuffle, X, Wrench } from "lucide-react";
-import { Card, SectionTitle, Pill, Input, Btn, Collapsible } from "../components/ui/primitives.jsx";
+import { Card, SectionTitle, Pill, Input, Btn, Collapsible, ToggleChip, IconBtn, Eyebrow } from "../components/ui/primitives.jsx";
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { ROLES } from "../constants/game.js";
@@ -109,7 +109,14 @@ function RolePoolEditor({ role, poolIds, weights, champions, byId, loading, erro
           onChange={(e) => setQuery(e.target.value)}
           placeholder={loading ? "Chargement de la liste des champions…" : "Chercher un champion à ajouter…"}
           disabled={loading || !!error}
+          style={loading ? { paddingRight: 30 } : {}}
         />
+        {loading && (
+          <span
+            className="spinner"
+            style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", color: "var(--dim)" }}
+          />
+        )}
         {matches.length > 0 && (
           <div
             style={{
@@ -133,6 +140,7 @@ function RolePoolEditor({ role, poolIds, weights, champions, byId, loading, erro
                   addToPool(role, c.id);
                   setQuery("");
                 }}
+                className="row-hover"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -185,13 +193,9 @@ function RolePoolEditor({ role, poolIds, weights, champions, byId, loading, erro
               {tier.label && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: tier.color }}>{tier.label}</span>
               )}
-              <button
-                onClick={() => removeFromPool(role, c.id)}
-                aria-label={`Retirer ${c.name} du rôle ${role}`}
-                style={{ background: "none", border: "none", color: "var(--dim)", cursor: "pointer", display: "flex", padding: 2 }}
-              >
+              <IconBtn onClick={() => removeFromPool(role, c.id)} aria-label={`Retirer ${c.name} du rôle ${role}`}>
                 <X size={12} />
-              </button>
+              </IconBtn>
             </div>
           );
         })}
@@ -293,23 +297,9 @@ function RouletteSection({ championPool, championWeights, byId, recordRouletteSp
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
         {ROLES.map((r) => (
-          <button
-            key={r}
-            onClick={() => changeRole(r)}
-            disabled={spinning}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 7,
-              fontSize: 12.5,
-              fontWeight: 600,
-              cursor: spinning ? "not-allowed" : "pointer",
-              background: role === r ? "var(--gold)" : "var(--card)",
-              color: role === r ? "#1a1406" : "var(--dim)",
-              border: `1px solid ${role === r ? "var(--gold)" : "var(--border)"}`,
-            }}
-          >
+          <ToggleChip key={r} active={role === r} disabled={spinning} onClick={() => changeRole(r)}>
             {r} ({(championPool[r] || []).length})
-          </button>
+          </ToggleChip>
         ))}
       </div>
 
@@ -475,9 +465,10 @@ function DevPanel({ championPool, championWeights, byId, setChampionWeight }) {
             <button
               key={t.id}
               onClick={() => triggerPreview(t.id)}
+              className="hoverable"
               style={{
                 padding: "6px 10px",
-                borderRadius: 7,
+                borderRadius: "var(--radius-md)",
                 fontSize: 11.5,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -520,22 +511,9 @@ function DevPanel({ championPool, championWeights, byId, setChampionWeight }) {
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
           {ROLES.map((r) => (
-            <button
-              key={r}
-              onClick={() => setRole(r)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: 7,
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                background: role === r ? "var(--gold)" : "var(--card)",
-                color: role === r ? "#1a1406" : "var(--dim)",
-                border: `1px solid ${role === r ? "var(--gold)" : "var(--border)"}`,
-              }}
-            >
+            <ToggleChip key={r} active={role === r} onClick={() => setRole(r)}>
               {r} ({(championPool[r] || []).length})
-            </button>
+            </ToggleChip>
           ))}
         </div>
 
@@ -566,6 +544,7 @@ function DevPanel({ championPool, championWeights, byId, setChampionWeight }) {
                         key={t.id}
                         title={`Passer à ${t.label || "Normal"} (${threshold} misses pour cette pool de ${pool.length})`}
                         onClick={() => setChampionWeight(role, id, threshold)}
+                        className="hoverable"
                         style={{
                           width: 22,
                           height: 22,

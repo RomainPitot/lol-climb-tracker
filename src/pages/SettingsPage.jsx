@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Upload, RotateCcw, Download } from "lucide-react";
+import { Check, Upload, RotateCcw, Download, AlertTriangle } from "lucide-react";
 import { SectionTitle, Field, Input, Select, TextArea, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GoalsSection from "../components/settings/GoalsSection.jsx";
 import RiotImportSection from "../components/settings/RiotImportSection.jsx";
@@ -29,7 +29,13 @@ export default function SettingsPage({
   const [pasteText, setPasteText] = useState("");
   const [jsonText, setJsonText] = useState("");
   const [msg, setMsg] = useState("");
+  const [msgError, setMsgError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+
+  const notify = (text, isError = false) => {
+    setMsg(text);
+    setMsgError(isError);
+  };
 
   const saveCurrentRank = () => {
     const isApex = APEX.includes(rankForm.tier);
@@ -38,7 +44,7 @@ export default function SettingsPage({
       div: isApex ? null : rankForm.div,
       lp: Math.max(0, Math.round(Number(rankForm.lp) || 0)),
     });
-    setMsg("Rang actuel mis à jour.");
+    notify("Rang actuel mis à jour.");
   };
 
   /** Vérifie que les totaux saisis à la main tiennent debout avant d'enregistrer. */
@@ -62,17 +68,17 @@ export default function SettingsPage({
   const saveHist = () => {
     const issues = checkConsistency();
     if (issues.length) {
-      setMsg(`Incohérences détectées : ${issues.join(" | ")}`);
+      notify(`Incohérences détectées : ${issues.join(" | ")}`, true);
       return;
     }
     setHistorical(hist);
-    setMsg("Statistiques historiques enregistrées.");
+    notify("Statistiques historiques enregistrées.");
   };
 
   const doImportCsv = () => {
     if (!pasteText.trim()) return;
     const n = importGames(csvToGames(pasteText));
-    setMsg(`${n} games importées.`);
+    notify(`${n} games importées.`);
     setPasteText("");
   };
 
@@ -81,10 +87,10 @@ export default function SettingsPage({
       const arr = JSON.parse(jsonText);
       if (!Array.isArray(arr)) throw new Error("not array");
       const n = importGames(arr.map((g) => ({ id: uid(), ...emptyGame(), ...g })));
-      setMsg(`${n} games importées (JSON).`);
+      notify(`${n} games importées (JSON).`);
       setJsonText("");
     } catch {
-      setMsg("JSON invalide.");
+      notify("JSON invalide.", true);
     }
   };
 
@@ -110,16 +116,25 @@ export default function SettingsPage({
 
       {msg && (
         <div
+          className="fade-in"
           style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
             padding: "10px 14px",
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
+            background: msgError ? "rgba(255,92,92,0.08)" : "rgba(15,214,138,0.08)",
+            border: `1px solid ${msgError ? "rgba(255,92,92,0.3)" : "rgba(15,214,138,0.3)"}`,
+            borderRadius: "var(--radius-md)",
             marginBottom: 16,
             fontSize: 13,
             color: "var(--text)",
           }}
         >
+          {msgError ? (
+            <AlertTriangle size={14} color="var(--loss)" style={{ flexShrink: 0, marginTop: 1 }} />
+          ) : (
+            <Check size={14} color="var(--win)" style={{ flexShrink: 0, marginTop: 1 }} />
+          )}
           {msg}
         </div>
       )}
@@ -202,7 +217,7 @@ export default function SettingsPage({
           variant="primary"
           onClick={() => {
             setThresholds(th);
-            setMsg("Seuils de couleur enregistrés.");
+            notify("Seuils de couleur enregistrés.");
           }}
           style={{ marginTop: 6 }}
         >

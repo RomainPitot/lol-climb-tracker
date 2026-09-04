@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Sparkles, Copy, Check } from "lucide-react";
-import { Card, Pill, StatCard, SectionTitle, Btn, Trend } from "../components/ui/primitives.jsx";
+import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip } from "../components/ui/primitives.jsx";
 import { computeAgg } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
 import { round1, round2 } from "../lib/format.js";
@@ -62,38 +62,22 @@ export default function CoachPage({ data, sorted }) {
       </SectionTitle>
 
       <Card className="p-4 mb-5">
-        <div style={{ fontSize: 12, color: "var(--dim)", fontWeight: 600, marginBottom: 10 }}>
-          RACCOURCIS DE SÉLECTION
-        </div>
+        <Eyebrow style={{ marginBottom: 10 }}>Raccourcis de sélection</Eyebrow>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
           {PRESETS.map((p) => (
-            <button
-              key={p.label}
-              onClick={() => applyPreset(p.take)}
-              style={{
-                padding: "7px 13px",
-                borderRadius: 7,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-                background: "var(--bg-elevated)",
-                color: "var(--dim)",
-                border: "1px solid var(--border)",
-              }}
-            >
+            <ToggleChip key={p.label} onClick={() => applyPreset(p.take)}>
               {p.label}
-            </button>
+            </ToggleChip>
           ))}
         </div>
 
-        <div style={{ fontSize: 12, color: "var(--dim)", fontWeight: 600, marginBottom: 8 }}>
-          {selectedGames.length} game(s) sélectionnée(s)
-        </div>
+        <Eyebrow style={{ marginBottom: 8 }}>{selectedGames.length} game(s) sélectionnée(s)</Eyebrow>
 
         <div style={{ maxHeight: 260, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 8 }}>
           {[...sorted].reverse().map((g) => (
             <label
               key={g.id}
+              className={selected.has(g.id) ? "" : "row-hover"}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -111,7 +95,7 @@ export default function CoachPage({ data, sorted }) {
               <span style={{ fontWeight: 600, minWidth: 90 }}>{g.champion}</span>
               <Pill tone={g.win ? "win" : "loss"}>{g.win ? "V" : "D"}</Pill>
               <span style={{ color: "var(--dim)" }}>{g.kills}/{g.deaths}/{g.assists}</span>
-              <span style={{ color: g.lpChange >= 0 ? "var(--win)" : "var(--loss)", marginLeft: "auto" }}>
+              <span className="tnum" style={{ color: g.lpChange >= 0 ? "var(--win)" : "var(--loss)", marginLeft: "auto", fontWeight: 600 }}>
                 {g.lpChange >= 0 ? "+" : ""}
                 {g.lpChange} LP
               </span>
@@ -166,9 +150,9 @@ export default function CoachPage({ data, sorted }) {
       </Btn>
 
       {recap && (
-        <Card className="p-4">
+        <Card className="p-4 fade-in">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)" }}>RECAP GÉNÉRÉ</div>
+            <Eyebrow color="var(--gold)">Recap généré</Eyebrow>
             <Btn onClick={copy}>
               {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copié" : "Copier"}
             </Btn>

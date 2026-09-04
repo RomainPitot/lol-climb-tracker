@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Trash2, Pencil } from "lucide-react";
-import { Card, Pill, Btn, Collapsible } from "../ui/primitives.jsx";
+import { Trash2, Pencil, X } from "lucide-react";
+import { Card, Pill, Btn, Collapsible, IconBtn } from "../ui/primitives.jsx";
 import ChampAvatar from "../ChampAvatar.jsx";
 import EditGameModal from "../EditGameModal.jsx";
 import { rankLabel } from "../../lib/rank.js";
@@ -74,7 +74,11 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                 />
               </th>
               {COLUMNS.map((h, i) => (
-                <th key={h || `col-${i}`} style={{ textAlign: "left", padding: "10px 12px", fontWeight: 600, color: "var(--dim)" }}>
+                <th
+                  key={h || `col-${i}`}
+                  className="eyebrow"
+                  style={{ textAlign: "left", padding: "10px 12px", fontSize: 10.5 }}
+                >
                   {h}
                 </th>
               ))}
@@ -91,9 +95,10 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
             {rows.map((g) => (
               <tr
                 key={g.id}
+                className={checked.has(g.id) ? "" : "row-hover"}
                 style={{
                   borderBottom: "1px solid var(--border)",
-                  background: checked.has(g.id) ? "rgba(212,175,55,0.06)" : "transparent",
+                  ...(checked.has(g.id) ? { background: "rgba(212,175,55,0.06)" } : {}),
                 }}
               >
                 <td style={cell}>
@@ -119,6 +124,7 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                 </td>
                 <td style={{ ...cell, color: "var(--dim)" }}>{rankLabel(g.rankAfterTier, g.rankAfterDiv)}</td>
                 <td
+                  className="tnum"
                   style={{ ...cell, color: g.lpChange >= 0 ? "var(--win)" : "var(--loss)", fontWeight: 600 }}
                   title={g.lpEstimated ? "Estimation : l'API Riot ne fournit pas le LP par game" : undefined}
                 >
@@ -126,42 +132,32 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                   {g.lpChange >= 0 ? "+" : ""}
                   {g.lpChange}
                 </td>
-                <td style={cell}>{g.kills}/{g.deaths}/{g.assists}</td>
-                <td style={cell}>{g.duration ? round1(g.cs / g.duration) : 0}</td>
-                <td style={cell}>{g.damage}</td>
-                <td style={cell}>{g.visionScore}</td>
+                <td className="tnum" style={cell}>{g.kills}/{g.deaths}/{g.assists}</td>
+                <td className="tnum" style={cell}>{g.duration ? round1(g.cs / g.duration) : 0}</td>
+                <td className="tnum" style={cell}>{g.damage}</td>
+                <td className="tnum" style={cell}>{g.visionScore}</td>
                 <td style={cell}>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <button
-                      onClick={() => setEditingGame(g)}
-                      aria-label="Modifier"
-                      style={{ background: "none", border: "none", color: "var(--dim)", cursor: "pointer" }}
-                    >
+                  <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <IconBtn onClick={() => setEditingGame(g)} aria-label="Modifier">
                       <Pencil size={14} />
-                    </button>
+                    </IconBtn>
                     {confirmId === g.id ? (
                       <>
                         <button
                           onClick={() => confirmRemoveOne(g.id)}
-                          style={{ background: "none", border: "none", color: "var(--loss)", cursor: "pointer", fontSize: 11, fontWeight: 700 }}
+                          className="btn btn-danger"
+                          style={{ padding: "4px 9px", fontSize: 11, fontWeight: 700 }}
                         >
                           OK
                         </button>
-                        <button
-                          onClick={() => setConfirmId(null)}
-                          style={{ background: "none", border: "none", color: "var(--dim)", cursor: "pointer", fontSize: 11 }}
-                        >
-                          ✕
-                        </button>
+                        <IconBtn onClick={() => setConfirmId(null)} aria-label="Annuler la suppression">
+                          <X size={14} />
+                        </IconBtn>
                       </>
                     ) : (
-                      <button
-                        onClick={() => setConfirmId(g.id)}
-                        aria-label="Supprimer"
-                        style={{ background: "none", border: "none", color: "var(--dim)", cursor: "pointer" }}
-                      >
+                      <IconBtn onClick={() => setConfirmId(g.id)} aria-label="Supprimer">
                         <Trash2 size={14} />
-                      </button>
+                      </IconBtn>
                     )}
                   </div>
                 </td>

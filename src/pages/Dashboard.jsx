@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ChevronDown } from "lucide-react";
-import { Card, Pill, StatCard, Collapsible, EmptyChart } from "../components/ui/primitives.jsx";
+import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, ToggleChip } from "../components/ui/primitives.jsx";
 import RankBadge from "../components/RankBadge.jsx";
 import LadderTrack from "../components/LadderTrack.jsx";
 import StatLadder from "../components/StatLadder.jsx";
@@ -76,11 +76,9 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
         }}
       >
         <div>
-          <div style={{ fontSize: 12, color: "var(--dim)", fontWeight: 500, marginBottom: 6 }}>
-            SITUATION ACTUELLE
-          </div>
+          <Eyebrow style={{ marginBottom: 8 }}>Situation actuelle</Eyebrow>
           <RankBadge tier={currentRank.tier} div={currentRank.div} lp={currentRank.lp} />
-          <div style={{ marginTop: 8, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <Pill tone={allAgg.wr >= 50 ? "win" : "loss"}>
               {allAgg.wins}W / {allAgg.losses}L — {round1(allAgg.wr)}% WR
             </Pill>
@@ -90,30 +88,15 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {PERIODS.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setPeriod(p.id)}
-              style={{
-                padding: "6px 11px",
-                borderRadius: 7,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-                background: period === p.id ? "var(--gold)" : "var(--card)",
-                color: period === p.id ? "#1a1406" : "var(--dim)",
-                border: `1px solid ${period === p.id ? "var(--gold)" : "var(--border)"}`,
-              }}
-            >
+            <ToggleChip key={p.id} active={period === p.id} onClick={() => setPeriod(p.id)}>
               {p.label}
-            </button>
+            </ToggleChip>
           ))}
         </div>
       </header>
 
       <Card className="p-4 mb-5">
-        <div style={{ fontSize: 12, color: "var(--dim)", fontWeight: 600, marginBottom: 4 }}>
-          PROGRESSION VERS MASTER
-        </div>
+        <Eyebrow style={{ marginBottom: 8 }}>Progression vers Master</Eyebrow>
         <LadderTrack tier={currentRank.tier} div={currentRank.div} />
       </Card>
 
@@ -154,10 +137,12 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           })}
         </div>
 
-        <div style={{ fontSize: 12, color: "var(--dim)", fontWeight: 600, marginBottom: 10 }}>
-          PROGRESSION VERS LE NIVEAU {objectiveTier.toUpperCase()}{" "}
-          <span style={{ fontWeight: 400 }}>(repères indicatifs, sur tes 20 dernières games)</span>
-        </div>
+        <Eyebrow style={{ marginBottom: 12 }}>
+          Progression vers le niveau {objectiveTier}{" "}
+          <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>
+            (repères indicatifs, sur tes 20 dernières games)
+          </span>
+        </Eyebrow>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
           <StatLadder label="CS/min" value={a20.csmin} benchmark={bench.csmin} />
           <StatLadder label="KDA" value={a20.kda} benchmark={bench.kda} />
@@ -168,7 +153,7 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
           gap: 12,
           marginBottom: 20,
         }}
@@ -218,9 +203,7 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
             padding: 0,
           }}
         >
-          <span style={{ fontSize: 12, color: "var(--dim)", fontWeight: 600 }}>
-            LP AU FIL DES GAMES (TRACKING) — clique pour voir le détail de la progression
-          </span>
+          <Eyebrow>LP au fil des games (tracking) — clique pour voir le détail de la progression</Eyebrow>
           <ChevronDown
             size={16}
             color="var(--dim)"

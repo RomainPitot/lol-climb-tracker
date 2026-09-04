@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import { Card, Field, Input, Select, TextArea } from "./ui/primitives.jsx";
+import { Card, Field, Input, Select, TextArea, Eyebrow } from "./ui/primitives.jsx";
 import { ROSTER, CHAMP_ROLE } from "../constants/roster.js";
 import { ROLES, ROLE_STATUS, SIDES, DEATH_CAUSES } from "../constants/game.js";
 import { isBotLaneRole } from "../lib/gameModel.js";
@@ -18,8 +18,8 @@ export default function GameFormFields({ g, set, showOptional, setShowOptional }
   return (
     <>
       <Card className="p-5 mb-4">
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)", marginBottom: 12 }}>OBLIGATOIRE</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+        <Eyebrow color="var(--gold)" style={{ marginBottom: 14 }}>Obligatoire</Eyebrow>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14 }}>
           <Field label="Date" required>
             <Input type="date" value={g.date} onChange={(e) => set("date", e.target.value)} />
           </Field>
@@ -123,6 +123,7 @@ export default function GameFormFields({ g, set, showOptional, setShowOptional }
       <Card className="p-5 mb-4">
         <button
           onClick={() => setShowOptional((s) => !s)}
+          className="eyebrow"
           style={{
             display: "flex",
             alignItems: "center",
@@ -130,21 +131,22 @@ export default function GameFormFields({ g, set, showOptional, setShowOptional }
             background: "none",
             border: "none",
             color: "var(--text)",
-            fontWeight: 700,
-            fontSize: 12,
             cursor: "pointer",
             padding: 0,
           }}
         >
           <ChevronRight
             size={14}
-            style={{ transform: showOptional ? "rotate(90deg)" : "none", transition: "transform .15s" }}
+            style={{ transform: showOptional ? "rotate(90deg)" : "none", transition: "transform var(--fast) var(--ease)" }}
           />
-          AUTRES CHAMPS OPTIONNELS
+          Autres champs optionnels
         </button>
 
         {showOptional && (
-          <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+          <div
+            className="fade-in"
+            style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}
+          >
             <Field label="Première mort ?">
               <Select value={g.firstDeath ? "1" : "0"} onChange={(e) => set("firstDeath", e.target.value === "1")}>
                 <option value="0">Non</option>

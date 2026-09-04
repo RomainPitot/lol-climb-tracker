@@ -47,6 +47,7 @@ export default function ChampAvatar({ name, ddragonId, size = 32 }) {
         height: size,
         borderRadius: 8,
         border: `1.5px solid ${color}55`,
+        background: "var(--bg-elevated)",
         flexShrink: 0,
         objectFit: "cover",
       }}

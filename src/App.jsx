@@ -34,13 +34,16 @@ export default function App() {
         style={{
           minHeight: "100vh",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: 12,
           background: "var(--bg)",
           color: "var(--dim)",
         }}
       >
-        Chargement…
+        <span className="spinner" style={{ width: 20, height: 20, color: "var(--gold)" }} />
+        <span style={{ fontSize: 13 }}>Chargement de CLIMB.EUW…</span>
       </div>
     );
   }
@@ -49,10 +52,10 @@ export default function App() {
   const pageProps = { data, sorted, currentRank: data.currentRank, navigate: setPage, ...actions };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", display: "flex" }}>
+    <div className="app-shell">
       <Sidebar page={page} setPage={setPage} currentRank={data.currentRank} />
-      <main style={{ flex: 1, padding: "28px 32px", minWidth: 0 }}>
-        <div style={{ maxWidth: 1440, margin: "0 auto", width: "100%" }}>
+      <main className="app-main">
+        <div className="fade-in" key={page} style={{ maxWidth: 1440, margin: "0 auto", width: "100%" }}>
           <Page {...pageProps} />
         </div>
       </main>

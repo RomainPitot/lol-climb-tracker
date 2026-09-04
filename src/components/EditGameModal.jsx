@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
-import { Btn } from "./ui/primitives.jsx";
+import { Btn, IconBtn } from "./ui/primitives.jsx";
 import GameFormFields from "./GameFormFields.jsx";
 
 export default function EditGameModal({ game, onSave, onCancel }) {
@@ -21,6 +21,10 @@ export default function EditGameModal({ game, onSave, onCancel }) {
     <div
       role="dialog"
       aria-modal="true"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+      className="fade-in"
       style={{
         position: "fixed",
         inset: 0,
@@ -38,20 +42,13 @@ export default function EditGameModal({ game, onSave, onCancel }) {
           <div style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 700, color: "var(--text)" }}>
             Modifier la game
           </div>
-          <button
+          <IconBtn
             onClick={onCancel}
             aria-label="Fermer"
-            style={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              padding: 8,
-              color: "var(--dim)",
-              cursor: "pointer",
-            }}
+            style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: 8 }}
           >
             <X size={16} />
-          </button>
+          </IconBtn>
         </div>
 
         <GameFormFields g={g} set={set} showOptional={showOptional} setShowOptional={setShowOptional} />
