@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Download, Play } from "lucide-react";
+import QRCode from "qrcode";
+import { Download, Play, Copy, Check, QrCode } from "lucide-react";
 import { Field, Input, Btn } from "../ui/primitives.jsx";
 
 /** Doit rester identique au STATUS_PORT défini dans notifier.py (GameDetectorLol). */
 const STATUS_URL = "http://127.0.0.1:37653/status";
+const PAIRING_URL = "http://127.0.0.1:37653/pairing";
 const STATUS_POLL_MS = 3000;
 
 /**
@@ -13,13 +15,14 @@ const STATUS_POLL_MS = 3000;
  * CLIMB.EUW est un site statique : il ne peut ni lire le lockfile du client LoL, ni
  * détecter une partie lui-même (pas d'accès système de fichiers ni réseau local depuis
  * un navigateur). Cette section ne fait que fabriquer confortablement le config.json que
- * le script attend, pour éviter d'éditer le JSON à la main — plus deux compléments :
+ * le script attend, pour éviter d'éditer le JSON à la main — plus trois compléments :
  * - un indicateur de statut, qui interroge le petit serveur local que le script expose
  *   (utile seulement si ce site est ouvert sur le même PC que celui qui fait tourner le
  *   script — sinon la requête échoue silencieusement, ce qui est normal) ;
- * - un lien `gamedetectorlol://` pour lancer le script d'un clic, via le mécanisme
- *   standard de Windows pour les liens d'application (comme un lien Spotify/Discord).
- *   Nécessite d'avoir importé `register_protocol.reg` une fois (voir le README du script).
+ * - un lien `gamedetectorlol://` pour lancer le script d'un clic ;
+ * - un QR code à scanner avec le téléphone pour connecter la page "Sélection de champion"
+ *   sans rien recopier à la main — le script réserve l'adresse+token complets aux
+ *   requêtes venant de ce PC (127.0.0.1), jamais au reste du Wi-Fi (voir notifier.py).
  */
 export default function NotificationsSection({ data, setSettings }) {
   const s = data.settings;
@@ -27,6 +30,10 @@ export default function NotificationsSection({ data, setSettings }) {
   const webhookUrl = s.discordWebhookUrl || "";
   const [status, setStatus] = useState("checking"); // "checking" | "active" | "inactive"
   const [phase, setPhase] = useState(null);
+  const [qrDataUrl, setQrDataUrl] = useState(null);
+  const [pairingLink, setPairingLink] = useState(null);
+  const [pairingError, setPairingError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +64,46 @@ export default function NotificationsSection({ data, setSettings }) {
       clearInterval(id);
     };
   }, []);
+
+  // Le QR/lien dépend de l'adresse+token du script, qu'on ne connaît qu'une fois détecté —
+  // on les récupère nous-mêmes (depuis ce PC) plutôt que de les faire recopier à la main.
+  useEffect(() => {
+    if (status !== "active") {
+      setQrDataUrl(null);
+      setPairingLink(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(PAIRING_URL);
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+        if (cancelled || !body.host || !body.token) return;
+        const link = `${window.location.origin}${window.location.pathname}?champselect_host=${encodeURIComponent(body.host)}&champselect_token=${encodeURIComponent(body.token)}`;
+        const dataUrl = await QRCode.toDataURL(link, { margin: 1, width: 176 });
+        if (cancelled) return;
+        setPairingLink(link);
+        setQrDataUrl(dataUrl);
+        setPairingError("");
+      } catch (e) {
+        if (!cancelled) setPairingError(e.message || "Impossible de générer le QR code.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(pairingLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard refusé : le lien reste affiché, sélectionnable à la main
+    }
+  };
 
   const downloadConfig = () => {
     const config = { discord_webhook_url: webhookUrl, lockfile_path: null };
@@ -147,6 +194,54 @@ export default function NotificationsSection({ data, setSettings }) {
           <code>register_protocol.reg</code> une fois (voir le README du script) ; ton navigateur demandera une
           confirmation à chaque clic, c'est normal.
         </p>
+      </div>
+
+      <div style={{ paddingTop: 16, marginTop: 16, borderTop: "1px solid var(--border)" }}>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 7 }}>
+          <QrCode size={14} /> Connecter ton téléphone (Sélection de champion)
+        </span>
+        <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 4, marginBottom: 14 }}>
+          Scanne ce QR code avec l'appareil photo de ton téléphone (connecté au même Wi-Fi que ce PC) — il configure
+          tout automatiquement et ouvre directement la page Sélection de champion, sans rien recopier à la main.
+        </p>
+
+        {status !== "active" && (
+          <p style={{ fontSize: 12, color: "var(--dim)" }}>
+            Le QR code apparaît ici automatiquement une fois GameDetectorLol détecté ci-dessus.
+          </p>
+        )}
+
+        {status === "active" && pairingError && (
+          <p style={{ fontSize: 12, color: "var(--loss)" }}>{pairingError}</p>
+        )}
+
+        {status === "active" && qrDataUrl && (
+          <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+            <img
+              src={qrDataUrl}
+              alt="QR code de connexion téléphone"
+              width={128}
+              height={128}
+              style={{ borderRadius: "var(--radius-md)", border: "1px solid var(--border)", flexShrink: 0 }}
+            />
+            <div style={{ minWidth: 0 }}>
+              <Btn onClick={copyLink}>
+                {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copié" : "Copier le lien"}
+              </Btn>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "var(--dim)",
+                  marginTop: 8,
+                  wordBreak: "break-all",
+                  maxWidth: 420,
+                }}
+              >
+                {pairingLink}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
