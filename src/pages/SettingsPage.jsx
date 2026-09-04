@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Check, Upload, RotateCcw, Download, AlertTriangle } from "lucide-react";
 import { SectionTitle, Field, Input, Select, TextArea, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GoalsSection from "../components/settings/GoalsSection.jsx";
-import RiotImportSection from "../components/settings/RiotImportSection.jsx";
 import NotificationsSection from "../components/settings/NotificationsSection.jsx";
 import { TIERS, APEX, DIVS } from "../constants/ranks.js";
 import { rankLabel } from "../lib/rank.js";
@@ -17,7 +16,7 @@ const HIST_FIELDS = [
 
 export default function SettingsPage({
   data, sorted, currentRank, addGoal, deleteGoal, setHistorical,
-  setThresholds, setCurrentRank, setSettings, importGames, importRiotResult, resetAll,
+  setThresholds, setCurrentRank, setSettings, importGames, resetAll,
 }) {
   const [hist, setHist] = useState(data.historical);
   const [th, setTh] = useState(data.thresholds);
@@ -138,18 +137,6 @@ export default function SettingsPage({
           {msg}
         </div>
       )}
-
-      <Collapsible
-        title="Import automatique (Riot API)"
-        sub="Récupère tes dernières games SoloQ automatiquement, avec repli manuel si besoin."
-      >
-        <RiotImportSection
-          data={data}
-          setSettings={setSettings}
-          importGames={importGames}
-          importRiotResult={importRiotResult}
-        />
-      </Collapsible>
 
       <Collapsible
         title="Notifications"
