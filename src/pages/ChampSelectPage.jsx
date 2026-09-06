@@ -5,7 +5,6 @@ import ChampAvatar from "../components/ChampAvatar.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { useChampSelect } from "../hooks/useChampSelect.js";
-import { riotProxyConn } from "../lib/aiCoach.js";
 import { rankLabel } from "../lib/rank.js";
 import {
   DEFAULT_HOST,
@@ -165,13 +164,7 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
             <>
               <TeamsAndBans session={session} byKey={byKey} />
 
-              <MatchupAnalysis
-                session={session}
-                byKey={byKey}
-                sorted={sorted}
-                currentRank={currentRank}
-                conn={riotProxyConn(data.settings)}
-              />
+              <MatchupAnalysis session={session} byKey={byKey} sorted={sorted} currentRank={currentRank} />
 
               <Card className="p-5 mt-4">
                 {myAction ? (
@@ -384,11 +377,11 @@ function personalHistoryLine(sorted, championName) {
 }
 
 /**
- * Conseils de bans/matchups/priorités générés par l'IA à partir de la composition en
- * cours — jamais appelé automatiquement (coût + limite de débit), seulement au clic,
+ * Prompt de conseils de bans/matchups/priorités à partir de la composition en cours —
+ * à coller dans Claude/ChatGPT sur le téléphone. Généré au clic (jamais automatiquement)
  * pour rester utilisable à n'importe quel moment de la sélection (bans ou picks).
  */
-function MatchupAnalysis({ session, byKey, sorted, currentRank, conn }) {
+function MatchupAnalysis({ session, byKey, sorted, currentRank }) {
   const buildPrompt = () => {
     const myBans = (session.bans?.myTeamBans || []).filter(Boolean).map((id) => byKey[id]?.name || `#${id}`);
     const theirBans = (session.bans?.theirTeamBans || []).filter(Boolean).map((id) => byKey[id]?.name || `#${id}`);
@@ -425,15 +418,10 @@ Réponse concise, à puces, sans blabla.`;
     <Card className="p-5 mt-4">
       <Eyebrow style={{ marginBottom: 6 }}>Conseils de bans &amp; matchups</Eyebrow>
       <p style={{ fontSize: 12, color: "var(--dim)", marginBottom: 12 }}>
-        Analyse la composition actuelle des deux équipes — relance-la si les picks changent.
+        Génère un prompt sur la composition actuelle des deux équipes, à coller dans Claude ou ChatGPT — régénère-le
+        si les picks changent.
       </p>
-      <AiCoachPanel
-        conn={conn}
-        buildPrompt={buildPrompt}
-        buttonLabel="Analyser la sélection"
-        resultTitle="Conseils du coach"
-        maxTokens={700}
-      />
+      <AiCoachPanel buildPrompt={buildPrompt} buttonLabel="Générer le prompt d'analyse" resultTitle="Prompt d'analyse" />
     </Card>
   );
 }

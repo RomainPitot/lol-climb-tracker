@@ -4,7 +4,6 @@ import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip } f
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { computeAgg } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
-import { riotProxyConn } from "../lib/aiCoach.js";
 import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
 
@@ -25,7 +24,6 @@ export default function CoachPage({ data, sorted, currentRank }) {
   const [selected, setSelected] = useState(() => new Set(sorted.slice(-20).map((g) => g.id)));
   const [recap, setRecap] = useState("");
   const [copied, setCopied] = useState(false);
-  const conn = riotProxyConn(data.settings);
 
   /** Le bilan de compte compare toujours les N dernières games au reste du profil —
    * indépendant de la sélection manuelle ci-dessous, qui sert au recap à coller/copier. */
@@ -78,15 +76,14 @@ export default function CoachPage({ data, sorted, currentRank }) {
       <Card className="p-5 mb-5">
         <Eyebrow style={{ marginBottom: 6 }}>Bilan de compte</Eyebrow>
         <p style={{ fontSize: 12.5, color: "var(--dim)", marginBottom: 14 }}>
-          Analyse façon coach coréen : direct, sans complaisance, sur tes {ACCOUNT_ANALYSIS_WINDOW} dernières games
-          vs le reste de ton profil — 3 points forts, 3 points faibles priorisés, une action concrète.
+          Génère un prompt façon coach coréen — direct, sans complaisance — sur tes {ACCOUNT_ANALYSIS_WINDOW} dernières
+          games vs le reste de ton profil : 3 points forts, 3 points faibles priorisés, une action concrète. Colle-le
+          ensuite dans Claude, ChatGPT ou l'IA de ton choix.
         </p>
         <AiCoachPanel
-          conn={conn}
           buildPrompt={buildAccountPrompt}
           buttonLabel="Générer mon bilan de compte"
-          resultTitle="Bilan du coach"
-          maxTokens={800}
+          resultTitle="Prompt du bilan de compte"
           disabled={sorted.length < 3}
           disabledReason="Ajoute au moins 3 games trackées pour un bilan qui a du sens."
         />

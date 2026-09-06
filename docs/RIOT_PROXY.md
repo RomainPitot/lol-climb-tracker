@@ -87,33 +87,12 @@ Les matchs déjà en base sont filtrés par `matchId` avant appel : relancer une
 
 ## Coach IA
 
-Le bilan de compte, le bilan de fin de game et les conseils de bans/matchups en champ
-select (voir CoachPage, AddGame, ChampSelectPage) passent par le **même Worker** que
-l'import Riot, sur un nouvel endpoint `/ai` — même URL, même `PROXY_TOKEN`, rien à
-reconfigurer côté app. Ça relaie vers l'API Claude d'Anthropic, avec la clé gardée côté
-Worker (jamais dans le navigateur), pour les mêmes raisons que RIOT_API_KEY.
-
-**Pour l'activer :**
-
-1. Crée un compte sur [console.anthropic.com](https://console.anthropic.com), génère une
-   clé API, et active la facturation (l'usage est payant, mais très faible pour ce cas
-   d'usage — le modèle utilisé, Claude Haiku, coûte typiquement quelques centimes pour
-   des dizaines d'analyses).
-2. Redéploie le Worker avec le code à jour de [`worker/worker.js`](../worker/worker.js)
-   (colle-le dans l'éditeur du Worker sur le dashboard Cloudflare, **Deploy**).
-3. Ajoute un secret supplémentaire (**Settings → Variables and Secrets**) :
-
-   | Nom | Valeur |
-   | --- | --- |
-   | `ANTHROPIC_API_KEY` | ta clé sur console.anthropic.com |
-
-C'est tout — dès que ce secret existe, les boutons "Générer mon bilan de compte",
-"Générer le bilan de cette game" et "Analyser la sélection" fonctionnent, sans rien de
-plus à configurer dans l'app (ils réutilisent l'URL et le token du proxy déjà en place
-pour l'import Riot).
-
-**Sans ce secret**, ces boutons restent visibles mais renvoient une erreur claire
-("Coach IA non configuré...") — le reste de l'app n'est pas affecté.
+Le bilan de compte (Coach IA), le bilan de fin de game (Ajouter une game) et les
+conseils de bans/matchups (Sélection de champion) fonctionnent en **copier-coller**,
+exactement comme le recap Coach IA d'origine : le bouton prépare un texte structuré et
+l'affiche prêt à copier — tu le colles dans Claude, ChatGPT ou l'IA de ton choix. Aucune
+clé API, aucun coût, rien à configurer côté Worker : ça utilise l'abonnement que tu as
+déjà pour discuter avec ton IA, pas une intégration payante à l'usage.
 
 ## Repli manuel
 

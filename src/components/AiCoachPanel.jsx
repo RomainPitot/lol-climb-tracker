@@ -1,73 +1,103 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
-import { Card, Btn, Eyebrow, Spinner } from "./ui/primitives.jsx";
-import { askCoach, diagnoseAiError } from "../lib/aiCoach.js";
+import { Sparkles, Copy, Check } from "lucide-react";
+import { Card, Btn, Eyebrow } from "./ui/primitives.jsx";
+
+/**
+ * Persona partagée par les trois fonctionnalités Coach IA (bilan de compte, bilan de
+ * game, conseils de champ select) : un coach coréen exigeant, direct, qui priorise les
+ * fondamentaux plutôt que le blabla générique — c'est le ton demandé, pas juste une
+ * couche de style, ça change concrètement ce que l'IA met en avant dans ses réponses.
+ * Fait partie du texte copié (il n'y a pas de champ "system" séparé quand on colle dans
+ * une appli de chat classique) : elle doit donc rester lisible telle quelle.
+ */
+export const KOREAN_COACH_SYSTEM = `Tu es un coach League of Legends professionnel, formé en Corée du Sud — réputé pour
+son exigence, sa franchise et son sens du détail. Tu ne flattes jamais inutilement : si
+un chiffre est mauvais, tu le dis, mais toujours accompagné d'une raison concrète et
+d'une action précise pour corriger. Tu priorises systématiquement les fondamentaux (CS,
+morts évitables, vision, macro, matchup, gestion de wave) avant les considérations de
+mécanique ou de méta. Réponds en français, de façon concise, structurée (courtes
+sections avec des tirets), sans blabla ni motivation creuse — chaque phrase doit être
+actionnable. Base-toi uniquement sur les chiffres et faits fournis, n'invente rien.`;
 
 /**
  * Bloc réutilisé par les trois fonctionnalités Coach IA (bilan de compte, bilan de
  * game, conseils de champ select) : un bouton qui construit le prompt au moment du clic
- * (donc toujours à jour), l'envoie au Worker, et affiche la réponse — avec les états de
- * chargement/erreur gérés une seule fois plutôt que dupliqués trois fois.
+ * (donc toujours à jour) et l'affiche prêt à copier — CLIMB.EUW est un site statique, il
+ * ne peut pas appeler une IA lui-même sans faire transiter une clé API et sa facturation
+ * par l'utilisateur ; ce mode copier-coller reste gratuit et utilise l'abonnement Claude/
+ * ChatGPT que tu as déjà, exactement comme le recap Coach IA existant.
  *
  * `buildPrompt` est un callback (pas une string) : le prompt dépend souvent d'un état qui
  * change entre deux clics (game la plus récente, composition en cours...), on ne veut le
- * calculer qu'au moment de l'appel.
+ * calculer qu'au moment du clic.
  */
 export default function AiCoachPanel({
-  conn,
   buildPrompt,
-  buttonLabel = "Demander au coach",
-  resultTitle = "Analyse du coach",
-  maxTokens,
+  system = KOREAN_COACH_SYSTEM,
+  buttonLabel = "Générer le prompt",
+  resultTitle = "Prompt généré",
   disabled,
   disabledReason,
 }) {
-  const [state, setState] = useState({ loading: false, text: "", error: "" });
-  const notConfigured = !conn?.proxyUrl || !conn?.proxyToken;
+  const [text, setText] = useState("");
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  const run = async () => {
-    setState({ loading: true, text: "", error: "" });
-    let prompt;
+  const generate = () => {
+    setError("");
+    setCopied(false);
     try {
-      prompt = buildPrompt();
+      setText(`${system}\n\n${buildPrompt()}`);
     } catch (e) {
-      setState({ loading: false, text: "", error: e.message || "Impossible de préparer la demande." });
-      return;
+      setText("");
+      setError(e.message || "Impossible de préparer ce prompt.");
     }
+  };
+
+  const copy = async () => {
     try {
-      const text = await askCoach(conn, { prompt, maxTokens });
-      setState({ loading: false, text, error: "" });
-    } catch (e) {
-      setState({ loading: false, text: "", error: `${e.message} ${diagnoseAiError(e)}` });
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard refusé (contexte non sécurisé / permission) : le texte reste sélectionnable
     }
   };
 
   return (
     <div>
-      <Btn variant="primary" onClick={run} disabled={disabled || notConfigured || state.loading}>
-        {state.loading ? <Spinner /> : <Sparkles size={14} />} {state.loading ? "Analyse en cours…" : buttonLabel}
+      <Btn variant="primary" onClick={generate} disabled={disabled}>
+        <Sparkles size={14} /> {buttonLabel}
       </Btn>
 
-      {notConfigured && (
-        <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 8 }}>
-          Configure d'abord le proxy dans <strong>Ajouter une game</strong> (mode "Via mon proxy") pour utiliser le
-          Coach IA — c'est le même Worker, il faut juste y ajouter le secret <code>ANTHROPIC_API_KEY</code> (voir{" "}
-          <code>docs/RIOT_PROXY.md</code>).
-        </p>
-      )}
-      {!notConfigured && disabled && disabledReason && (
+      {disabled && disabledReason && (
         <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 8 }}>{disabledReason}</p>
       )}
-      {state.error && <p style={{ fontSize: 12, color: "var(--loss)", marginTop: 10 }}>{state.error}</p>}
+      {error && <p style={{ fontSize: 12, color: "var(--loss)", marginTop: 10 }}>{error}</p>}
 
-      {state.text && (
+      {text && (
         <Card className="p-4 mt-3 fade-in">
-          <Eyebrow color="var(--gold)" style={{ marginBottom: 8 }}>
-            {resultTitle}
-          </Eyebrow>
-          <div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>
-            {state.text}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <Eyebrow color="var(--gold)">{resultTitle}</Eyebrow>
+            <Btn onClick={copy}>
+              {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copié" : "Copier"}
+            </Btn>
           </div>
+          <pre
+            style={{
+              whiteSpace: "pre-wrap",
+              fontFamily: "var(--body)",
+              fontSize: 12.5,
+              color: "var(--text)",
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
+            {text}
+          </pre>
+          <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 10 }}>
+            Colle ce texte dans Claude, ChatGPT, ou l'IA de ton choix — gratuit, avec l'abonnement que tu as déjà.
+          </p>
         </Card>
       )}
     </div>

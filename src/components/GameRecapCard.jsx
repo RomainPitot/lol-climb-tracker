@@ -3,24 +3,22 @@ import AiCoachPanel from "./AiCoachPanel.jsx";
 import ChampAvatar from "./ChampAvatar.jsx";
 import { computeAgg } from "../lib/stats.js";
 import { gameLine } from "../lib/coachRecap.js";
-import { riotProxyConn } from "../lib/aiCoach.js";
 import { round1, round2 } from "../lib/format.js";
 
 const BASELINE_WINDOW = 10;
 
 /**
  * Bilan de fin de game ("bordereau") : compare la toute dernière game trackée à la
- * moyenne des BASELINE_WINDOW précédentes (elle exclue), et demande au coach un verdict
- * structuré — bons points, points à améliorer, une seule chose à corriger au prochain
- * pick. Toujours la DERNIÈRE game trackée, pour rester dans l'esprit "juste après avoir
- * joué" même si les games arrivent par lots via l'import automatique.
+ * moyenne des BASELINE_WINDOW précédentes (elle exclue), et prépare un prompt à coller
+ * dans une IA pour un verdict structuré — bons points, points à améliorer, une seule
+ * chose à corriger au prochain pick. Toujours la DERNIÈRE game trackée, pour rester dans
+ * l'esprit "juste après avoir joué" même si les games arrivent par lots via l'import auto.
  */
-export default function GameRecapCard({ data, sorted }) {
+export default function GameRecapCard({ sorted }) {
   if (!sorted.length) return null;
   const last = sorted[sorted.length - 1];
   const baseline = sorted.slice(Math.max(0, sorted.length - 1 - BASELINE_WINDOW), sorted.length - 1);
   const baseAgg = computeAgg(baseline);
-  const conn = riotProxyConn(data.settings);
 
   const buildPrompt = () => {
     const csmin = last.duration ? last.cs / last.duration : 0;
@@ -65,11 +63,9 @@ points concrets, 2-3 points à améliorer concrets, et un verdict en une phrase.
       </div>
 
       <AiCoachPanel
-        conn={conn}
         buildPrompt={buildPrompt}
         buttonLabel="Générer le bilan de cette game"
-        resultTitle="Bilan du coach"
-        maxTokens={500}
+        resultTitle="Prompt du bilan de game"
       />
     </Card>
   );
