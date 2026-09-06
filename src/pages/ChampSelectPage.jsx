@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Wifi, WifiOff, Settings2, Ban, Check } from "lucide-react";
 import { Card, SectionTitle, Eyebrow, Field, Input, Btn, Pill, Spinner } from "../components/ui/primitives.jsx";
 import ChampAvatar from "../components/ChampAvatar.jsx";
+import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { useChampSelect } from "../hooks/useChampSelect.js";
+import { riotProxyConn } from "../lib/aiCoach.js";
+import { rankLabel } from "../lib/rank.js";
 import {
   DEFAULT_HOST,
   sendChampSelectAction,
@@ -19,7 +22,9 @@ const PHASE_LABEL = {
   FINALIZATION: "Derniers réglages",
 };
 
-export default function ChampSelectPage({ data, setSettings }) {
+const POSITION_LABEL = { top: "Top", jungle: "Jungle", middle: "Mid", bottom: "ADC", utility: "Support" };
+
+export default function ChampSelectPage({ data, sorted, currentRank, setSettings }) {
   const s = data.settings;
   const host = s.gameDetectorHost || DEFAULT_HOST;
   const token = s.gameDetectorToken || "";
@@ -159,6 +164,14 @@ export default function ChampSelectPage({ data, setSettings }) {
           {session && (
             <>
               <TeamsAndBans session={session} byKey={byKey} />
+
+              <MatchupAnalysis
+                session={session}
+                byKey={byKey}
+                sorted={sorted}
+                currentRank={currentRank}
+                conn={riotProxyConn(data.settings)}
+              />
 
               <Card className="p-5 mt-4">
                 {myAction ? (
@@ -346,6 +359,82 @@ function PlayerSlot({ player, byKey, isMe }) {
         {champ?.name || "?"}
       </span>
     </div>
+  );
+}
+
+/** Une ligne "Rôle : Champion" pour le prompt — "?" pour un rôle non assigné (ARAM,
+ * blind pick) ou un pick pas encore verrouillé, jamais une case vide ambiguë. */
+function teamLines(team, byKey, meCellId) {
+  return team.map((p) => {
+    const role = POSITION_LABEL[p.assignedPosition] || "?";
+    const champ = byKey[p.championId]?.name || (p.championId ? `#${p.championId}` : "pas encore choisi");
+    return `- ${role} : ${champ}${p.cellId === meCellId ? " (moi)" : ""}`;
+  });
+}
+
+/** Historique perso sur un champion — simple correspondance de nom, best-effort (les
+ * games trackées stockent un nom affiché, pas l'id Data Dragon) : s'il n'y a pas de
+ * correspondance, on omet la ligne plutôt que d'inventer un chiffre. */
+function personalHistoryLine(sorted, championName) {
+  if (!championName) return "";
+  const games = sorted.filter((g) => g.champion?.toLowerCase() === championName.toLowerCase());
+  if (!games.length) return "";
+  const wins = games.filter((g) => g.win).length;
+  return `Mon historique sur ${championName} : ${games.length} game(s), ${Math.round((wins / games.length) * 100)}% WR.`;
+}
+
+/**
+ * Conseils de bans/matchups/priorités générés par l'IA à partir de la composition en
+ * cours — jamais appelé automatiquement (coût + limite de débit), seulement au clic,
+ * pour rester utilisable à n'importe quel moment de la sélection (bans ou picks).
+ */
+function MatchupAnalysis({ session, byKey, sorted, currentRank, conn }) {
+  const buildPrompt = () => {
+    const myBans = (session.bans?.myTeamBans || []).filter(Boolean).map((id) => byKey[id]?.name || `#${id}`);
+    const theirBans = (session.bans?.theirTeamBans || []).filter(Boolean).map((id) => byKey[id]?.name || `#${id}`);
+    const me = session.myTeam.find((p) => p.cellId === session.localPlayerCellId);
+    const myChamp = byKey[me?.championId]?.name;
+
+    return `=== SÉLECTION DE CHAMPION EN COURS (League of Legends) ===
+Rang du joueur : ${rankLabel(currentRank.tier, currentRank.div)}
+Mon rôle : ${POSITION_LABEL[me?.assignedPosition] || "inconnu"}
+Mon champion : ${myChamp || "pas encore choisi/verrouillé"}
+${personalHistoryLine(sorted, myChamp)}
+
+=== MON ÉQUIPE ===
+${teamLines(session.myTeam, byKey, session.localPlayerCellId).join("\n")}
+
+=== ÉQUIPE ENNEMIE (picks connus jusqu'ici) ===
+${teamLines(session.theirTeam, byKey, -1).join("\n") || "- Aucun pick ennemi visible pour l'instant."}
+
+=== BANS ===
+Bans alliés : ${myBans.join(", ") || "aucun pour l'instant"}
+Bans ennemis : ${theirBans.join(", ") || "aucun pour l'instant"}
+
+=== DEMANDE ===
+Dans l'ordre de priorité pour gagner cette game, et seulement à partir des informations
+ci-dessus (ignore ce qui n'est pas encore connu plutôt que de le deviner) :
+1. S'il reste des bans à faire côté allié : quel champion bannir en priorité et pourquoi.
+2. Matchups déjà connus (lane par lane) : qui a l'avantage et pourquoi, en une phrase par lane.
+3. Sur quel allié concentrer les ressources (invades, ganks, roams) et pourquoi.
+4. Un piège ou risque spécifique à cette composition ennemie à surveiller.
+Réponse concise, à puces, sans blabla.`;
+  };
+
+  return (
+    <Card className="p-5 mt-4">
+      <Eyebrow style={{ marginBottom: 6 }}>Conseils de bans &amp; matchups</Eyebrow>
+      <p style={{ fontSize: 12, color: "var(--dim)", marginBottom: 12 }}>
+        Analyse la composition actuelle des deux équipes — relance-la si les picks changent.
+      </p>
+      <AiCoachPanel
+        conn={conn}
+        buildPrompt={buildPrompt}
+        buttonLabel="Analyser la sélection"
+        resultTitle="Conseils du coach"
+        maxTokens={700}
+      />
+    </Card>
   );
 }
 

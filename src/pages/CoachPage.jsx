@@ -1,9 +1,14 @@
 import { useState, useMemo } from "react";
 import { Sparkles, Copy, Check } from "lucide-react";
 import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip } from "../components/ui/primitives.jsx";
+import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { computeAgg } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
+import { riotProxyConn } from "../lib/aiCoach.js";
+import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
+
+const ACCOUNT_ANALYSIS_WINDOW = 20;
 
 const PRESETS = [
   { label: "Dernière game", take: 1 },
@@ -16,10 +21,19 @@ const PRESETS = [
   { label: "Aucune", take: 0 },
 ];
 
-export default function CoachPage({ data, sorted }) {
+export default function CoachPage({ data, sorted, currentRank }) {
   const [selected, setSelected] = useState(() => new Set(sorted.slice(-20).map((g) => g.id)));
   const [recap, setRecap] = useState("");
   const [copied, setCopied] = useState(false);
+  const conn = riotProxyConn(data.settings);
+
+  /** Le bilan de compte compare toujours les N dernières games au reste du profil —
+   * indépendant de la sélection manuelle ci-dessous, qui sert au recap à coller/copier. */
+  const buildAccountPrompt = () => {
+    const recentIds = new Set(sorted.slice(-ACCOUNT_ANALYSIS_WINDOW).map((g) => g.id));
+    const base = buildCoachRecap({ data, sorted, selectedIds: recentIds }).split("=== QUESTION AU COACH IA ===")[0];
+    return `${base}\n=== DEMANDE ===\nFais un bilan complet de mon compte, pas juste de la sélection ci-dessus : 3 points forts, les 3 points faibles qui me coûtent le plus de LP en ce moment (par ordre de priorité), et une seule action concrète à appliquer dès ma prochaine game. Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
+  };
 
   const selectedGames = useMemo(() => sorted.filter((g) => selected.has(g.id)), [sorted, selected]);
   const restGames = useMemo(() => sorted.filter((g) => !selected.has(g.id)), [sorted, selected]);
@@ -60,6 +74,23 @@ export default function CoachPage({ data, sorted }) {
       <SectionTitle sub="Sélectionne les games à inclure dans le recap, puis génère un récapitulatif structuré pour une IA coach.">
         Coach IA
       </SectionTitle>
+
+      <Card className="p-5 mb-5">
+        <Eyebrow style={{ marginBottom: 6 }}>Bilan de compte</Eyebrow>
+        <p style={{ fontSize: 12.5, color: "var(--dim)", marginBottom: 14 }}>
+          Analyse façon coach coréen : direct, sans complaisance, sur tes {ACCOUNT_ANALYSIS_WINDOW} dernières games
+          vs le reste de ton profil — 3 points forts, 3 points faibles priorisés, une action concrète.
+        </p>
+        <AiCoachPanel
+          conn={conn}
+          buildPrompt={buildAccountPrompt}
+          buttonLabel="Générer mon bilan de compte"
+          resultTitle="Bilan du coach"
+          maxTokens={800}
+          disabled={sorted.length < 3}
+          disabledReason="Ajoute au moins 3 games trackées pour un bilan qui a du sens."
+        />
+      </Card>
 
       <Card className="p-4 mb-5">
         <Eyebrow style={{ marginBottom: 10 }}>Raccourcis de sélection</Eyebrow>
