@@ -215,6 +215,8 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
               value={form.proxyUrl}
               onChange={(e) => patch({ proxyUrl: e.target.value })}
               placeholder="https://lol-proxy.tonnom.workers.dev"
+              autoComplete="off"
+              name="climb-euw-riot-proxy-url"
             />
           </Field>
           <Field label="Token du proxy">
@@ -222,6 +224,8 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
               value={form.proxyToken}
               onChange={(e) => patch({ proxyToken: e.target.value })}
               placeholder="le PROXY_TOKEN que tu as choisi"
+              autoComplete="off"
+              name="climb-euw-riot-proxy-token"
             />
           </Field>
           <SessionActiveField checked={form.sessionActive} onChange={(v) => patch({ sessionActive: v })} />
@@ -229,7 +233,13 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
           <Field label="Clé API Riot">
-            <Input value={form.apiKey} onChange={(e) => patch({ apiKey: e.target.value })} placeholder="RGAPI-..." />
+            <Input
+              value={form.apiKey}
+              onChange={(e) => patch({ apiKey: e.target.value })}
+              placeholder="RGAPI-..."
+              autoComplete="off"
+              name="climb-euw-riot-api-key"
+            />
           </Field>
           <SessionActiveField checked={form.sessionActive} onChange={(v) => patch({ sessionActive: v })} />
         </div>
@@ -336,6 +346,8 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
                 value={form.adminToken}
                 onChange={(e) => patch({ adminToken: e.target.value })}
                 placeholder="différent du token du proxy"
+                autoComplete="off"
+                name="climb-euw-riot-admin-token"
               />
             </Field>
             <Field label="Nouvelle clé Riot">
@@ -343,6 +355,8 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
                 value={newRiotKey}
                 onChange={(e) => setNewRiotKey(e.target.value)}
                 placeholder="RGAPI-..."
+                autoComplete="off"
+                name="climb-euw-riot-new-key"
               />
             </Field>
           </div>
