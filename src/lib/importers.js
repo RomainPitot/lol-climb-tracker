@@ -74,6 +74,10 @@ export function riotMatchToGame(match, puuid) {
   return {
     id: uid(),
     matchId: match.metadata?.matchId,
+    // Sert uniquement à situer précisément cette game dans l'historique de rang (voir
+    // estimateLpChanges dans riotApi.js) — pas affiché tel quel dans l'UI. gameEndTimestamp
+    // n'existe que sur les matchs récents ; à défaut on le déduit du début + de la durée.
+    endTimestamp: info.gameEndTimestamp || start.getTime() + (info.gameDuration || 0) * 1000,
     date: start.toISOString().slice(0, 10),
     time: start.toTimeString().slice(0, 5),
     champion: REVERSE_CHAMP[me.championName] || me.championName,

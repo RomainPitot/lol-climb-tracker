@@ -64,8 +64,13 @@ export function useAutoRiotImport(data, actions) {
 
       ref.current.running = true;
       try {
-        const result = await fetchRiotGames(conn, existingMatchIds, cur.currentRank);
-        const importedCount = act.importRiotResult({ puuid: result.puuid, games: result.games, rank: result.rank });
+        const result = await fetchRiotGames(conn, existingMatchIds, cur.currentRank, cur.rankHistory);
+        const importedCount = act.importRiotResult({
+          puuid: result.puuid,
+          games: result.games,
+          rank: result.rank,
+          rankHistory: result.rankHistory,
+        });
         act.setSettings({
           riotLastAutoCheck: new Date().toISOString(),
           riotLastAutoError: "",

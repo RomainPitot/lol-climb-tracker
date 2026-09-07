@@ -90,8 +90,8 @@ export function useTrackerData() {
         return fresh.length;
       },
 
-      /** Import Riot : combine games + rang resynchronisé + PUUID en un seul `save`. */
-      importRiotResult({ puuid, games, rank }) {
+      /** Import Riot : combine games + rang resynchronisé + PUUID + historique de rang en un seul `save`. */
+      importRiotResult({ puuid, games, rank, rankHistory }) {
         const cur = dataRef.current;
         const known = new Set(cur.games.map((g) => g.matchId).filter(Boolean));
         const fresh = games.filter((g) => !g.matchId || !known.has(g.matchId));
@@ -101,6 +101,9 @@ export function useTrackerData() {
           ...(puuid ? { settings: { ...cur.settings, riotPuuid: puuid } } : {}),
           games: newGames,
           currentRank: rank || recomputeCurrentRank(newGames, cur.historical),
+          // Alimente lib/riotApi.js estimateLpChanges au prochain import, même si celui-ci
+          // n'a ramené aucune nouvelle game — voir le commentaire dans fetchRiotGames.
+          ...(rankHistory ? { rankHistory } : {}),
         });
         return fresh.length;
       },

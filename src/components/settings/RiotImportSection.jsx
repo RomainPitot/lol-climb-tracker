@@ -92,19 +92,33 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
     try {
       // beforeRank sert à estimer un LP par game (voir estimateLpChanges dans riotApi.js) :
       // c'est le rang tel que l'app le connaît juste avant ce lot de games.
-      const result = await fetchRiotGames(conn, existingMatchIds, data.currentRank);
-      // Un seul appel qui combine games + rang + PUUID : voir le commentaire sur
-      // importRiotResult dans useTrackerData.js pour la raison (bug d'écrasement corrigé).
-      const importedCount = importRiotResult({ puuid: result.puuid, games: result.games, rank: result.rank });
+      const result = await fetchRiotGames(conn, existingMatchIds, data.currentRank, data.rankHistory);
+      // Un seul appel qui combine games + rang + PUUID + historique de rang : voir le
+      // commentaire sur importRiotResult dans useTrackerData.js (bug d'écrasement corrigé).
+      const importedCount = importRiotResult({
+        puuid: result.puuid,
+        games: result.games,
+        rank: result.rank,
+        rankHistory: result.rankHistory,
+      });
       if (result.puuid) setManualPuuid(result.puuid);
 
-      const hasEstimate = result.games.some((g) => g.lpEstimated);
+      // Le LP par game n'est jamais fourni tel quel par Riot — voir estimateLpChanges dans
+      // riotApi.js. Chaque game de ce lot est marquée individuellement exacte ou estimée
+      // selon qu'une vérification de rang isolée a pu la délimiter ou non (≈ dans l'historique).
+      const estimatedCount = result.games.filter((g) => g.lpEstimated).length;
+      const exactCount = result.games.length - estimatedCount;
       let lpNote = " Le gain/perte de LP n'est pas fourni par l'API Riot — pense à corriger les LP des games importées si besoin (bouton Modifier dans l'historique).";
-      if (result.rank && hasEstimate) {
+      if (result.rank && estimatedCount > 0 && exactCount > 0) {
+        lpNote = ` Sur ce lot : ${exactCount} game(s) avec un LP exact, ${estimatedCount} estimée(s) (marquées ≈ dans l'historique — plusieurs games résolues entre deux vérifications de rang). Un intervalle de vérification automatique plus court augmente la part de valeurs exactes. Corrige les estimées à la main si tu les connais précisément.`;
+      } else if (result.rank && estimatedCount > 0) {
         lpNote =
           " Le LP par game n'est pas fourni par l'API Riot — les valeurs affichées (marquées ≈) sont une estimation basée sur ton rang avant/après ce lot, pas la vraie donnée Riot. Astuce : importe plus souvent (idéalement après chaque game) pour des lots plus petits, donc plus précis — avec une seule game par lot, la valeur devient exacte. Corrige-les à la main si tu les connais précisément (bouton Modifier dans l'historique).";
-      } else if (result.rank && importedCount === 1) {
-        lpNote = " Une seule game dans ce lot : le LP affiché est la vraie valeur (pas une estimation), déduite de ton rang avant/après.";
+      } else if (result.rank && exactCount > 0) {
+        lpNote =
+          exactCount > 1
+            ? " LP exact pour ces games (pas une estimation) — une vérification de rang les a délimitées individuellement."
+            : " LP exact pour cette game (pas une estimation) — une vérification de rang l'a délimitée individuellement.";
       }
 
       setMsg(

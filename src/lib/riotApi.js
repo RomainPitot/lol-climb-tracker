@@ -66,30 +66,22 @@ export async function riotFetch(riotUrl, conn) {
  * l'app avant l'import) et le rang juste après (`afterRank`, resynchronisé depuis Riot) — la
  * différence entre les deux est la vérité mesurée, il ne reste qu'à la répartir sur les games.
  *
- * Hypothèse simplificatrice : les victoires rapportent un LP symétrique aux défaites (`+x`
- * / `-x`). Avec V victoires et D défaites, `total = x·(V − D)` se résout tant que V ≠ D. Si
- * V = D, l'équation à une inconnue n'a pas de solution (un delta non nul avec autant de
- * victoires que de défaites ne peut s'expliquer que par une asymétrie qu'on ne peut pas
- * connaître) : on retombe sur une magnitude par défaut, et l'écart restant est absorbé par
- * la game la plus récente pour que le total reste exact.
+ * Hypothèse simplificatrice utilisée quand plusieurs games se sont jouées sans vérification
+ * entre elles : les victoires rapportent un LP symétrique aux défaites (`+x` / `-x`). Avec V
+ * victoires et D défaites, `total = x·(V − D)` se résout tant que V ≠ D. Si V = D, l'équation
+ * à une inconnue n'a pas de solution : on retombe sur une magnitude par défaut, et l'écart
+ * restant est absorbé par la game la plus récente pour que le total reste exact.
  *
- * Cas particulier important : si le lot ne contient qu'UNE SEULE game, il n'y a rien à
- * répartir — le delta mesuré s'applique à elle seule sans aucune hypothèse. Ce n'est alors
- * plus une estimation mais la vraie valeur (d'où l'intérêt d'importer souvent : plus les
- * lots sont petits, plus le calcul se rapproche de l'exact). Dès que le lot contient
- * plusieurs games, le modèle symétrique (V ≠ D) ou par défaut (V = D) entre en jeu, et promos,
- * séries de rétrogradation ou bonus de première victoire du jour restent invisibles ici.
- * `lpEstimated` reflète cette distinction : `false` pour un lot d'une game, `true` sinon.
+ * Si le lot ne contient qu'UNE SEULE game, il n'y a rien à répartir — le delta mesuré
+ * s'applique à elle seule sans aucune hypothèse : ce n'est alors plus une estimation mais la
+ * vraie valeur. Voir `estimateLpChanges` plus bas pour comment `rankHistory` permet
+ * d'atteindre ce cas idéal bien plus souvent qu'un simple avant/après sur tout le lot.
  */
 const DEFAULT_LP_MAGNITUDE = 17;
 
-function estimateLpChanges(games, beforeRank, afterRank) {
-  if (!games.length || !beforeRank || !afterRank) return;
-
-  const chronological = [...games].sort((a, b) => gameTime(a) - gameTime(b));
-  const totalDelta = rankScore(afterRank.tier, afterRank.div, afterRank.lp) - rankScore(beforeRank.tier, beforeRank.div, beforeRank.lp);
-  const wins = chronological.filter((g) => g.win).length;
-  const losses = chronological.length - wins;
+function splitSegmentDelta(segment, totalDelta) {
+  const wins = segment.filter((g) => g.win).length;
+  const losses = segment.length - wins;
 
   let perWin;
   let perLoss;
@@ -102,15 +94,95 @@ function estimateLpChanges(games, beforeRank, afterRank) {
     perLoss = -DEFAULT_LP_MAGNITUDE;
   }
 
-  let cursor = beforeRank;
   let assigned = 0;
-  chronological.forEach((g, i) => {
-    const isLast = i === chronological.length - 1;
-    // La dernière game absorbe l'arrondi (et, si V = D, tout l'écart non expliqué par le
-    // modèle symétrique) pour que la somme colle exactement au delta mesuré par Riot.
+  return segment.map((g, i) => {
+    const isLast = i === segment.length - 1;
+    // La dernière game du segment absorbe l'arrondi (et, si V = D, tout l'écart non expliqué
+    // par le modèle symétrique) pour que la somme colle exactement au delta mesuré par Riot.
     const delta = isLast ? Math.round(totalDelta - assigned) : Math.round(g.win ? perWin : perLoss);
     assigned += delta;
+    return delta;
+  });
+}
 
+/** Timestamp de fin (ms) d'une game — voir le champ `endTimestamp` ajouté par riotMatchToGame. */
+function gameEndMs(g) {
+  return g.endTimestamp || gameTime(g);
+}
+
+/**
+ * Construit la liste ordonnée des rangs connus ("ancres") dans la fenêtre du lot de games à
+ * traiter : l'historique persistant (`rankHistory`, alimenté à CHAQUE vérification Riot, pas
+ * seulement quand une nouvelle game apparaît — voir useAutoRiotImport.js), complété par
+ * `beforeRank` en secours si l'historique ne couvre pas encore le début du lot (premier
+ * import, ou historique vidé par le nettoyage périodique dans fetchRiotGames).
+ */
+function buildAnchors(rankHistory, beforeRank, earliestGameMs) {
+  const anchors = (rankHistory || [])
+    .filter((s) => s && s.tier && Number.isFinite(s.ts))
+    .map((s) => ({ ts: s.ts, score: rankScore(s.tier, s.div, s.lp) }))
+    .sort((a, b) => a.ts - b.ts);
+
+  if (!anchors.length || anchors[0].ts > earliestGameMs) {
+    anchors.unshift({ ts: earliestGameMs - 1, score: rankScore(beforeRank.tier, beforeRank.div, beforeRank.lp) });
+  }
+  return anchors;
+}
+
+/**
+ * Répartit le LP gagné/perdu sur un lot de games fraîchement importées, en s'appuyant sur
+ * `rankHistory` pour retrouver, quand c'est possible, le rang exact entre deux games
+ * consécutives plutôt qu'un seul avant/après sur tout le lot.
+ *
+ * Principe : chaque échantillon de `rankHistory` (un par vérification Riot, même sans
+ * nouvelle game trouvée) délimite un segment de temps. Une game qui se termine dans un
+ * segment où AUCUNE autre game ne se termine a un LP exact, calculé sans hypothèse : la
+ * différence entre les deux échantillons qui l'entourent EST son gain/perte. Seules les
+ * games regroupées dans un même segment (plusieurs games jouées entre deux vérifications)
+ * retombent sur le modèle symétrique approximatif — et seulement pour ce sous-groupe, pas
+ * pour tout le lot. Plus l'intervalle de vérification est court par rapport au temps entre
+ * deux games, plus les segments contiennent une seule game, plus le LP devient exact.
+ */
+function estimateLpChanges(games, beforeRank, afterRank, rankHistory = []) {
+  if (!games.length || !beforeRank || !afterRank) return;
+
+  const chronological = [...games].sort((a, b) => gameEndMs(a) - gameEndMs(b));
+  const anchors = buildAnchors(rankHistory, beforeRank, gameEndMs(chronological[0]));
+
+  // Le rang tout juste resynchronisé est forcément postérieur à toutes les games de ce lot
+  // (on vient de le récupérer après avoir vu leurs matchIds) : il ferme la dernière ancre.
+  const lastKnownTs = anchors.at(-1).ts;
+  anchors.push({
+    ts: Math.max(Date.now(), lastKnownTs + 1),
+    score: rankScore(afterRank.tier, afterRank.div, afterRank.lp),
+  });
+
+  // Regroupe les games par segment [anchors[k].ts, anchors[k+1].ts] où elles se terminent,
+  // puis répartit le delta mesuré sur CE segment uniquement (voir splitSegmentDelta).
+  const results = new Map();
+  let k = 0;
+  let segment = [];
+  const flushSegment = () => {
+    if (!segment.length) return;
+    const totalDelta = Math.round(anchors[k + 1].score - anchors[k].score);
+    const deltas = splitSegmentDelta(segment, totalDelta);
+    segment.forEach((g, i) => results.set(g, { delta: deltas[i], estimated: segment.length > 1 }));
+    segment = [];
+  };
+
+  for (const g of chronological) {
+    const t = gameEndMs(g);
+    while (k < anchors.length - 2 && t > anchors[k + 1].ts) {
+      flushSegment();
+      k++;
+    }
+    segment.push(g);
+  }
+  flushSegment();
+
+  let cursor = beforeRank;
+  chronological.forEach((g) => {
+    const { delta, estimated } = results.get(g);
     const after = applyLpChange(cursor, delta);
     g.rankBeforeTier = cursor.tier;
     g.rankBeforeDiv = cursor.div;
@@ -119,18 +191,35 @@ function estimateLpChanges(games, beforeRank, afterRank) {
     g.rankAfterTier = after.tier;
     g.rankAfterDiv = after.div;
     g.lpAfter = after.lp;
-    // Une seule game dans le lot : aucune répartition à faire, la valeur est exacte.
-    g.lpEstimated = chronological.length > 1;
+    g.lpEstimated = estimated;
     cursor = after;
   });
+}
+
+const RANK_HISTORY_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000; // 14 jours
+const RANK_HISTORY_MAX_ENTRIES = 500;
+
+/**
+ * Purge l'historique de rang au fil du temps : au-delà de 14 jours, une game déjà importée a
+ * forcément déjà eu son LP calculé (définitivement, pas recalculé rétroactivement) — garder
+ * ces échantillons ne servirait plus qu'à faire grossir le localStorage indéfiniment pour un
+ * usage prolongé de l'auto-import.
+ */
+function pruneRankHistory(history) {
+  const cutoff = Date.now() - RANK_HISTORY_MAX_AGE_MS;
+  const pruned = history.filter((s) => s.ts >= cutoff);
+  return pruned.length > RANK_HISTORY_MAX_ENTRIES ? pruned.slice(pruned.length - RANK_HISTORY_MAX_ENTRIES) : pruned;
 }
 
 /**
  * Récupère les dernières games SoloQ non encore importées, plus le rang actuel.
  * `existingMatchIds` évite de re-télécharger les matchs déjà en base. `beforeRank` (le rang
- * courant de l'app avant l'import) sert à estimer un LP par game — voir estimateLpChanges.
+ * courant de l'app avant l'import) et `rankHistory` (les vérifications précédentes) servent
+ * à calculer le LP par game — voir estimateLpChanges. Le rang fraîchement récupéré ici est
+ * ajouté à l'historique retourné (`rankHistory`), à persister par l'appelant : c'est ce qui
+ * permet aux imports suivants d'être plus précis, même sans nouvelle game à chaque fois.
  */
-export async function fetchRiotGames(conn, existingMatchIds, beforeRank) {
+export async function fetchRiotGames(conn, existingMatchIds, beforeRank, rankHistory = []) {
   const { gameName, tagLine, platform, continent, count } = conn;
 
   const account = await riotFetch(
@@ -173,9 +262,16 @@ export async function fetchRiotGames(conn, existingMatchIds, beforeRank) {
 
   // Sans rang de départ ou d'arrivée, impossible d'estimer quoi que ce soit — les games
   // gardent alors lpChange: 0 comme avant (comportement inchangé dans ce cas).
-  if (beforeRank && rank) estimateLpChanges(games, beforeRank, rank);
+  if (beforeRank && rank) estimateLpChanges(games, beforeRank, rank, rankHistory);
 
-  return { games, rank, totalFound: ids.length, newFound: newIds.length, puuid };
+  // Le rang qu'on vient de récupérer entre dans l'historique pour le PROCHAIN import — y
+  // compris quand ce lot ne contenait aucune nouvelle game : c'est justement ce qui permet de
+  // délimiter des segments d'une seule game plus tard (voir estimateLpChanges).
+  const updatedHistory = rank
+    ? pruneRankHistory([...(rankHistory || []), { ts: Date.now(), tier: rank.tier, div: rank.div, lp: rank.lp }])
+    : rankHistory || [];
+
+  return { games, rank, rankHistory: updatedHistory, totalFound: ids.length, newFound: newIds.length, puuid };
 }
 
 /**

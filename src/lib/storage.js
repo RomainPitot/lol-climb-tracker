@@ -26,6 +26,10 @@ export function emptyState() {
     currentRank: recomputeCurrentRank([], DEFAULT_HISTORICAL),
     championPool: emptyChampionPool(),
     championWeights: emptyChampionWeights(),
+    // Historique des rangs observés au fil des vérifications Riot (pas seulement au moment
+    // d'une nouvelle game) — voir lib/riotApi.js pour son usage : situer précisément une
+    // game entre deux vérifications rapprochées rend son LP exact plutôt qu'estimé.
+    rankHistory: [],
   };
 }
 
@@ -42,6 +46,7 @@ function normalize(state) {
   else for (const r of ROLES) if (!Array.isArray(d.championPool[r])) d.championPool[r] = [];
   if (!d.championWeights) d.championWeights = emptyChampionWeights();
   else for (const r of ROLES) if (!d.championWeights[r] || typeof d.championWeights[r] !== "object") d.championWeights[r] = {};
+  if (!Array.isArray(d.rankHistory)) d.rankHistory = [];
   return d;
 }
 
