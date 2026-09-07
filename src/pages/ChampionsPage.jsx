@@ -36,6 +36,9 @@ export default function ChampionsPage({ data, sorted }) {
   const activeAgg = champMap[active] || computeAgg([]);
   const streaks = streaksOf(activeGames);
   const accent = champColor(active);
+  // CS/min et vision/min se lisent très différemment selon le rôle (un support à
+  // 1 CS/min n'est pas "mauvais") — voir constants/ranks.js ROLE_CSMIN_FACTOR.
+  const activeRole = CHAMP_ROLE[active];
   const hist = data.historical[HISTORICAL_KEY[active]] || null;
 
   const chartData = useMemo(() => {
@@ -156,10 +159,18 @@ export default function ChampionsPage({ data, sorted }) {
             sub={`${round1(activeAgg.kills)}/${round1(activeAgg.deaths)}/${round1(activeAgg.assists)}`}
             tone={getColor("kda", activeAgg.kda, th)}
           />
-          <StatCard label="CS/min" value={round1(activeAgg.csmin)} tone={getColor("csmin", activeAgg.csmin, th)} />
+          <StatCard
+            label="CS/min"
+            value={round1(activeAgg.csmin)}
+            tone={getColor("csmin", activeAgg.csmin, th, activeRole)}
+          />
           <StatCard label="Gold/min" value={round1(activeAgg.goldmin)} />
           <StatCard label="Dégâts/game" value={Math.round(activeAgg.damageGame)} />
-          <StatCard label="Vision/min" value={round1(activeAgg.visionMin)} />
+          <StatCard
+            label="Vision/min"
+            value={round1(activeAgg.visionMin)}
+            tone={getColor("visionmin", activeAgg.visionMin, th, activeRole)}
+          />
           <StatCard
             label="LP gagnés"
             value={`${activeAgg.lpSum >= 0 ? "+" : ""}${round1(activeAgg.lpSum)}`}

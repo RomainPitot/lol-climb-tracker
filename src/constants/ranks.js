@@ -50,6 +50,8 @@ export const TIER_ICON = {
 /**
  * Repères indicatifs par palier (estimations générales, pas de données temps réel).
  * Sert uniquement à afficher des paliers de progression, jamais à juger une game isolée.
+ * Repères "laner" de référence (Top/Mid/ADC) — voir ROLE_CSMIN_FACTOR/roleBenchmark
+ * ci-dessous pour l'ajustement par rôle (Jungle/Support farment structurellement moins).
  */
 export const BENCHMARKS = {
   Fer: { csmin: 3.5, kda: 1.5, deaths: 8.5, wr: 50 },
@@ -63,3 +65,27 @@ export const BENCHMARKS = {
   "Grand Maître": { csmin: 8.2, kda: 3.6, deaths: 5.0, wr: 50 },
   Challenger: { csmin: 8.2, kda: 3.6, deaths: 5.0, wr: 50 },
 };
+
+/**
+ * Facteurs multiplicatifs appliqués aux repères "laner" ci-dessus (CS/min) et à
+ * VISION_BASE_TARGET (vision/min) — sans ça, un support comparé au même repère qu'un ADC
+ * ressort toujours "mauvais" sur des métriques qui ne mesurent structurellement pas la
+ * même chose pour lui (le support ne farme quasiment pas, mais pose l'essentiel de la
+ * vision). KDA/deaths restent partagés entre rôles pour l'instant — différenciation
+ * jugée secondaire et plus incertaine à chiffrer correctement.
+ */
+export const ROLE_CSMIN_FACTOR = { Top: 1, Mid: 1, ADC: 1, Jungle: 0.68, Support: 0.12 };
+export const ROLE_VISIONMIN_FACTOR = { Top: 1, Mid: 1.05, ADC: 0.85, Jungle: 1.8, Support: 3.2 };
+
+/** Vision/min cible pour un rôle de référence (Top), tous tiers confondus — la vision
+ * dépend surtout de la discipline/du rôle, beaucoup moins du rang que le CS/min. */
+export const VISION_BASE_TARGET = 0.5;
+
+/** Repère CS/min + vision/min pour un tier et un rôle donnés, dérivé de BENCHMARKS via
+ * les facteurs ci-dessus. `role` absent ou inconnu -> pas d'ajustement (repère laner). */
+export function roleBenchmark(tier, role) {
+  const base = BENCHMARKS[tier] || BENCHMARKS.Diamant;
+  const csFactor = ROLE_CSMIN_FACTOR[role] ?? 1;
+  const visFactor = ROLE_VISIONMIN_FACTOR[role] ?? 1;
+  return { ...base, csmin: base.csmin * csFactor, visionmin: VISION_BASE_TARGET * visFactor };
+}

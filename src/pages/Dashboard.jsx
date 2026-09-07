@@ -8,9 +8,9 @@ import StatLadder from "../components/StatLadder.jsx";
 import ProgressionDetails from "../components/dashboard/ProgressionDetails.jsx";
 import GamesHistory from "../components/dashboard/GamesHistory.jsx";
 import { PERIODS } from "../constants/game.js";
-import { BENCHMARKS, TIER_COLORS } from "../constants/ranks.js";
+import { roleBenchmark, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
-import { computeAgg, filterByPeriod, getColor } from "../lib/stats.js";
+import { computeAgg, filterByPeriod, getColor, mostFrequentRole } from "../lib/stats.js";
 import { computeGeneralAchievements } from "../lib/achievements.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { round1, round2 } from "../lib/format.js";
@@ -56,8 +56,14 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   }, [filtered]);
 
   const objectiveTier = objectiveTierOf(data.goals);
-  const bench = BENCHMARKS[objectiveTier] || BENCHMARKS.Diamant;
-  const a20 = useMemo(() => computeAgg(repSorted.slice(-20)), [repSorted]);
+  // CS/min et vision/min n'ont pas la même cible selon le rôle — on prend le rôle le
+  // plus joué sur la fenêtre récente (elle peut mélanger plusieurs rôles) plutôt qu'un
+  // repère unique valable seulement pour un laner. KDA/deaths restent partagés entre
+  // rôles pour l'instant (voir constants/ranks.js roleBenchmark).
+  const recent20 = useMemo(() => repSorted.slice(-20), [repSorted]);
+  const dominantRole = useMemo(() => mostFrequentRole(recent20), [recent20]);
+  const bench = roleBenchmark(objectiveTier, dominantRole);
+  const a20 = useMemo(() => computeAgg(recent20), [recent20]);
 
   // Score composite rang+LP : donne une courbe continue à travers les promotions.
   const lpSeries = useMemo(
@@ -150,11 +156,12 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
         <Eyebrow style={{ marginBottom: 12 }}>
           Progression vers le niveau {objectiveTier}{" "}
           <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>
-            (repères indicatifs, sur tes 20 dernières games)
+            (repères indicatifs, sur tes 20 dernières games{dominantRole ? ` — surtout ${dominantRole}` : ""})
           </span>
         </Eyebrow>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
           <StatLadder label="CS/min" value={a20.csmin} benchmark={bench.csmin} />
+          <StatLadder label="Vision/min" value={a20.visionMin} benchmark={bench.visionmin} />
           <StatLadder label="KDA" value={a20.kda} benchmark={bench.kda} />
           <StatLadder label="Deaths/game" value={a20.deaths} benchmark={bench.deaths} invert />
         </div>

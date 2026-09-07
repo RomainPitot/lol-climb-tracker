@@ -1,5 +1,6 @@
 import { sortByDate } from "./rank.js";
 import { gameDate, gameTime } from "./format.js";
+import { ROLE_CSMIN_FACTOR, ROLE_VISIONMIN_FACTOR } from "../constants/ranks.js";
 
 export function withinPeriod(game, period, allSorted) {
   if (period === "all" || period === "season") return true;
@@ -90,6 +91,16 @@ export function groupByChampion(games) {
     .sort((a, b) => b.games - a.games);
 }
 
+/** Rôle le plus joué d'un lot de games — sert à choisir un repère CS/min et vision
+ * quand l'agrégat mélange plusieurs rôles (ex : progression du Dashboard sur les
+ * dernières games, potentiellement multi-rôles). `null` si le lot est vide. */
+export function mostFrequentRole(games) {
+  if (!games.length) return null;
+  const counts = {};
+  for (const g of games) counts[g.role] = (counts[g.role] || 0) + 1;
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
 export function streaksOf(sortedGames) {
   let bestWin = 0;
   let worstLoss = 0;
@@ -131,10 +142,21 @@ export function lpSince(sorted, sinceMs) {
     .reduce((a, g) => a + Number(g.lpChange || 0), 0);
 }
 
-/** Couleur d'une stat selon les seuils configurés (vert / orange / rouge). */
-export function getColor(key, value, thresholds) {
-  const t = thresholds[key];
-  if (!t || value === undefined || value === null || !isFinite(value)) return "var(--text)";
+// CS/min et vision/min n'ont pas la même signification selon le rôle (un support à
+// 1 CS/min ou un jungler à 5 vision/min ne sont pas "mauvais", ils jouent juste un rôle
+// aux exigences structurellement différentes) — leur seuil est mis à l'échelle par rôle
+// avant comparaison.
+const ROLE_SCALED_KEYS = { csmin: ROLE_CSMIN_FACTOR, visionmin: ROLE_VISIONMIN_FACTOR };
+
+/** Couleur d'une stat selon les seuils configurés (vert / orange / rouge). `role`,
+ * quand fourni, ajuste le seuil pour csmin/visionmin (voir ROLE_SCALED_KEYS). */
+export function getColor(key, value, thresholds, role) {
+  const raw = thresholds[key];
+  if (!raw || value === undefined || value === null || !isFinite(value)) return "var(--text)";
+
+  const factorMap = ROLE_SCALED_KEYS[key];
+  const factor = role && factorMap ? factorMap[role] ?? 1 : 1;
+  const t = factor === 1 ? raw : { ...raw, good: raw.good * factor, bad: raw.bad * factor };
 
   if (t.invert) {
     if (value <= t.good) return "var(--win)";

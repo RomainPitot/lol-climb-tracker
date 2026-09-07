@@ -53,4 +53,7 @@ export const DEFAULT_THRESHOLDS = {
   kda: { good: 3, bad: 2, invert: false, label: "KDA" },
   csmin: { good: 7, bad: 5.5, invert: false, label: "CS/min" },
   deaths: { good: 5, bad: 7, invert: true, label: "Deaths/game" },
+  // Repère pour un rôle de référence (Top) — ajusté par rôle via ROLE_VISIONMIN_FACTOR
+  // (voir constants/ranks.js) partout où le rôle de la game/du champion est connu.
+  visionmin: { good: 0.5, bad: 0.3, invert: false, label: "Vision/min" },
 };
