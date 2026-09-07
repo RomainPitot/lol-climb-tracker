@@ -5,6 +5,7 @@ import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { computeAgg } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
 import { representativeGames } from "../lib/gameModel.js";
+import { computeFocus } from "../lib/focus.js";
 import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
 
@@ -34,7 +35,16 @@ export default function CoachPage({ data, sorted, currentRank }) {
     const repSorted = representativeGames(sorted, !!data.settings.includeExcludedGames);
     const recentIds = new Set(repSorted.slice(-ACCOUNT_ANALYSIS_WINDOW).map((g) => g.id));
     const base = buildCoachRecap({ data, sorted: repSorted, selectedIds: recentIds }).split("=== QUESTION AU COACH IA ===")[0];
-    return `${base}\n=== DEMANDE ===\nFais un bilan complet de mon compte, pas juste de la sélection ci-dessus : 3 points forts, les 3 points faibles qui me coûtent le plus de LP en ce moment (par ordre de priorité), et une seule action concrète à appliquer dès ma prochaine game. Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
+
+    const focus = computeFocus(sorted, data.settings);
+    const focusBlock = focus
+      ? `\n=== FOCUS EN COURS ===\nJe travaille sur ${focus.label} depuis ${focus.gamesCount} game(s) (valeur de départ : ${focus.startValue.toFixed(focus.decimals)}, valeur actuelle : ${focus.currentValue.toFixed(focus.decimals)}).${focus.note ? ` Note : ${focus.note}.` : ""}\n`
+      : "";
+    const demande = focus
+      ? `Commente en priorité ma progression sur ce focus précis (${focus.label}) — est-ce que ça s'améliore vraiment, qu'est-ce qui coince encore, faut-il continuer dessus ou en changer. Complète avec 2 points forts et 1 autre point faible si pertinent, mais le focus passe avant.`
+      : `Fais un bilan complet de mon compte, pas juste de la sélection ci-dessus : 3 points forts, les 3 points faibles qui me coûtent le plus de LP en ce moment (par ordre de priorité), et une seule action concrète à appliquer dès ma prochaine game.`;
+
+    return `${base}${focusBlock}\n=== DEMANDE ===\n${demande} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
   };
 
   const selectedGames = useMemo(() => sorted.filter((g) => selected.has(g.id)), [sorted, selected]);

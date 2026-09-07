@@ -7,6 +7,7 @@ import LadderTrack from "../components/LadderTrack.jsx";
 import StatLadder from "../components/StatLadder.jsx";
 import ProgressionDetails from "../components/dashboard/ProgressionDetails.jsx";
 import GamesHistory from "../components/dashboard/GamesHistory.jsx";
+import FocusTracker from "../components/dashboard/FocusTracker.jsx";
 import { PERIODS } from "../constants/game.js";
 import { roleBenchmark, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
@@ -23,7 +24,7 @@ const TOOLTIP_STYLE = {
   color: "var(--text)",
 };
 
-export default function Dashboard({ data, sorted, currentRank, deleteGame, deleteGames, updateGame }) {
+export default function Dashboard({ data, sorted, currentRank, deleteGame, deleteGames, updateGame, setSettings }) {
   const [period, setPeriod] = useState("30d");
   const [showProgression, setShowProgression] = useState(false);
   const th = data.thresholds;
@@ -115,6 +116,8 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           <LadderTrack tier={currentRank.tier} div={currentRank.div} />
         </div>
       </Card>
+
+      <FocusTracker data={data} sorted={sorted} setSettings={setSettings} />
 
       <Collapsible
         title={`Succès — ${unlockedCount}/${achievements.length} débloqués`}
