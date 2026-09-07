@@ -30,7 +30,23 @@ export function emptyGame() {
     feeling: 3,
     focus: 3,
     tilt: 1,
+    excluded: false,
+    excludedReason: "",
   };
 }
 
 export const isBotLaneRole = (role) => role === "ADC" || role === "Support";
+
+/**
+ * Games à utiliser pour toute analyse de tendance/performance (agrégats, benchmarks,
+ * prompts de bilan) — exclut par défaut celles marquées non représentatives (remake,
+ * teammate qui feed volontairement, smurf adverse...), qui polluent la lecture de la
+ * vraie progression sans rien dire du niveau réel du joueur. `includeExcluded` (option
+ * "réafficher", voir Paramètres) les remet dans le calcul si explicitement demandé.
+ * L'historique (GamesHistory) et le suivi de rang/LP ne passent jamais par ici : ces
+ * games ont bien eu lieu et leur impact sur le rang reste réel, seule leur valeur
+ * d'analyse de skill est écartée.
+ */
+export function representativeGames(games, includeExcluded = false) {
+  return includeExcluded ? games : games.filter((g) => !g.excluded);
+}

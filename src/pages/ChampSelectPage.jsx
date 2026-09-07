@@ -6,6 +6,7 @@ import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { useChampSelect } from "../hooks/useChampSelect.js";
 import { rankLabel } from "../lib/rank.js";
+import { representativeGames } from "../lib/gameModel.js";
 import {
   DEFAULT_HOST,
   sendChampSelectAction,
@@ -164,7 +165,12 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
             <>
               <TeamsAndBans session={session} byKey={byKey} />
 
-              <MatchupAnalysis session={session} byKey={byKey} sorted={sorted} currentRank={currentRank} />
+              <MatchupAnalysis
+                session={session}
+                byKey={byKey}
+                sorted={representativeGames(sorted, !!s.includeExcludedGames)}
+                currentRank={currentRank}
+              />
 
               <Card className="p-5 mt-4">
                 {myAction ? (

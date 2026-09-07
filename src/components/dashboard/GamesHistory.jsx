@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, Pencil, X } from "lucide-react";
+import { Trash2, Pencil, X, Flag } from "lucide-react";
 import { Card, Pill, Btn, Collapsible, IconBtn } from "../ui/primitives.jsx";
 import ChampAvatar from "../ChampAvatar.jsx";
 import EditGameModal from "../EditGameModal.jsx";
@@ -98,6 +98,7 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                 className={checked.has(g.id) ? "" : "row-hover"}
                 style={{
                   borderBottom: "1px solid var(--border)",
+                  opacity: g.excluded ? 0.55 : 1,
                   ...(checked.has(g.id) ? { background: "rgba(212,175,55,0.06)" } : {}),
                 }}
               >
@@ -116,6 +117,11 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                     <span>
                       {g.champion} <span style={{ color: "var(--dim)", fontWeight: 400 }}>({g.role})</span>
                     </span>
+                    {g.excluded && (
+                      <Pill tone="loss" title={g.excludedReason || "Exclue des stats et bilans"}>
+                        Exclue
+                      </Pill>
+                    )}
                   </div>
                 </td>
                 <td style={{ ...cell, color: "var(--dim)" }}>{g.roleStatus || "—"}</td>
@@ -138,6 +144,14 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                 <td className="tnum" style={cell}>{g.visionScore}</td>
                 <td style={cell}>
                   <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <IconBtn
+                      onClick={() => updateGame(g.id, { excluded: !g.excluded })}
+                      aria-label={g.excluded ? "Ne plus exclure cette game" : "Marquer non représentative (remake, int, smurf...)"}
+                      title={g.excluded ? "Ne plus exclure cette game" : "Marquer non représentative (remake, int, smurf...)"}
+                      style={g.excluded ? { color: "var(--loss)" } : undefined}
+                    >
+                      <Flag size={14} />
+                    </IconBtn>
                     <IconBtn onClick={() => setEditingGame(g)} aria-label="Modifier">
                       <Pencil size={14} />
                     </IconBtn>

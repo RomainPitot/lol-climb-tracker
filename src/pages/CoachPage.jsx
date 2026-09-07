@@ -4,6 +4,7 @@ import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip } f
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { computeAgg } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
+import { representativeGames } from "../lib/gameModel.js";
 import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
 
@@ -26,10 +27,13 @@ export default function CoachPage({ data, sorted, currentRank }) {
   const [copied, setCopied] = useState(false);
 
   /** Le bilan de compte compare toujours les N dernières games au reste du profil —
-   * indépendant de la sélection manuelle ci-dessous, qui sert au recap à coller/copier. */
+   * indépendant de la sélection manuelle ci-dessous, qui sert au recap à coller/copier.
+   * Games marquées non représentatives (remake, int, smurf adverse) écartées des deux
+   * côtés de la comparaison par défaut — voir Paramètres > Statistiques. */
   const buildAccountPrompt = () => {
-    const recentIds = new Set(sorted.slice(-ACCOUNT_ANALYSIS_WINDOW).map((g) => g.id));
-    const base = buildCoachRecap({ data, sorted, selectedIds: recentIds }).split("=== QUESTION AU COACH IA ===")[0];
+    const repSorted = representativeGames(sorted, !!data.settings.includeExcludedGames);
+    const recentIds = new Set(repSorted.slice(-ACCOUNT_ANALYSIS_WINDOW).map((g) => g.id));
+    const base = buildCoachRecap({ data, sorted: repSorted, selectedIds: recentIds }).split("=== QUESTION AU COACH IA ===")[0];
     return `${base}\n=== DEMANDE ===\nFais un bilan complet de mon compte, pas juste de la sélection ci-dessus : 3 points forts, les 3 points faibles qui me coûtent le plus de LP en ce moment (par ordre de priorité), et une seule action concrète à appliquer dès ma prochaine game. Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
   };
 
@@ -122,6 +126,11 @@ export default function CoachPage({ data, sorted, currentRank }) {
               <span style={{ color: "var(--dim)", minWidth: 90 }}>{g.date}</span>
               <span style={{ fontWeight: 600, minWidth: 90 }}>{g.champion}</span>
               <Pill tone={g.win ? "win" : "loss"}>{g.win ? "V" : "D"}</Pill>
+              {g.excluded && (
+                <Pill tone="loss" title={g.excludedReason || "Marquée non représentative"}>
+                  Exclue
+                </Pill>
+              )}
               <span style={{ color: "var(--dim)" }}>{g.kills}/{g.deaths}/{g.assists}</span>
               <span className="tnum" style={{ color: g.lpChange >= 0 ? "var(--win)" : "var(--loss)", marginLeft: "auto", fontWeight: 600 }}>
                 {g.lpChange >= 0 ? "+" : ""}

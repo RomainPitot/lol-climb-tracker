@@ -18,7 +18,7 @@ export default function AddGame({ data, sorted, setSettings, importGames, import
         />
       </Card>
 
-      <GameRecapCard sorted={sorted} />
+      <GameRecapCard data={data} sorted={sorted} />
     </div>
   );
 }

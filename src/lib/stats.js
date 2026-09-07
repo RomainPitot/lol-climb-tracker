@@ -56,6 +56,11 @@ export function computeAgg(games) {
     damageGame: n ? damage / n : 0,
     damageMin: damage / durationSum,
     visionGame: n ? vision / n : 0,
+    // Le score de vision brut par game n'est pas comparable entre une game de 20 min et
+    // une de 40 min — visionMin (pondéré par la durée, comme csmin) est la valeur à
+    // utiliser pour toute comparaison/tendance ; visionGame reste dispo pour l'affichage
+    // brut d'une game isolée.
+    visionMin: vision / durationSum,
     lpSum: sum((g) => g.lpChange),
     maxKills: games.reduce((m, g) => Math.max(m, Number(g.kills) || 0), 0),
     maxDeaths: games.reduce((m, g) => Math.max(m, Number(g.deaths) || 0), 0),

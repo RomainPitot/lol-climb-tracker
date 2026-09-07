@@ -62,7 +62,7 @@ const PILL_TONES = {
   gold: { bg: "rgba(212,175,55,0.14)", fg: "var(--gold)" },
 };
 
-export const Pill = ({ children, tone = "neutral" }) => {
+export const Pill = ({ children, tone = "neutral", ...rest }) => {
   const t = PILL_TONES[tone] || PILL_TONES.neutral;
   return (
     <span
@@ -79,6 +79,7 @@ export const Pill = ({ children, tone = "neutral" }) => {
         whiteSpace: "nowrap",
         lineHeight: 1.5,
       }}
+      {...rest}
     >
       {children}
     </span>

@@ -180,6 +180,32 @@ export default function SettingsPage({
       </Collapsible>
 
       <Collapsible
+        title="Statistiques"
+        sub="Contrôle ce qui compte dans les stats, benchmarks et bilans IA."
+      >
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={!!data.settings.includeExcludedGames}
+            onChange={(e) => setSettings({ includeExcludedGames: e.target.checked })}
+            style={{ marginTop: 2 }}
+          />
+          <span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
+              Inclure les games marquées "non représentatives" dans les stats et bilans
+            </span>
+            <br />
+            <span style={{ fontSize: 11.5, color: "var(--dim)" }}>
+              Par défaut, une game marquée non représentative (remake, teammate qui feed volontairement, smurf
+              adverse — voir le drapeau dans l'historique ou l'édition d'une game) est exclue des agrégats de
+              tendance, des benchmarks et des prompts de bilan IA, pour ne pas fausser la lecture de ta vraie
+              progression. Elle reste toujours visible dans l'historique et compte pour ton rang/LP.
+            </span>
+          </span>
+        </label>
+      </Collapsible>
+
+      <Collapsible
         title="Seuils de couleur"
         sub="Règle à partir de quelle valeur une stat s'affiche en vert / orange / rouge."
       >

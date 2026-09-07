@@ -5,6 +5,7 @@ import ChartBlock from "../components/ChartBlock.jsx";
 import { ROSTER, CHAMP_ROLE, champColor } from "../constants/roster.js";
 import { sortByDate } from "../lib/rank.js";
 import { computeAgg, groupByChampion, streaksOf, movingAverage, getColor } from "../lib/stats.js";
+import { representativeGames } from "../lib/gameModel.js";
 import { round1, round2 } from "../lib/format.js";
 
 const MA_WINDOW = 10;
@@ -16,15 +17,21 @@ export default function ChampionsPage({ data, sorted }) {
   const th = data.thresholds;
   const [active, setActive] = useState("Yone");
 
-  const champsPlayed = useMemo(() => groupByChampion(data.games), [data.games]);
+  // Games marquées non représentatives (remake, int, smurf adverse) écartées par défaut
+  // des stats/tendances par champion — voir Paramètres > Statistiques.
+  const includeExcluded = !!data.settings.includeExcludedGames;
+  const repGames = useMemo(() => representativeGames(data.games, includeExcluded), [data.games, includeExcluded]);
+  const repSorted = useMemo(() => representativeGames(sorted, includeExcluded), [sorted, includeExcluded]);
+
+  const champsPlayed = useMemo(() => groupByChampion(repGames), [repGames]);
   const champMap = useMemo(
     () => Object.fromEntries(champsPlayed.map((c) => [c.champion, c])),
     [champsPlayed]
   );
 
   const activeGames = useMemo(
-    () => sortByDate(data.games.filter((g) => g.champion === active)),
-    [data.games, active]
+    () => sortByDate(repGames.filter((g) => g.champion === active)),
+    [repGames, active]
   );
   const activeAgg = champMap[active] || computeAgg([]);
   const streaks = streaksOf(activeGames);
@@ -59,7 +66,7 @@ export default function ChampionsPage({ data, sorted }) {
     });
   }, [activeGames]);
 
-  const sharePct = sorted.length ? round1((activeGames.length / sorted.length) * 100) : null;
+  const sharePct = repSorted.length ? round1((activeGames.length / repSorted.length) * 100) : null;
 
   return (
     <div>
@@ -152,7 +159,7 @@ export default function ChampionsPage({ data, sorted }) {
           <StatCard label="CS/min" value={round1(activeAgg.csmin)} tone={getColor("csmin", activeAgg.csmin, th)} />
           <StatCard label="Gold/min" value={round1(activeAgg.goldmin)} />
           <StatCard label="Dégâts/game" value={Math.round(activeAgg.damageGame)} />
-          <StatCard label="Vision/game" value={round1(activeAgg.visionGame)} />
+          <StatCard label="Vision/min" value={round1(activeAgg.visionMin)} />
           <StatCard
             label="LP gagnés"
             value={`${activeAgg.lpSum >= 0 ? "+" : ""}${round1(activeAgg.lpSum)}`}

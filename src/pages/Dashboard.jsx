@@ -12,6 +12,7 @@ import { BENCHMARKS, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
 import { computeAgg, filterByPeriod, getColor } from "../lib/stats.js";
 import { computeGeneralAchievements } from "../lib/achievements.js";
+import { representativeGames } from "../lib/gameModel.js";
 import { round1, round2 } from "../lib/format.js";
 
 const TOOLTIP_STYLE = {
@@ -26,10 +27,17 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   const [period, setPeriod] = useState("30d");
   const [showProgression, setShowProgression] = useState(false);
   const th = data.thresholds;
+  // Stats de tendance (winrate, KDA, CS/min...) : games marquées non représentatives
+  // (remake, int, smurf adverse) écartées par défaut — voir Paramètres > Statistiques.
+  // Le rang/LP réel (badge, courbe, meilleur rang) n'utilise jamais ce filtre : ces
+  // games ont bien eu lieu et leur impact sur le rang reste réel.
+  const includeExcluded = !!data.settings.includeExcludedGames;
+  const repGames = useMemo(() => representativeGames(data.games, includeExcluded), [data.games, includeExcluded]);
+  const repSorted = useMemo(() => representativeGames(sorted, includeExcluded), [sorted, includeExcluded]);
 
-  const filtered = useMemo(() => filterByPeriod(data.games, period), [data.games, period]);
+  const filtered = useMemo(() => filterByPeriod(repGames, period), [repGames, period]);
   const agg = useMemo(() => computeAgg(filtered), [filtered]);
-  const allAgg = useMemo(() => computeAgg(sorted), [sorted]);
+  const allAgg = useMemo(() => computeAgg(repSorted), [repSorted]);
   const bestRankEver = useMemo(() => bestRankOf(sorted, currentRank), [sorted, currentRank]);
   const achievements = useMemo(
     () => computeGeneralAchievements(sorted, currentRank, data.goals),
@@ -49,7 +57,7 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
 
   const objectiveTier = objectiveTierOf(data.goals);
   const bench = BENCHMARKS[objectiveTier] || BENCHMARKS.Diamant;
-  const a20 = useMemo(() => computeAgg(sorted.slice(-20)), [sorted]);
+  const a20 = useMemo(() => computeAgg(repSorted.slice(-20)), [repSorted]);
 
   // Score composite rang+LP : donne une courbe continue à travers les promotions.
   const lpSeries = useMemo(

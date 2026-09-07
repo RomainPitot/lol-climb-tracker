@@ -120,6 +120,38 @@ export default function GameFormFields({ g, set, showOptional, setShowOptional }
         </Field>
       </Card>
 
+      <Card className="p-5 mb-4" style={{ borderColor: g.excluded ? "rgba(255,92,92,0.4)" : undefined }}>
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={!!g.excluded}
+            onChange={(e) => set("excluded", e.target.checked)}
+            style={{ marginTop: 2 }}
+          />
+          <span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
+              Game non représentative (remake, teammate qui feed volontairement, smurf adverse…)
+            </span>
+            <br />
+            <span style={{ fontSize: 11.5, color: "var(--dim)" }}>
+              Exclue par défaut des stats, benchmarks et bilans IA — elle reste dans l'historique et compte toujours
+              pour ton rang/LP, elle ne dit juste rien de ton niveau réel.
+            </span>
+          </span>
+        </label>
+        {g.excluded && (
+          <div className="fade-in" style={{ marginTop: 12 }}>
+            <Field label="Raison (optionnel)">
+              <Input
+                value={g.excludedReason}
+                onChange={(e) => set("excludedReason", e.target.value)}
+                placeholder="ex: remake, jungle AFK, smurf Challenger en face…"
+              />
+            </Field>
+          </div>
+        )}
+      </Card>
+
       <Card className="p-5 mb-4">
         <button
           onClick={() => setShowOptional((s) => !s)}

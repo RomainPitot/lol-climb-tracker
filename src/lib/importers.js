@@ -102,5 +102,7 @@ export function riotMatchToGame(match, puuid) {
     feeling: 3,
     focus: 3,
     tilt: 1,
+    excluded: false,
+    excludedReason: "",
   };
 }
