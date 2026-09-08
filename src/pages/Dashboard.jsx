@@ -117,16 +117,8 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   return (
     <div>
       <Card className="hero-card p-6 mb-6" style={{ "--hero-color": heroColor }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-            gap: 16,
-          }}
-        >
-          <div>
+        <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 260px" }}>
             <Eyebrow style={{ marginBottom: 10 }}>Situation actuelle</Eyebrow>
             <RankBadge tier={currentRank.tier} div={currentRank.div} lp={currentRank.lp} />
             <div style={{ marginTop: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -158,13 +150,83 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
             </div>
           </div>
 
-          <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: "auto" }}>
-            {PERIODS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </Select>
+          <div style={{ flex: "1 1 260px", minWidth: 220, display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              {unlockedCount > 0 ? (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} title={`Succès — ${unlockedCount}/${achievements.length} débloqués`}>
+                  {achievements
+                    .filter((a) => a.unlocked)
+                    .map((a) => {
+                      const Icon = a.icon;
+                      return (
+                        <div
+                          key={a.id}
+                          title={a.label}
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(212,175,55,0.1)",
+                            border: "1px solid var(--gold)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Icon size={12} color="var(--gold)" />
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <span />
+              )}
+
+              <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: "auto", flexShrink: 0 }}>
+                {PERIODS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div style={{ flex: 1, minHeight: 110 }}>
+              {lpSeries.length > 1 && lpBands ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={lpSeries} margin={{ top: 4, left: 0, right: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="heroLpStroke" x1="0" y1="0" x2="0" y2="1">
+                        {lpBands.gradientStops.map((s, i) => (
+                          <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={1} />
+                        ))}
+                      </linearGradient>
+                      <linearGradient id="heroLpFill" x1="0" y1="0" x2="0" y2="1">
+                        {lpBands.gradientStops.map((s, i) => (
+                          <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={0.25} />
+                        ))}
+                      </linearGradient>
+                    </defs>
+                    <YAxis hide domain={[lpBands.domainMin, lpBands.domainMax]} />
+                    <Tooltip
+                      contentStyle={TOOLTIP_STYLE}
+                      labelFormatter={(v) => `Game #${v}`}
+                      formatter={(_, __, item) => [
+                        `${rankLabel(item.payload.tier, item.payload.div)} — ${item.payload.lpAfter} LP`,
+                        "Rang",
+                      ]}
+                    />
+                    <Area type="monotone" dataKey="lp" stroke="url(#heroLpStroke)" fill="url(#heroLpFill)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: 11.5, color: "var(--dim)" }}>
+                  Ajoute au moins 2 games pour voir la courbe.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
