@@ -67,6 +67,20 @@ export async function activateRunePage(host, token, pageId) {
   return body;
 }
 
+/** Modifie l'arbre primaire (4 perks, dont le keystone en 1er) et secondaire (2 perks) d'une
+ * page existante, puis l'active — les statistiques bonus (3e ligne) restent celles de la
+ * page (voir notifier.py, non éditables ici). */
+export async function updateRunePage(host, token, { pageId, primaryStyleId, subStyleId, primaryPerkIds, secondaryPerkIds }) {
+  const res = await fetch(`${baseUrl(host)}/runes/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify({ pageId, primaryStyleId, subStyleId, primaryPerkIds, secondaryPerkIds }),
+  });
+  const body = await parseJson(res);
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return body;
+}
+
 /** Lance le Riot Client (League of Legends) si le client n'est pas encore ouvert. */
 export async function launchRiotClient(host, token) {
   const res = await fetch(`${baseUrl(host)}/client/launch`, {
@@ -112,12 +126,40 @@ export async function cancelQueue(host, token) {
   return body;
 }
 
+/** Accepte ou refuse la partie trouvée (ready check). */
+export async function respondReadyCheck(host, token, accept) {
+  const res = await fetch(`${baseUrl(host)}/readycheck/${accept ? "accept" : "decline"}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+  });
+  const body = await parseJson(res);
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return body;
+}
+
 /** L'action pick/ban actionnable par le joueur local, si son tour est arrivé. */
 export function findMyAction(session) {
   if (!session) return null;
   for (const group of session.actions || []) {
     for (const action of group) {
       if (action.actorCellId === session.localPlayerCellId && action.isInProgress && !action.completed) {
+        return action;
+      }
+    }
+  }
+  return null;
+}
+
+/** Ton futur pick (même si ce n'est pas encore ton tour) — permet de présélectionner ton
+ * champion pendant que les autres bannissent/pickent, comme dans le client officiel : le
+ * LCU accepte de "survoler" (completed=false) une action pick qui t'appartient même si elle
+ * n'est pas encore isInProgress. Contrairement aux bans, qui ne peuvent se survoler qu'à ton
+ * tour (voir findMyAction) — pas de présélection de ban dans le client. */
+export function findMyPendingPick(session) {
+  if (!session) return null;
+  for (const group of session.actions || []) {
+    for (const action of group) {
+      if (action.actorCellId === session.localPlayerCellId && action.type === "pick" && !action.completed) {
         return action;
       }
     }

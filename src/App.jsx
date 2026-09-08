@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
 import RankUpCelebration from "./components/RankUpCelebration.jsx";
+import AlertBanner from "./components/AlertBanner.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import AddGame from "./pages/AddGame.jsx";
 import ChampionsPage from "./pages/ChampionsPage.jsx";
@@ -10,6 +11,10 @@ import CoachPage from "./pages/CoachPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import { useTrackerData } from "./hooks/useTrackerData.js";
 import { useAutoRiotImport } from "./hooks/useAutoRiotImport.js";
+import { useGameDetectorAlerts } from "./hooks/useGameDetectorAlerts.js";
+import { notifyGameEvent } from "./lib/notify.js";
+
+const ALERT_DISPLAY_MS = 6000;
 
 const PAGES = {
   dashboard: Dashboard,
@@ -28,6 +33,19 @@ export default function App() {
   // Tourne indépendamment de la page affichée (pas seulement quand Paramètres est monté) :
   // tant que ce site reste ouvert dans un onglet, voir useAutoRiotImport.js.
   useAutoRiotImport(data, actions);
+
+  // Idem pour les alertes de jeu (ready check, chargement, en jeu) — voir
+  // useGameDetectorAlerts.js. La bannière (AlertBanner) est le canal fiable ; la
+  // notification navigateur (notifyGameEvent) est un bonus best-effort en plus.
+  const [alert, setAlert] = useState(null);
+  const alertTimer = useRef(null);
+  const showAlert = useCallback((message) => {
+    notifyGameEvent(message);
+    setAlert({ message, id: Date.now() });
+    clearTimeout(alertTimer.current);
+    alertTimer.current = setTimeout(() => setAlert(null), ALERT_DISPLAY_MS);
+  }, []);
+  useGameDetectorAlerts(data?.settings, setPage, showAlert);
 
   // Lien de "pairing" (QR code ou "Copier le lien" dans Paramètres, voir
   // GameDetectorSection.jsx) : configure l'adresse/le token du téléphone en un tap au lieu
@@ -70,6 +88,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <AlertBanner alert={alert} onDismiss={() => setAlert(null)} />
       <Sidebar page={page} setPage={setPage} currentRank={data.currentRank} />
       <main className="app-main">
         <div className="fade-in" key={page} style={{ maxWidth: 1440, margin: "0 auto", width: "100%" }}>

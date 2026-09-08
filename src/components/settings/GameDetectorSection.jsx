@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { Play, Copy, Check, QrCode, Maximize2, X } from "lucide-react";
-import { Btn, IconBtn } from "../ui/primitives.jsx";
+import { Play, Copy, Check, QrCode, Maximize2, X, Bell, BellOff } from "lucide-react";
+import { Btn, IconBtn, Pill } from "../ui/primitives.jsx";
 import { gamePhaseLabel } from "../../constants/gameDetector.js";
+import { requestNotifPermission } from "../../lib/notify.js";
 
 /** Doit rester identique au STATUS_PORT défini dans notifier.py (GameDetectorLol). */
 const STATUS_URL = "http://127.0.0.1:37653/status";
@@ -32,6 +33,14 @@ export default function GameDetectorSection() {
   const [pairingError, setPairingError] = useState("");
   const [copied, setCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
+
+  const enableNotifs = async () => {
+    const result = await requestNotifPermission();
+    setNotifPermission(result);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -143,6 +152,31 @@ export default function GameDetectorSection() {
         <code>register_protocol.reg</code> une fois (voir le README du script) ; ton navigateur demandera une
         confirmation à chaque clic, c'est normal.
       </p>
+
+      <div style={{ paddingTop: 16, marginTop: 16, borderTop: "1px solid var(--border)" }}>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 7 }}>
+          {notifPermission === "granted" ? <Bell size={14} /> : <BellOff size={14} />} Alertes de jeu
+        </span>
+        <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 4, marginBottom: 10 }}>
+          Partie trouvée, chargement, début de partie — affichés en direct dans l'app (n'importe quelle page),
+          et en plus en notification navigateur si tu l'autorises ci-dessous.
+        </p>
+        {notifPermission === "granted" && (
+          <Pill tone="win">
+            <Bell size={12} /> Notifications activées
+          </Pill>
+        )}
+        {notifPermission === "denied" && (
+          <p style={{ fontSize: 12, color: "var(--loss)" }}>
+            Notifications bloquées par le navigateur — à réactiver dans ses réglages si tu les veux.
+          </p>
+        )}
+        {notifPermission !== "granted" && notifPermission !== "denied" && (
+          <Btn onClick={enableNotifs}>
+            <Bell size={14} /> Activer les notifications
+          </Btn>
+        )}
+      </div>
 
       <div style={{ paddingTop: 16, marginTop: 16, borderTop: "1px solid var(--border)" }}>
         <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 7 }}>

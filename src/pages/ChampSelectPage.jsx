@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Wifi, WifiOff, Settings2, Ban, Check, Rocket, Search, X } from "lucide-react";
-import { Card, SectionTitle, Eyebrow, Field, Input, Select, Btn, Pill, Spinner } from "../components/ui/primitives.jsx";
+import { Wifi, WifiOff, Settings2, Ban, Check, Rocket, Search, X, Star } from "lucide-react";
+import { Card, SectionTitle, Eyebrow, Field, Input, Select, Btn, Pill, Spinner, ToggleChip } from "../components/ui/primitives.jsx";
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
@@ -14,14 +14,18 @@ import {
   DEFAULT_HOST,
   sendChampSelectAction,
   findMyAction,
+  findMyPendingPick,
   unavailableChampionIds,
   fetchRunePages,
   activateRunePage,
+  updateRunePage,
   launchRiotClient,
   fetchLobbyStatus,
   startQueue,
   cancelQueue,
+  respondReadyCheck,
 } from "../lib/gameDetector.js";
+import { fetchRuneTree } from "../lib/ddragon.js";
 
 // Sous-phase INTERNE au champ select (timer.phase de la session) — différent de la phase
 // globale du client (None/Lobby/ChampSelect/InProgress...) affichée en haut de page via
@@ -49,18 +53,37 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
 
   const { connected, phase, gameLoaded, inChampSelect, session, sessionError } = useChampSelect(host, token);
   const myAction = findMyAction(session);
+  // Ton pick à venir, même si ce n'est pas encore ton tour (voir findMyPendingPick) — permet
+  // de présélectionner ton champion pendant les bans adverses, comme dans le client officiel.
+  // Les bans, eux, ne se présélectionnent pas : myAction reste la seule source pour un ban.
+  const myPendingPick = findMyPendingPick(session);
+  const activeAction = myAction || myPendingPick;
   const unavailable = useMemo(() => unavailableChampionIds(session), [session]);
 
   const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [hovered, setHovered] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const [actionError, setActionError] = useState("");
+
+  const favorites = useMemo(() => new Set(s.favoriteChampionIds || []), [s.favoriteChampionIds]);
+  const recurringBans = useMemo(() => new Set(s.recurringBanIds || []), [s.recurringBanIds]);
+  const toggleFavorite = (champKey) => {
+    const next = new Set(favorites);
+    next.has(champKey) ? next.delete(champKey) : next.add(champKey);
+    setSettings({ favoriteChampionIds: [...next] });
+  };
+  const toggleRecurringBan = (champKey) => {
+    const next = new Set(recurringBans);
+    next.has(champKey) ? next.delete(champKey) : next.add(champKey);
+    setSettings({ recurringBanIds: [...next] });
+  };
 
   // Nouvelle action (nouveau tour, nouvelle phase) -> on oublie la sélection précédente.
   useEffect(() => {
     setHovered(null);
     setActionError("");
-  }, [myAction?.id]);
+  }, [activeAction?.id]);
 
   const saveConfig = () => {
     setSettings({ gameDetectorHost: hostInput.trim() || DEFAULT_HOST, gameDetectorToken: tokenInput.trim() });
@@ -70,9 +93,9 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
   const hoverChampion = async (champKey) => {
     setHovered(champKey);
     setActionError("");
-    if (!myAction) return;
+    if (!activeAction) return;
     try {
-      await sendChampSelectAction(host, token, { actionId: myAction.id, championId: champKey, completed: false });
+      await sendChampSelectAction(host, token, { actionId: activeAction.id, championId: champKey, completed: false });
     } catch (e) {
       setActionError(e.message);
     }
@@ -93,8 +116,17 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
 
   const filteredChampions = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return champions.filter((c) => !q || c.name.toLowerCase().includes(q));
-  }, [champions, query]);
+    let list = champions.filter((c) => !q || c.name.toLowerCase().includes(q));
+    if (roleFilter !== "all") {
+      const pool = new Set(data.championPool?.[roleFilter] || []);
+      list = list.filter((c) => pool.has(c.id));
+    }
+    return [...list].sort((a, b) => {
+      const favA = favorites.has(a.champKey) ? 0 : 1;
+      const favB = favorites.has(b.champKey) ? 0 : 1;
+      return favA !== favB ? favA - favB : a.name.localeCompare(b.name, "fr");
+    });
+  }, [champions, query, roleFilter, data.championPool, favorites]);
 
   return (
     <div style={{ maxWidth: 820 }}>
@@ -152,7 +184,8 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
         )}
       </Card>
 
-      {connected && !inChampSelect && <QueuePanel host={host} token={token} phase={phase} />}
+      {connected && !inChampSelect && phase === "ReadyCheck" && <ReadyCheckPanel host={host} token={token} />}
+      {connected && !inChampSelect && phase !== "ReadyCheck" && <QueuePanel host={host} token={token} phase={phase} />}
 
       {inChampSelect && (
         <>
@@ -167,28 +200,45 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
               <TeamsAndBans session={session} byKey={byKey} />
 
               <Card className="p-5 mt-4">
-                {myAction ? (
+                {activeAction ? (
                   <>
-                    <Eyebrow color={myAction.type === "ban" ? "var(--loss)" : "var(--gold)"} style={{ marginBottom: 10 }}>
-                      {myAction.type === "ban" ? "À toi de bannir" : "À toi de choisir ton champion"}
+                    <Eyebrow color={myAction?.type === "ban" ? "var(--loss)" : "var(--gold)"} style={{ marginBottom: 10 }}>
+                      {myAction
+                        ? myAction.type === "ban"
+                          ? "À toi de bannir"
+                          : "À toi de choisir ton champion"
+                        : "Présélectionne ton champion (pas encore ton tour)"}
                     </Eyebrow>
 
                     {hovered && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
                         <ChampAvatar ddragonId={byKey[hovered]?.id} size={48} />
                         <div>
                           <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 18, color: "var(--text)" }}>
                             {byKey[hovered]?.name || hovered}
                           </div>
-                          <Btn
-                            variant="primary"
-                            onClick={confirmChampion}
-                            disabled={confirming}
-                            style={{ marginTop: 6 }}
-                          >
-                            {confirming ? <Spinner /> : myAction.type === "ban" ? <Ban size={14} /> : <Check size={14} />}
-                            {confirming ? "Confirmation…" : myAction.type === "ban" ? "Confirmer le ban" : "Confirmer le pick"}
-                          </Btn>
+                          <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                            {myAction ? (
+                              <Btn variant="primary" onClick={confirmChampion} disabled={confirming}>
+                                {confirming ? <Spinner /> : myAction.type === "ban" ? <Ban size={14} /> : <Check size={14} />}
+                                {confirming ? "Confirmation…" : myAction.type === "ban" ? "Confirmer le ban" : "Confirmer le pick"}
+                              </Btn>
+                            ) : (
+                              <span style={{ fontSize: 12, color: "var(--dim)" }}>
+                                Présélectionné — tu pourras confirmer dès que ce sera ton tour.
+                              </span>
+                            )}
+                            <Btn onClick={() => toggleFavorite(hovered)} title="Favori">
+                              <Star size={14} fill={favorites.has(hovered) ? "var(--gold)" : "none"} color="var(--gold)" />
+                              {favorites.has(hovered) ? "Favori" : "Ajouter aux favoris"}
+                            </Btn>
+                            {myAction?.type === "ban" && (
+                              <Btn onClick={() => toggleRecurringBan(hovered)} title="Ban habituel">
+                                <Ban size={14} color={recurringBans.has(hovered) ? "var(--loss)" : "var(--dim)"} />
+                                {recurringBans.has(hovered) ? "Retirer des bans habituels" : "Ajouter aux bans habituels"}
+                              </Btn>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -196,6 +246,42 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
                     {actionError && (
                       <div style={{ fontSize: 12, color: "var(--loss)", marginBottom: 10 }}>{actionError}</div>
                     )}
+
+                    {myAction?.type === "ban" && recurringBans.size > 0 && (
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: "var(--dim)", marginBottom: 6 }}>Bans habituels</div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {[...recurringBans].map((key) => {
+                            const c = byKey[key];
+                            if (!c || unavailable.has(key)) return null;
+                            return (
+                              <button
+                                key={key}
+                                onClick={() => hoverChampion(key)}
+                                title={c.name}
+                                className="hoverable"
+                                style={{
+                                  padding: 3,
+                                  borderRadius: "var(--radius-md)",
+                                  background: hovered === key ? "rgba(212,175,55,0.14)" : "transparent",
+                                  border: `1px solid ${hovered === key ? "var(--gold)" : "var(--border)"}`,
+                                }}
+                              >
+                                <ChampAvatar ddragonId={c.id} size={32} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                      {["all", ...ROLES].map((r) => (
+                        <ToggleChip key={r} active={roleFilter === r} onClick={() => setRoleFilter(r)}>
+                          {r === "all" ? "Tous" : r}
+                        </ToggleChip>
+                      ))}
+                    </div>
 
                     <Input
                       value={query}
@@ -224,6 +310,7 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
                             title={c.name}
                             className="hoverable"
                             style={{
+                              position: "relative",
                               display: "flex",
                               flexDirection: "column",
                               alignItems: "center",
@@ -236,6 +323,14 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
                               opacity: isUnavailable ? 0.3 : 1,
                             }}
                           >
+                            {favorites.has(c.champKey) && (
+                              <Star
+                                size={11}
+                                fill="var(--gold)"
+                                color="var(--gold)"
+                                style={{ position: "absolute", top: 1, right: 1 }}
+                              />
+                            )}
                             <ChampAvatar ddragonId={c.id} size={40} />
                             <span
                               style={{
@@ -446,6 +541,44 @@ Réponse concise, à puces, sans blabla.`;
   );
 }
 
+/** Accepter/refuser la partie trouvée — le seul moment où il y a vraiment urgence (le
+ * ready check expire en quelques secondes), donc les deux boutons occupent tout l'espace. */
+function ReadyCheckPanel({ host, token }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const respond = async (accept) => {
+    setBusy(true);
+    setError("");
+    try {
+      await respondReadyCheck(host, token, accept);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="p-6">
+      <div style={{ textAlign: "center", padding: "8px 0" }}>
+        <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 18, color: "var(--gold)", marginBottom: 14 }}>
+          Partie trouvée !
+        </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <Btn variant="primary" onClick={() => respond(true)} disabled={busy}>
+            {busy ? <Spinner /> : <Check size={14} />} Accepter
+          </Btn>
+          <Btn onClick={() => respond(false)} disabled={busy}>
+            <X size={14} /> Refuser
+          </Btn>
+        </div>
+        {error && <div style={{ fontSize: 12, color: "var(--loss)", marginTop: 10 }}>{error}</div>}
+      </div>
+    </Card>
+  );
+}
+
 const LOBBY_POLL_MS = 3000;
 // Queues où League autorise le choix d'un rôle préféré (ARAM, blind pick... n'en ont pas) —
 // tenu en phase avec ROLE_QUEUES côté notifier.py, mais un fallback local suffit tant que
@@ -630,6 +763,19 @@ function RunesPanel({ host, token }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activatingId, setActivatingId] = useState(null);
+  const [editingPageId, setEditingPageId] = useState(null);
+  const [tree, setTree] = useState(null);
+  const [treeError, setTreeError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  const reload = () =>
+    fetchRunePages(host, token)
+      .then((p) => {
+        setPages(p);
+        setError("");
+      })
+      .catch((e) => setError(e.message));
 
   useEffect(() => {
     let cancelled = false;
@@ -664,6 +810,31 @@ function RunesPanel({ host, token }) {
     }
   };
 
+  const startEditing = async (pageId) => {
+    setEditingPageId(pageId);
+    setSaveError("");
+    if (tree) return;
+    try {
+      setTree(await fetchRuneTree());
+    } catch (e) {
+      setTreeError(e.message);
+    }
+  };
+
+  const saveEdit = async (pageId, patch) => {
+    setSaving(true);
+    setSaveError("");
+    try {
+      await updateRunePage(host, token, { pageId, ...patch });
+      await reload();
+      setEditingPageId(null);
+    } catch (e) {
+      setSaveError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Card className="p-5 mt-4">
       <Eyebrow style={{ marginBottom: 10 }}>Pages de runes</Eyebrow>
@@ -675,26 +846,55 @@ function RunesPanel({ host, token }) {
       {error && <div style={{ fontSize: 12.5, color: "var(--loss)", marginBottom: 8 }}>{error}</div>}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {pages.map((p) => (
-          <div
-            key={p.id}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 10,
-              padding: "9px 12px",
-              borderRadius: "var(--radius-md)",
-              background: p.current ? "rgba(212,175,55,0.1)" : "var(--bg-elevated)",
-              border: `1px solid ${p.current ? "var(--gold)" : "var(--border)"}`,
-            }}
-          >
-            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{p.name}</span>
-            {p.current ? (
-              <Pill tone="gold">Active</Pill>
-            ) : (
-              <Btn onClick={() => activate(p.id)} disabled={activatingId === p.id}>
-                {activatingId === p.id ? <Spinner /> : null} Utiliser
-              </Btn>
+          <div key={p.id}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                padding: "9px 12px",
+                borderRadius: "var(--radius-md)",
+                background: p.current ? "rgba(212,175,55,0.1)" : "var(--bg-elevated)",
+                border: `1px solid ${p.current ? "var(--gold)" : "var(--border)"}`,
+              }}
+            >
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{p.name}</span>
+              <div style={{ display: "flex", gap: 6 }}>
+                {p.isEditable && (
+                  <Btn onClick={() => (editingPageId === p.id ? setEditingPageId(null) : startEditing(p.id))}>
+                    <Settings2 size={14} /> {editingPageId === p.id ? "Fermer" : "Modifier"}
+                  </Btn>
+                )}
+                {p.current ? (
+                  <Pill tone="gold">Active</Pill>
+                ) : (
+                  <Btn onClick={() => activate(p.id)} disabled={activatingId === p.id}>
+                    {activatingId === p.id ? <Spinner /> : null} Utiliser
+                  </Btn>
+                )}
+              </div>
+            </div>
+
+            {editingPageId === p.id && (
+              <>
+                {!tree && !treeError && (
+                  <div style={{ fontSize: 12.5, color: "var(--dim)", marginTop: 8, display: "flex", gap: 6, alignItems: "center" }}>
+                    <Spinner /> Chargement de l'arbre des runes…
+                  </div>
+                )}
+                {treeError && <div style={{ fontSize: 12, color: "var(--loss)", marginTop: 8 }}>{treeError}</div>}
+                {tree && (
+                  <RuneEditor
+                    page={p}
+                    tree={tree}
+                    saving={saving}
+                    error={saveError}
+                    onCancel={() => setEditingPageId(null)}
+                    onSave={(patch) => saveEdit(p.id, patch)}
+                  />
+                )}
+              </>
             )}
           </div>
         ))}
@@ -703,5 +903,182 @@ function RunesPanel({ host, token }) {
         )}
       </div>
     </Card>
+  );
+}
+
+/** Édition de l'arbre primaire (keystone + 3 runes) et secondaire (2 runes, sur 2 lignes
+ * différentes) d'une page — les statistiques bonus (3e ligne) ne sont pas modifiables ici
+ * (voir updateRunePage). Change de style primaire réinitialise ses picks aux valeurs par
+ * défaut du nouvel arbre ; change de style secondaire vide ses picks (les runes d'un autre
+ * arbre n'ont pas de correspondance évidente). */
+function RuneEditor({ page, tree, saving, error, onCancel, onSave }) {
+  const styleById = (id) => tree.find((s) => s.id === id);
+
+  const [primaryStyleId, setPrimaryStyleId] = useState(page.primaryStyleId);
+  const [subStyleId, setSubStyleId] = useState(page.subStyleId);
+  const [primaryPicks, setPrimaryPicks] = useState(() => (page.selectedPerkIds || []).slice(0, 4));
+  const [secondaryPicks, setSecondaryPicks] = useState(() => {
+    const picks = {};
+    const secStyle = styleById(page.subStyleId);
+    const ids = (page.selectedPerkIds || []).slice(4, 6);
+    secStyle?.slots.forEach((slot, i) => {
+      if (i === 0) return;
+      const found = ids.find((id) => slot.runes.some((r) => r.id === id));
+      if (found) picks[i] = found;
+    });
+    return picks;
+  });
+
+  const primaryStyle = styleById(primaryStyleId);
+  const secondaryStyle = styleById(subStyleId);
+
+  const choosePrimaryStyle = (id) => {
+    setPrimaryStyleId(id);
+    setPrimaryPicks(styleById(id).slots.slice(0, 4).map((slot) => slot.runes[0].id));
+    if (subStyleId === id) {
+      setSubStyleId(tree.find((s) => s.id !== id).id);
+      setSecondaryPicks({});
+    }
+  };
+
+  const chooseSubStyle = (id) => {
+    setSubStyleId(id);
+    setSecondaryPicks({});
+  };
+
+  const pickPrimary = (slotIndex, runeId) => {
+    setPrimaryPicks((prev) => prev.map((id, i) => (i === slotIndex ? runeId : id)));
+  };
+
+  const toggleSecondary = (slotIndex, runeId) => {
+    setSecondaryPicks((prev) => {
+      if (prev[slotIndex] === runeId) {
+        const next = { ...prev };
+        delete next[slotIndex];
+        return next;
+      }
+      const rows = Object.keys(prev).map(Number);
+      if (!rows.includes(slotIndex) && rows.length >= 2) return prev; // 2 lignes max — désélectionne-en une d'abord.
+      return { ...prev, [slotIndex]: runeId };
+    });
+  };
+
+  const secondaryIds = Object.values(secondaryPicks);
+  const canSave = primaryPicks.length === 4 && primaryPicks.every(Boolean) && secondaryIds.length === 2;
+
+  return (
+    <div
+      style={{
+        marginTop: 8,
+        padding: 12,
+        borderRadius: "var(--radius-md)",
+        border: "1px solid var(--border)",
+        background: "var(--bg-elevated)",
+      }}
+    >
+      <div style={{ fontSize: 11, color: "var(--dim)", marginBottom: 6 }}>Arbre primaire</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+        {tree.map((st) => (
+          <button
+            key={st.id}
+            onClick={() => choosePrimaryStyle(st.id)}
+            title={st.name}
+            className="hoverable"
+            style={{
+              padding: 4,
+              borderRadius: "var(--radius-md)",
+              border: `1px solid ${primaryStyleId === st.id ? "var(--gold)" : "var(--border)"}`,
+              background: primaryStyleId === st.id ? "rgba(212,175,55,0.14)" : "transparent",
+            }}
+          >
+            <img src={st.icon} alt={st.name} width={28} height={28} />
+          </button>
+        ))}
+      </div>
+
+      {primaryStyle?.slots.map((slot, i) => (
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+          {slot.runes.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => pickPrimary(i, r.id)}
+              title={r.name}
+              className="hoverable"
+              style={{
+                padding: 3,
+                borderRadius: "50%",
+                border: `2px solid ${primaryPicks[i] === r.id ? "var(--gold)" : "transparent"}`,
+                opacity: primaryPicks[i] === r.id ? 1 : 0.5,
+              }}
+            >
+              <img src={r.icon} alt={r.name} width={i === 0 ? 34 : 26} height={i === 0 ? 34 : 26} />
+            </button>
+          ))}
+        </div>
+      ))}
+
+      <div style={{ fontSize: 11, color: "var(--dim)", margin: "12px 0 6px" }}>
+        Arbre secondaire — 2 runes, sur 2 lignes différentes
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+        {tree
+          .filter((st) => st.id !== primaryStyleId)
+          .map((st) => (
+            <button
+              key={st.id}
+              onClick={() => chooseSubStyle(st.id)}
+              title={st.name}
+              className="hoverable"
+              style={{
+                padding: 4,
+                borderRadius: "var(--radius-md)",
+                border: `1px solid ${subStyleId === st.id ? "var(--gold)" : "var(--border)"}`,
+                background: subStyleId === st.id ? "rgba(212,175,55,0.14)" : "transparent",
+              }}
+            >
+              <img src={st.icon} alt={st.name} width={24} height={24} />
+            </button>
+          ))}
+      </div>
+
+      {secondaryStyle?.slots.map((slot, i) => {
+        if (i === 0) return null; // Pas de keystone en secondaire.
+        return (
+          <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+            {slot.runes.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => toggleSecondary(i, r.id)}
+                title={r.name}
+                className="hoverable"
+                style={{
+                  padding: 3,
+                  borderRadius: "50%",
+                  border: `2px solid ${secondaryPicks[i] === r.id ? "var(--gold)" : "transparent"}`,
+                  opacity: secondaryPicks[i] === r.id ? 1 : 0.5,
+                }}
+              >
+                <img src={r.icon} alt={r.name} width={26} height={26} />
+              </button>
+            ))}
+          </div>
+        );
+      })}
+
+      {error && <div style={{ fontSize: 12, color: "var(--loss)", margin: "8px 0" }}>{error}</div>}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <Btn
+          variant="primary"
+          disabled={!canSave || saving}
+          onClick={() => onSave({ primaryStyleId, subStyleId, primaryPerkIds: primaryPicks, secondaryPerkIds: secondaryIds })}
+        >
+          {saving ? <Spinner /> : <Check size={14} />} Enregistrer et activer
+        </Btn>
+        <Btn onClick={onCancel} disabled={saving}>
+          Annuler
+        </Btn>
+      </div>
+    </div>
   );
 }
