@@ -48,7 +48,9 @@ export default function LadderTrack({ tier, div, objectiveTiers }) {
         const isCurrent = node.expanded ? node.div === div : tierIdx === currentTierIdx;
         const isObjective = objectiveIdxs.has(i);
         const big = isCurrent || (!node.expanded && node.tier === tier);
-        const size = big ? 40 : node.expanded ? 30 : 34;
+        // x2 par rapport à la taille d'origine (40/30/34) — les logos de rangs, ici affichés
+        // en frise, doivent rester lisibles même en défilement horizontal.
+        const size = big ? 80 : node.expanded ? 60 : 68;
 
         const c = isCurrent ? "var(--gold)" : isPast ? "var(--win)" : "var(--border)";
 
@@ -61,10 +63,10 @@ export default function LadderTrack({ tier, div, objectiveTiers }) {
               <div style={{ position: "relative", width: size, height: size }}>
                 {isObjective && (
                   <Flag
-                    size={12}
+                    size={24}
                     color="var(--gold)"
                     fill="var(--gold)"
-                    style={{ position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)" }}
+                    style={{ position: "absolute", top: -26, left: "50%", transform: "translateX(-50%)" }}
                   />
                 )}
                 <div
@@ -80,25 +82,25 @@ export default function LadderTrack({ tier, div, objectiveTiers }) {
                     justifyContent: "center",
                   }}
                 >
-                  <RankEmblem tier={node.tier} size={size - (isCurrent ? 6 : 2)} dim={!isPast && !isCurrent} />
+                  <RankEmblem tier={node.tier} size={size - (isCurrent ? 12 : 4)} dim={!isPast && !isCurrent} />
                 </div>
                 {isPast && (
                   <div
                     style={{
                       position: "absolute",
-                      bottom: -3,
-                      right: -3,
-                      width: 15,
-                      height: 15,
+                      bottom: -6,
+                      right: -6,
+                      width: 30,
+                      height: 30,
                       borderRadius: "50%",
                       background: "var(--win)",
-                      border: "2px solid var(--bg-card, var(--card))",
+                      border: "4px solid var(--bg-card, var(--card))",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <Check size={9} color="#0a0a0f" strokeWidth={3} />
+                    <Check size={18} color="#0a0a0f" strokeWidth={3} />
                   </div>
                 )}
               </div>
