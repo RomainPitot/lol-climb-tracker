@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Sparkles, Copy, Check } from "lucide-react";
-import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip } from "../components/ui/primitives.jsx";
+import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip, Collapsible } from "../components/ui/primitives.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import GameRecapCard from "../components/GameRecapCard.jsx";
 import { computeAgg } from "../lib/stats.js";
@@ -106,8 +106,7 @@ export default function CoachPage({ data, sorted, currentRank }) {
         />
       </Card>
 
-      <Card className="p-4 mb-5">
-        <Eyebrow style={{ marginBottom: 10 }}>Raccourcis de sélection</Eyebrow>
+      <Collapsible title="Raccourcis de sélection" sub={`${selectedGames.length} game(s) sélectionnée(s)`}>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
           {PRESETS.map((p) => (
             <ToggleChip key={p.label} onClick={() => applyPreset(p.take)}>
@@ -115,8 +114,6 @@ export default function CoachPage({ data, sorted, currentRank }) {
             </ToggleChip>
           ))}
         </div>
-
-        <Eyebrow style={{ marginBottom: 8 }}>{selectedGames.length} game(s) sélectionnée(s)</Eyebrow>
 
         <div style={{ maxHeight: 260, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 8 }}>
           {[...sorted].reverse().map((g) => (
@@ -157,7 +154,7 @@ export default function CoachPage({ data, sorted, currentRank }) {
             </div>
           )}
         </div>
-      </Card>
+      </Collapsible>
 
       <div
         style={{
