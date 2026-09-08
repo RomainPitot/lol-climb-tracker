@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, ReferenceArea, ReferenceLine, Tooltip, ResponsiveContainer } from "recharts";
 import { ChevronDown, Percent, Zap, Swords, Trophy, Layers } from "lucide-react";
-import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, ToggleChip } from "../components/ui/primitives.jsx";
+import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, Select } from "../components/ui/primitives.jsx";
 import RankBadge from "../components/RankBadge.jsx";
 import LadderTrack from "../components/LadderTrack.jsx";
 import StatLadder from "../components/StatLadder.jsx";
@@ -118,13 +118,13 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+          <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: "auto" }}>
             {PERIODS.map((p) => (
-              <ToggleChip key={p.id} active={period === p.id} onClick={() => setPeriod(p.id)}>
+              <option key={p.id} value={p.id}>
                 {p.label}
-              </ToggleChip>
+              </option>
             ))}
-          </div>
+          </Select>
         </div>
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
