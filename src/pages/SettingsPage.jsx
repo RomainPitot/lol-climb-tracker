@@ -3,12 +3,13 @@ import { Check, RotateCcw, Download, AlertTriangle } from "lucide-react";
 import { SectionTitle, Field, Input, Select, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GoalsSection from "../components/settings/GoalsSection.jsx";
 import GameDetectorSection from "../components/settings/GameDetectorSection.jsx";
+import RiotImportSection from "../components/settings/RiotImportSection.jsx";
 import { TIERS, APEX, DIVS } from "../constants/ranks.js";
 import { rankLabel } from "../lib/rank.js";
 
 export default function SettingsPage({
   data, sorted, currentRank, addGoal, deleteGoal,
-  setThresholds, setCurrentRank, setSettings, resetAll, resetStats,
+  setThresholds, setCurrentRank, setSettings, importRiotResult, resetAll, resetStats,
 }) {
   const [th, setTh] = useState(data.thresholds);
   const [rankForm, setRankForm] = useState({
@@ -80,8 +81,15 @@ export default function SettingsPage({
       )}
 
       <Collapsible
+        title="Ajouter une game"
+        sub="Récupère tes dernières games SoloQ automatiquement depuis l'API Riot — plus besoin de tout ressaisir à la main."
+      >
+        <RiotImportSection data={data} setSettings={setSettings} importRiotResult={importRiotResult} />
+      </Collapsible>
+
+      <Collapsible
         title="GameDetectorLol"
-        sub="Statut en direct de ta partie (recherche, chargement, en jeu...) — plus de notification Discord, tout s'affiche ici et sur Sélection de champion."
+        sub="Statut en direct de ta partie (recherche, chargement, en jeu...) — plus de notification Discord, tout s'affiche ici et sur Phone control."
       >
         <GameDetectorSection />
       </Collapsible>

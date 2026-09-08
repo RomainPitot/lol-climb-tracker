@@ -3,7 +3,6 @@ import Sidebar from "./components/Sidebar.jsx";
 import RankUpCelebration from "./components/RankUpCelebration.jsx";
 import AlertBanner from "./components/AlertBanner.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
-import AddGame from "./pages/AddGame.jsx";
 import ChampionsPage from "./pages/ChampionsPage.jsx";
 import TierlistPage from "./pages/TierlistPage.jsx";
 import ChampSelectPage from "./pages/ChampSelectPage.jsx";
@@ -18,7 +17,6 @@ const ALERT_DISPLAY_MS = 6000;
 
 const PAGES = {
   dashboard: Dashboard,
-  add: AddGame,
   champions: ChampionsPage,
   tierlist: TierlistPage,
   champselect: ChampSelectPage,

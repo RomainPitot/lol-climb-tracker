@@ -20,7 +20,7 @@ const STATUS_POLL_MS = 3000;
  * détecter une partie lui-même (pas d'accès système de fichiers ni réseau local depuis
  * un navigateur) — d'où le script séparé. Deux compléments en plus du statut :
  * - un lien `gamedetectorlol://` pour lancer le script d'un clic ;
- * - un QR code à scanner avec le téléphone pour connecter la page "Sélection de champion"
+ * - un QR code à scanner avec le téléphone pour connecter la page "Phone control"
  *   sans rien recopier à la main — le script réserve l'adresse+token complets aux
  *   requêtes venant de ce PC (127.0.0.1), jamais au reste du Wi-Fi (voir notifier.py).
  */
@@ -180,11 +180,11 @@ export default function GameDetectorSection() {
 
       <div style={{ paddingTop: 16, marginTop: 16, borderTop: "1px solid var(--border)" }}>
         <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 7 }}>
-          <QrCode size={14} /> Connecter ton téléphone (Sélection de champion)
+          <QrCode size={14} /> Connecter ton téléphone (Phone control)
         </span>
         <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 4, marginBottom: 14 }}>
           Scanne ce QR code avec l'appareil photo de ton téléphone (connecté au même Wi-Fi que ce PC) — il configure
-          tout automatiquement et ouvre directement la page Sélection de champion, sans rien recopier à la main.
+          tout automatiquement et ouvre directement la page Phone control, sans rien recopier à la main.
         </p>
 
         {status !== "active" && (
