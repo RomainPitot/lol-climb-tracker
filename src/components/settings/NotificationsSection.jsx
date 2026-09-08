@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { Download, Play, Copy, Check, QrCode } from "lucide-react";
-import { Field, Input, Btn } from "../ui/primitives.jsx";
+import { Download, Play, Copy, Check, QrCode, Maximize2, X } from "lucide-react";
+import { Field, Input, Btn, IconBtn } from "../ui/primitives.jsx";
 
 /** Doit rester identique au STATUS_PORT défini dans notifier.py (GameDetectorLol). */
 const STATUS_URL = "http://127.0.0.1:37653/status";
@@ -34,6 +34,7 @@ export default function NotificationsSection({ data, setSettings }) {
   const [pairingLink, setPairingLink] = useState(null);
   const [pairingError, setPairingError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +82,10 @@ export default function NotificationsSection({ data, setSettings }) {
         if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
         if (cancelled || !body.host || !body.token) return;
         const link = `${window.location.origin}${window.location.pathname}?champselect_host=${encodeURIComponent(body.host)}&champselect_token=${encodeURIComponent(body.token)}`;
-        const dataUrl = await QRCode.toDataURL(link, { margin: 1, width: 176 });
+        // Généré en plus grand que la taille affichée en ligne (128) : downscaler à
+        // l'affichage reste net, alors qu'agrandir un QR à la volée (bouton "Afficher en
+        // grand") l'aurait rendu flou en upscalant depuis une image trop petite.
+        const dataUrl = await QRCode.toDataURL(link, { margin: 1, width: 340 });
         if (cancelled) return;
         setPairingLink(link);
         setQrDataUrl(dataUrl);
@@ -225,9 +229,14 @@ export default function NotificationsSection({ data, setSettings }) {
               style={{ borderRadius: "var(--radius-md)", border: "1px solid var(--border)", flexShrink: 0 }}
             />
             <div style={{ minWidth: 0 }}>
-              <Btn onClick={copyLink}>
-                {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copié" : "Copier le lien"}
-              </Btn>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Btn onClick={copyLink}>
+                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copié" : "Copier le lien"}
+                </Btn>
+                <Btn onClick={() => setShowQrModal(true)}>
+                  <Maximize2 size={14} /> Afficher en grand
+                </Btn>
+              </div>
               <p
                 style={{
                   fontSize: 11,
@@ -243,6 +252,71 @@ export default function NotificationsSection({ data, setSettings }) {
           </div>
         )}
       </div>
+
+      {showQrModal && qrDataUrl && <QrModal dataUrl={qrDataUrl} onClose={() => setShowQrModal(false)} />}
     </>
+  );
+}
+
+/** QR code en grand — plus facile à scanner à distance qu'à la petite taille affichée en ligne. */
+function QrModal({ dataUrl, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fade-in"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.7)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+        zIndex: 50,
+      }}
+    >
+      <div
+        style={{
+          background: "var(--card)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-md)",
+          padding: 24,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 14,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: 20 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Scanne avec ton téléphone</span>
+          <IconBtn
+            onClick={onClose}
+            aria-label="Fermer"
+            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: 8 }}
+          >
+            <X size={16} />
+          </IconBtn>
+        </div>
+        <img
+          src={dataUrl}
+          alt="QR code de connexion téléphone, en grand"
+          width={340}
+          height={340}
+          style={{ borderRadius: 8, background: "#fff", padding: 12 }}
+        />
+      </div>
+    </div>
   );
 }
