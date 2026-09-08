@@ -144,13 +144,22 @@ export default function RiotImportSection({ data, setSettings, importRiotResult 
               </div>
               <div style={{ fontSize: 11.5, color: "var(--dim)" }}>
                 {regionLabel} · {form.mode === "proxy" ? "via proxy" : "direct"}
-                {form.autoImport && ` · vérif. auto toutes les ${form.activeIntervalMin} min`}
               </div>
             </div>
           </div>
-          <Btn onClick={() => setEditingAccount(true)}>
-            <Pencil size={14} /> Modifier
-          </Btn>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: "var(--text)" }}>
+              <input
+                type="checkbox"
+                checked={form.autoImport}
+                onChange={(e) => patch({ autoImport: e.target.checked })}
+              />
+              Vérif. auto ({form.activeIntervalMin} min)
+            </label>
+            <Btn onClick={() => setEditingAccount(true)}>
+              <Pencil size={14} /> Modifier
+            </Btn>
+          </div>
         </div>
       ) : (
         <>
