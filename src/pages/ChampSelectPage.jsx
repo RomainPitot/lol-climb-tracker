@@ -24,8 +24,9 @@ import {
   startQueue,
   cancelQueue,
   respondReadyCheck,
+  setSummonerSpells,
 } from "../lib/gameDetector.js";
-import { fetchRuneTree } from "../lib/ddragon.js";
+import { fetchRuneTree, fetchSummonerSpells } from "../lib/ddragon.js";
 
 // Sous-phase INTERNE au champ select (timer.phase de la session) — différent de la phase
 // globale du client (None/Lobby/ChampSelect/InProgress...) affichée en haut de page via
@@ -355,6 +356,8 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
                   </div>
                 )}
               </Card>
+
+              <SpellsPanel host={host} token={token} session={session} />
 
               <RunesPanel host={host} token={token} />
 
@@ -753,6 +756,98 @@ function QueuePanel({ host, token, phase }) {
             {busy ? <Spinner /> : <Search size={14} />} {busy ? "…" : "Rechercher une partie"}
           </Btn>
         </>
+      )}
+    </Card>
+  );
+}
+
+/** Change tes deux sorts d'invocateur pendant la sélection — les valeurs actuelles sont
+ * déjà dans la session (myTeam[].spell1Id/spell2Id), pas besoin d'un appel séparé pour
+ * savoir ce qui est équipé. */
+function SpellsPanel({ host, token, session }) {
+  const me = session.myTeam?.find((p) => p.cellId === session.localPlayerCellId);
+  const [spells, setSpells] = useState(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(null); // "spell1" | "spell2" | null
+  const [saveError, setSaveError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSummonerSpells()
+      .then((list) => {
+        if (!cancelled) setSpells(list);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const choose = async (slot, spellId) => {
+    if (!me) return;
+    const spell1Id = slot === "spell1" ? spellId : me.spell1Id;
+    const spell2Id = slot === "spell2" ? spellId : me.spell2Id;
+    setSaving(slot);
+    setSaveError("");
+    try {
+      await setSummonerSpells(host, token, { spell1Id, spell2Id });
+    } catch (e) {
+      setSaveError(e.message);
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  if (!me) return null;
+
+  return (
+    <Card className="p-5 mt-4">
+      <Eyebrow style={{ marginBottom: 10 }}>Sorts d'invocateur</Eyebrow>
+      {error && <div style={{ fontSize: 12.5, color: "var(--loss)", marginBottom: 8 }}>{error}</div>}
+      {!spells && !error && (
+        <div style={{ fontSize: 12.5, color: "var(--dim)", display: "flex", gap: 6, alignItems: "center" }}>
+          <Spinner /> Chargement…
+        </div>
+      )}
+      {saveError && <div style={{ fontSize: 12.5, color: "var(--loss)", marginBottom: 8 }}>{saveError}</div>}
+      {spells && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {["spell1", "spell2"].map((slot) => {
+            const currentId = slot === "spell1" ? me.spell1Id : me.spell2Id;
+            return (
+              <div key={slot}>
+                <div style={{ fontSize: 11, color: "var(--dim)", marginBottom: 6 }}>
+                  {slot === "spell1" ? "Touche D" : "Touche F"}
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {spells.map((sp) => {
+                    const isSelected = currentId === sp.id;
+                    return (
+                      <button
+                        key={sp.id}
+                        onClick={() => choose(slot, sp.id)}
+                        disabled={saving === slot}
+                        title={sp.name}
+                        className="hoverable"
+                        style={{
+                          padding: 3,
+                          borderRadius: "var(--radius-md)",
+                          border: `1.5px solid ${isSelected ? "var(--gold)" : "var(--border)"}`,
+                          background: isSelected ? "rgba(212,175,55,0.14)" : "transparent",
+                          opacity: saving === slot && !isSelected ? 0.5 : 1,
+                        }}
+                      >
+                        <img src={sp.icon} alt={sp.name} width={32} height={32} style={{ borderRadius: 6 }} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </Card>
   );

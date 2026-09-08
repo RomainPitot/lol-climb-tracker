@@ -47,6 +47,18 @@ export async function sendChampSelectAction(host, token, { actionId, championId,
   return body;
 }
 
+/** Change tes deux sorts d'invocateur pendant la sélection. */
+export async function setSummonerSpells(host, token, { spell1Id, spell2Id }) {
+  const res = await fetch(`${baseUrl(host)}/champselect/spells`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify({ spell1Id, spell2Id }),
+  });
+  const body = await parseJson(res);
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return body;
+}
+
 /** Pages de runes sauvegardées dans le client. */
 export async function fetchRunePages(host, token) {
   const res = await fetch(`${baseUrl(host)}/runes`, { headers: authHeaders(token) });

@@ -2,6 +2,7 @@ import { DDRAGON_VERSION } from "../constants/roster.js";
 
 let cached = null;
 let cachedRuneTree = null;
+let cachedSpells = null;
 
 /**
  * Liste complète des champions LoL (id Data Dragon + nom affiché), récupérée en direct
@@ -50,4 +51,26 @@ export async function fetchRuneTree() {
     })),
   }));
   return cachedRuneTree;
+}
+
+/**
+ * Sorts d'invocateur valides sur la Faille de l'invocateur (Rift classique — pas ARAM,
+ * pas les modes spéciaux) : filtrés sur `modes.includes("CLASSIC")`, ce qui exclut par
+ * exemple Clarté (ARAM uniquement). `id` correspond directement à spell1Id/spell2Id lus
+ * dans la session de champ select (voir gameDetector.js).
+ */
+export async function fetchSummonerSpells() {
+  if (cachedSpells) return cachedSpells;
+  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/fr_FR/summoner.json`);
+  if (!res.ok) throw new Error(`Data Dragon a répondu ${res.status}`);
+  const body = await res.json();
+  cachedSpells = Object.values(body.data)
+    .filter((s) => s.modes?.includes("CLASSIC"))
+    .map((s) => ({
+      id: Number(s.key),
+      name: s.name,
+      icon: `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/spell/${s.image.full}`,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  return cachedSpells;
 }
