@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
+import RankUpCelebration from "./components/RankUpCelebration.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import AddGame from "./pages/AddGame.jsx";
 import ChampionsPage from "./pages/ChampionsPage.jsx";
@@ -77,6 +78,11 @@ export default function App() {
           <Page {...pageProps} />
         </div>
       </main>
+      <RankUpCelebration
+        currentRank={data.currentRank}
+        settings={data.settings}
+        setSettings={actions.setSettings}
+      />
     </div>
   );
 }

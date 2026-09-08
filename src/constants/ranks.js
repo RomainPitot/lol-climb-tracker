@@ -5,6 +5,10 @@ export const APEX = ["Maître", "Grand Maître", "Challenger"];
 export const DIVS = ["IV", "III", "II", "I"];
 export const DIV_NUM = { IV: 1, III: 2, II: 3, I: 4 };
 
+/** Tous les paliers du jeu, Fer → Challenger, dans l'ordre croissant — sert à comparer deux
+ * paliers entre eux (ex: la frise du dashboard, la détection de passage à un nouveau rang). */
+export const ALL_TIERS = [...TIERS, ...APEX];
+
 /** Toutes les divisions Fer IV → Diamant I, dans l'ordre croissant. */
 export const FULL_LADDER = TIERS.flatMap((tier) => DIVS.map((div) => ({ tier, div })));
 

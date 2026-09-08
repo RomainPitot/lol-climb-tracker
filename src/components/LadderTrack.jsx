@@ -1,9 +1,7 @@
 import { Fragment, useMemo } from "react";
 import { Check, Flag } from "lucide-react";
-import { TIERS, APEX, DIVS, DIV_NUM } from "../constants/ranks.js";
+import { APEX, DIVS, DIV_NUM, ALL_TIERS } from "../constants/ranks.js";
 import RankEmblem from "./RankEmblem.jsx";
-
-const ALL_TIERS = [...TIERS, ...APEX];
 
 /**
  * Un nœud par palier, sauf le palier COURANT : celui-là se déplie en ses 4 divisions
