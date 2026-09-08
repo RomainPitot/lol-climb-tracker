@@ -38,6 +38,32 @@ export const TIER_ICON = {
   Challenger: Star,
 };
 
+/** Nom (anglais, en minuscules) utilisé par Community Dragon pour chaque emblème de rang. */
+const TIER_EMBLEM_SLUG = {
+  Fer: "iron",
+  Bronze: "bronze",
+  Argent: "silver",
+  Or: "gold",
+  Platine: "platinum",
+  Émeraude: "emerald",
+  Diamant: "diamond",
+  Maître: "master",
+  "Grand Maître": "grandmaster",
+  Challenger: "challenger",
+};
+
+/**
+ * URL du vrai emblème de rang LoL (Community Dragon — miroir communautaire des assets
+ * officiels de Riot, pas d'API clé requise). `null` si le tier est inconnu, pour que
+ * l'appelant puisse retomber sur TIER_ICON (voir RankEmblem.jsx) plutôt que planter.
+ */
+export function rankEmblemUrl(tier) {
+  const slug = TIER_EMBLEM_SLUG[tier];
+  return slug
+    ? `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${slug}.png`
+    : null;
+}
+
 /**
  * Repères indicatifs par palier (estimations générales, pas de données temps réel).
  * Sert uniquement à afficher des paliers de progression, jamais à juger une game isolée.

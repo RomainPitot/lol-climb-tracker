@@ -1,6 +1,6 @@
-import { Trophy } from "lucide-react";
-import { APEX, DIV_NUM, TIER_COLORS, TIER_ICON } from "../constants/ranks.js";
+import { APEX, DIV_NUM, TIER_COLORS } from "../constants/ranks.js";
 import { rankLabel } from "../lib/rank.js";
+import RankEmblem from "./RankEmblem.jsx";
 
 /** Les 4 carrés représentant la division dans le tier (IV → I). */
 function DivisionPips({ tier, div, color, size = 6 }) {
@@ -28,7 +28,6 @@ function DivisionPips({ tier, div, color, size = 6 }) {
 
 export default function RankBadge({ tier, div, lp, size = "lg" }) {
   const c = TIER_COLORS[tier] || "var(--dim)";
-  const Icon = TIER_ICON[tier] || Trophy;
   const big = size === "lg";
 
   return (
@@ -47,7 +46,7 @@ export default function RankBadge({ tier, div, lp, size = "lg" }) {
           flexShrink: 0,
         }}
       >
-        <Icon size={big ? 34 : 18} color={c} strokeWidth={big ? 1.75 : 2} />
+        <RankEmblem tier={tier} size={big ? 56 : 32} />
       </div>
       <div>
         <div

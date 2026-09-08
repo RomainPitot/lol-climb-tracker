@@ -1,64 +1,98 @@
-import { Fragment } from "react";
-import { Trophy, Check, Flag } from "lucide-react";
-import { FULL_GAME_LADDER, TIER_ICON } from "../constants/ranks.js";
-import { ladderIndex } from "../lib/rank.js";
+import { Fragment, useMemo } from "react";
+import { Check, Flag } from "lucide-react";
+import { TIERS, APEX, DIVS, DIV_NUM } from "../constants/ranks.js";
+import RankEmblem from "./RankEmblem.jsx";
 
-/** Frise Fer IV → Challenger, avec le palier courant et l'objectif mis en avant. */
+const ALL_TIERS = [...TIERS, ...APEX];
+
+/**
+ * Un nœud par palier, sauf le palier COURANT : celui-là se déplie en ses 4 divisions
+ * (IV → I) plutôt que de rester un seul bloc — les autres paliers n'ont pas besoin de
+ * ce détail, seul celui où on se trouve réellement le justifie.
+ */
+function buildNodes(currentTier) {
+  const nodes = [];
+  for (const t of ALL_TIERS) {
+    if (!APEX.includes(t) && t === currentTier) {
+      for (const d of DIVS) nodes.push({ tier: t, div: d, expanded: true });
+    } else {
+      nodes.push({ tier: t, div: null, expanded: false });
+    }
+  }
+  return nodes;
+}
+
+/** Frise Fer → Challenger, avec le palier courant déplié et l'objectif mis en avant. */
 export default function LadderTrack({ tier, div, objectiveTier }) {
-  const idx = ladderIndex(tier, div);
-  // Premier palier qui correspond à l'objectif (ex: "Diamant IV" pour l'objectif "Diamant")
-  // — un seul marqueur au début du palier visé, pas un par division.
-  const objectiveIdx = objectiveTier ? FULL_GAME_LADDER.findIndex((s) => s.tier === objectiveTier) : -1;
+  const nodes = useMemo(() => buildNodes(tier), [tier]);
+  const currentTierIdx = ALL_TIERS.indexOf(tier);
+  // Premier nœud qui correspond à l'objectif (la division IV s'il est déplié) — un seul
+  // marqueur au début du palier visé, pas un par division.
+  const objectiveIdx = objectiveTier ? nodes.findIndex((n) => n.tier === objectiveTier) : -1;
 
   return (
     <div style={{ display: "flex", alignItems: "center", width: "100%", overflowX: "auto", padding: "10px 2px 6px" }}>
-      {FULL_GAME_LADDER.map((step, i) => {
-        const isCurrent = i === idx;
-        const isPast = i < idx;
+      {nodes.map((node, i) => {
+        const tierIdx = ALL_TIERS.indexOf(node.tier);
+        const isPast = node.expanded
+          ? DIV_NUM[node.div] < DIV_NUM[div]
+          : tierIdx < currentTierIdx;
+        const isCurrent = node.expanded ? node.div === div : tierIdx === currentTierIdx;
         const isObjective = i === objectiveIdx;
+        const big = isCurrent || (!node.expanded && node.tier === tier);
+        const size = big ? 40 : node.expanded ? 30 : 34;
+
         const c = isCurrent ? "var(--gold)" : isPast ? "var(--win)" : "var(--border)";
-        const Icon = TIER_ICON[step.tier] || Trophy;
 
         return (
-          <Fragment key={`${step.tier}-${step.div ?? "apex"}`}>
+          <Fragment key={`${node.tier}-${node.div ?? "apex"}`}>
             {i > 0 && (
-              <div style={{ height: 2, width: 14, background: isPast || isCurrent ? c : "var(--border)", flexShrink: 0 }} />
+              <div style={{ height: 2, width: 10, background: isPast || isCurrent ? c : "var(--border)", flexShrink: 0 }} />
             )}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
-              <div style={{ position: "relative" }}>
+              <div style={{ position: "relative", width: size, height: size }}>
                 {isObjective && (
                   <Flag
-                    size={13}
+                    size={12}
                     color="var(--gold)"
                     fill="var(--gold)"
-                    style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)" }}
+                    style={{ position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)" }}
                   />
                 )}
                 <div
                   style={{
-                    width: isCurrent ? 32 : 26,
-                    height: isCurrent ? 32 : 26,
-                    borderRadius: 9,
-                    background: isCurrent
-                      ? "rgba(212,175,55,0.18)"
-                      : isPast
-                        ? "rgba(15,214,138,0.12)"
-                        : isObjective
-                          ? "rgba(212,175,55,0.08)"
-                          : "var(--bg-elevated)",
-                    border: `1.5px solid ${isObjective && !isPast && !isCurrent ? "var(--gold)" : c}`,
+                    width: size,
+                    height: size,
+                    borderRadius: 10,
+                    background: isCurrent ? "rgba(212,175,55,0.16)" : "transparent",
+                    border: isCurrent ? "1.5px solid var(--gold)" : isObjective ? "1.5px solid rgba(212,175,55,0.5)" : "none",
+                    boxShadow: isCurrent ? "0 0 0 4px rgba(212,175,55,0.12)" : "none",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    boxShadow: isCurrent ? "0 0 0 4px rgba(212,175,55,0.12)" : "none",
                   }}
                 >
-                  {isPast ? (
-                    <Check size={12} color={c} />
-                  ) : (
-                    <Icon size={isCurrent ? 15 : 11} color={isObjective && !isCurrent ? "var(--gold)" : c} />
-                  )}
+                  <RankEmblem tier={node.tier} size={size - (isCurrent ? 6 : 2)} dim={!isPast && !isCurrent} />
                 </div>
+                {isPast && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: -3,
+                      right: -3,
+                      width: 15,
+                      height: 15,
+                      borderRadius: "50%",
+                      background: "var(--win)",
+                      border: "2px solid var(--bg-card, var(--card))",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Check size={9} color="#0a0a0f" strokeWidth={3} />
+                  </div>
+                )}
               </div>
               <div
                 style={{
@@ -68,7 +102,7 @@ export default function LadderTrack({ tier, div, objectiveTier }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                {step.div ? `${step.tier[0]}${step.div}` : step.tier}
+                {node.div ? `${node.tier[0]}${node.div}` : node.tier}
               </div>
             </div>
           </Fragment>
