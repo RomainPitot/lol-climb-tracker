@@ -9,11 +9,26 @@ import { TIER_COLORS, TIER_ICON, rankEmblemUrl } from "../constants/ranks.js";
  *
  * Rendu en `background-image` plutôt qu'un simple `<img>` : l'écusson ne remplit qu'une
  * petite portion (environ un tiers, centrée) de l'image source fournie par Community
- * Dragon — le reste est du remplissage transparent. Un simple `object-fit: contain`
- * l'aurait donc affiché minuscule dans les tailles utilisées ici ; `background-size`/
- * `background-position` zooment et recadrent sur la zone où se trouve réellement l'écusson
- * (mesuré empiriquement sur plusieurs paliers, centre légèrement au-dessus du milieu).
+ * Dragon (1280×720) — le reste est du remplissage transparent. Un simple
+ * `object-fit: contain` l'aurait donc affiché minuscule dans les tailles utilisées ici.
+ *
+ * `background-size` prend un pourcentage PAR AXE (largeur/hauteur), chacun relatif à la
+ * dimension du conteneur sur cet axe — mettre la même valeur sur les deux axes (ex: 300%
+ * 300%) déforme donc l'image dès que le conteneur n'a pas le même ratio qu'elle (ici un
+ * conteneur carré contre une source 16:9), ce qui l'étirait verticalement. Les deux
+ * pourcentages ci-dessous sont calculés pour zoomer d'un même facteur sur les deux axes
+ * (donc sans déformation), en recadrant sur la zone où se trouve réellement l'écusson
+ * (mesurée empiriquement sur plusieurs paliers, centre légèrement au-dessus du milieu).
  */
+const SOURCE_W = 1280;
+const SOURCE_H = 720;
+// Fenêtre de recadrage carrée (en pixels de l'image source) assez grande pour contenir
+// l'écusson le plus large observé (Challenger, ~320px) avec de la marge.
+const CROP_WINDOW = 400;
+const BG_SIZE = `${(SOURCE_W / CROP_WINDOW) * 100}% ${(SOURCE_H / CROP_WINDOW) * 100}%`;
+// Centre de l'écusson dans l'image source (fraction 0-1) — position background-position
+// qui en résulte, dérivée de la formule position% = (centre × zoom − 0.5) / (zoom − 1).
+const BG_POSITION = "50% 46%";
 export default function RankEmblem({ tier, size = 32, dim = false }) {
   const [failed, setFailed] = useState(false);
   const url = rankEmblemUrl(tier);
@@ -37,8 +52,8 @@ export default function RankEmblem({ tier, size = 32, dim = false }) {
           height: size,
           flexShrink: 0,
           backgroundImage: `url(${url})`,
-          backgroundSize: "300% 300%",
-          backgroundPosition: "50% 48%",
+          backgroundSize: BG_SIZE,
+          backgroundPosition: BG_POSITION,
           backgroundRepeat: "no-repeat",
           opacity: dim ? 0.45 : 1,
           filter: dim ? "saturate(0.6)" : "none",
