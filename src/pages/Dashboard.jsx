@@ -11,7 +11,7 @@ import FocusTracker from "../components/dashboard/FocusTracker.jsx";
 import { PERIODS } from "../constants/game.js";
 import { roleBenchmark, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
-import { buildLpChartBands } from "../lib/lpChart.js";
+import { buildLpChartBands, trimToRealStart } from "../lib/lpChart.js";
 import { computeAgg, filterByPeriod, getColor, mostFrequentRole } from "../lib/stats.js";
 import { computeGeneralAchievements } from "../lib/achievements.js";
 import { representativeGames } from "../lib/gameModel.js";
@@ -70,32 +70,27 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   // Score composite rang+LP : donne une courbe continue à travers les promotions. Le
   // palier/LP réels de chaque point restent à côté (tier/div/lpAfter) pour un tooltip
   // lisible ("Émeraude II — 45 LP") plutôt que le score brut, qui ne veut rien dire seul.
-  const lpSeries = useMemo(
-    () =>
-      sorted.map((g, i) => ({
-        i: i + 1,
-        lp: rankValue(g.rankAfterTier, g.rankAfterDiv) * 100 + Number(g.lpAfter || 0),
-        tier: g.rankAfterTier,
-        div: g.rankAfterDiv,
-        lpAfter: Number(g.lpAfter || 0),
-      })),
-    [sorted]
-  );
+  // trimToRealStart coupe un éventuel début parasite (rang jamais réglé avant le tout
+  // premier vrai import/réglage — se voit à un saut de score invraisemblable) : sans ça,
+  // ce départ à zéro traînerait plein de paliers jamais vraiment joués sur tout le graphique.
+  // Renumérotée à partir de 1 après coupe, pour un axe des games lisible depuis le vrai début.
+  const lpSeries = useMemo(() => {
+    const raw = sorted.map((g) => ({
+      lp: rankValue(g.rankAfterTier, g.rankAfterDiv) * 100 + Number(g.lpAfter || 0),
+      tier: g.rankAfterTier,
+      div: g.rankAfterDiv,
+      lpAfter: Number(g.lpAfter || 0),
+    }));
+    return trimToRealStart(raw).map((p, i) => ({ ...p, i: i + 1 }));
+  }, [sorted]);
 
   // Bandes/lignes de division façon u.gg (voir lib/lpChart.js) — une couleur par palier
-  // (pas par division), calculées sur la plage réellement couverte par la courbe. Le bas
-  // de cette plage ne descend jamais sous le rang de départ (avant la toute première game
-  // trackée) : sans ce plancher, un rang jamais vraiment rejoué depuis (ou juste mal réglé
-  // au départ) ajouterait plein de divisions inutiles et rendrait le graphique illisible.
+  // (pas par division), calculées sur la plage réellement couverte par la courbe déjà coupée.
   const lpBands = useMemo(() => {
     if (lpSeries.length < 2) return null;
     const scores = lpSeries.map((p) => p.lp);
-    const first = sorted[0];
-    const startScore = first
-      ? rankValue(first.rankBeforeTier, first.rankBeforeDiv) * 100 + Number(first.lpBefore || 0)
-      : -Infinity;
-    return buildLpChartBands(Math.max(Math.min(...scores), startScore), Math.max(...scores));
-  }, [lpSeries, sorted]);
+    return buildLpChartBands(Math.min(...scores), Math.max(...scores));
+  }, [lpSeries]);
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const heroColor = TIER_COLORS[currentRank.tier] || "var(--gold)";

@@ -1,5 +1,26 @@
 import { FULL_GAME_LADDER, TIER_COLORS, APEX } from "../constants/ranks.js";
 
+// Un vrai gain/perte de LP sur UNE game ne dépasse jamais quelques dizaines de points, même
+// avec l'estimation par lot (voir estimateLpChanges dans riotApi.js) qui peut absorber
+// l'arrondi d'un import après une longue absence. Un saut plus grand que ça entre deux
+// points consécutifs ne peut trahir qu'un rang jamais réglé/corrigé (valeur par défaut restée
+// en place avant le tout premier vrai import/réglage) plutôt qu'une vraie partie jouée.
+const IMPLAUSIBLE_JUMP = 500;
+
+/**
+ * Coupe le début d'une série de points { lp, ... } au dernier saut invraisemblable détecté
+ * — tout ce qui précède n'est pas une vraie progression (voir IMPLAUSIBLE_JUMP), le garder
+ * ferait démarrer le graphique bien avant le début réel du suivi et ajouterait plein de
+ * paliers jamais vraiment joués. Sans saut détecté, renvoie la série entière inchangée.
+ */
+export function trimToRealStart(points) {
+  let cut = 0;
+  for (let i = 1; i < points.length; i++) {
+    if (Math.abs(points[i].lp - points[i - 1].lp) > IMPLAUSIBLE_JUMP) cut = i;
+  }
+  return cut > 0 ? points.slice(cut) : points;
+}
+
 /**
  * Palier (tier/div) correspondant à un "score rang" arrondi à la centaine (voir
  * rankValue dans lib/rank.js : palier×100 + LP). Les paliers apex démarrent à 1000
