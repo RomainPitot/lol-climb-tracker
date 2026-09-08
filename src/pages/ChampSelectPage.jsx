@@ -7,6 +7,7 @@ import { useChampionList } from "../hooks/useChampionList.js";
 import { useChampSelect } from "../hooks/useChampSelect.js";
 import { rankLabel } from "../lib/rank.js";
 import { representativeGames } from "../lib/gameModel.js";
+import { gamePhaseLabel } from "../constants/gameDetector.js";
 import {
   DEFAULT_HOST,
   sendChampSelectAction,
@@ -16,7 +17,10 @@ import {
   activateRunePage,
 } from "../lib/gameDetector.js";
 
-const PHASE_LABEL = {
+// Sous-phase INTERNE au champ select (timer.phase de la session) — différent de la phase
+// globale du client (None/Lobby/ChampSelect/InProgress...) affichée en haut de page via
+// gamePhaseLabel (constants/gameDetector.js), qui remplace la notification Discord.
+const CHAMPSELECT_SUBPHASE_LABEL = {
   PLANNING: "Bannissements",
   BAN_PICK: "Sélection des champions",
   FINALIZATION: "Derniers réglages",
@@ -37,7 +41,7 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
   const { champions } = useChampionList();
   const byKey = useMemo(() => Object.fromEntries(champions.map((c) => [c.champKey, c])), [champions]);
 
-  const { connected, phase, inChampSelect, session, sessionError } = useChampSelect(host, token);
+  const { connected, phase, gameLoaded, inChampSelect, session, sessionError } = useChampSelect(host, token);
   const myAction = findMyAction(session);
   const unavailable = useMemo(() => unavailableChampionIds(session), [session]);
 
@@ -97,9 +101,7 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {connected ? <Wifi size={16} color="var(--win)" /> : <WifiOff size={16} color="var(--dim)" />}
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
-              {connected
-                ? `Connecté — ${PHASE_LABEL[phase] || (inChampSelect ? "Sélection des champions" : "en attente")}`
-                : "Script local non détecté"}
+              {connected ? `Connecté — ${gamePhaseLabel(phase, gameLoaded)}` : "Script local non détecté"}
             </span>
           </div>
           {configured && (
@@ -286,7 +288,7 @@ function TeamsAndBans({ session, byKey }) {
     <Card className="p-5">
       {secondsLeft !== null && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <Eyebrow>{PHASE_LABEL[timer.phase] || "Sélection en cours"}</Eyebrow>
+          <Eyebrow>{CHAMPSELECT_SUBPHASE_LABEL[timer.phase] || "Sélection en cours"}</Eyebrow>
           <span
             className="tnum"
             style={{

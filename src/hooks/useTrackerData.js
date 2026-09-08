@@ -23,8 +23,6 @@ const KEEP_SETTINGS_ON_STATS_RESET = [
   "riotPuuid",
   "gameDetectorHost",
   "gameDetectorToken",
-  "discordNotificationsEnabled",
-  "discordWebhookUrl",
 ];
 
 /**
@@ -217,9 +215,9 @@ export function useTrackerData() {
 
       /**
        * Comme resetAll, mais garde la config de connexion (clés/URL/tokens Riot,
-       * GameDetectorLol, webhook Discord) — pour repartir sur des games et des stats
-       * propres sans avoir à ressaisir tout ça. Tout le reste (games, objectifs,
-       * historique, seuils, rang courant, pool de champions, focus...) repart à zéro.
+       * GameDetectorLol) — pour repartir sur des games et des stats propres sans avoir à
+       * ressaisir tout ça. Tout le reste (games, objectifs, historique, seuils, rang
+       * courant, pool de champions, focus...) repart à zéro.
        */
       resetStats() {
         const cur = dataRef.current;

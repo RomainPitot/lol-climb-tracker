@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Check, Upload, RotateCcw, Download, AlertTriangle } from "lucide-react";
 import { SectionTitle, Field, Input, Select, TextArea, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GoalsSection from "../components/settings/GoalsSection.jsx";
-import NotificationsSection from "../components/settings/NotificationsSection.jsx";
+import GameDetectorSection from "../components/settings/GameDetectorSection.jsx";
 import { TIERS, APEX, DIVS } from "../constants/ranks.js";
 import { rankLabel } from "../lib/rank.js";
 import { csvToGames } from "../lib/importers.js";
@@ -140,10 +140,10 @@ export default function SettingsPage({
       )}
 
       <Collapsible
-        title="Notifications"
-        sub="Configure le webhook Discord utilisé par le script local GameDetectorLol (ready check, début et fin de partie)."
+        title="GameDetectorLol"
+        sub="Statut en direct de ta partie (recherche, chargement, en jeu...) — plus de notification Discord, tout s'affiche ici et sur Sélection de champion."
       >
-        <NotificationsSection data={data} setSettings={setSettings} />
+        <GameDetectorSection />
       </Collapsible>
 
       <Collapsible
@@ -361,8 +361,8 @@ export default function SettingsPage({
           )}
           <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 8 }}>
             Efface les games, objectifs, historique, seuils et rang courant — garde la
-            config de connexion (URL/token du Worker, clé API, GameDetectorLol, webhook
-            Discord) pour ne pas avoir à tout ressaisir.
+            config de connexion (URL/token du Worker, clé API, GameDetectorLol) pour ne pas
+            avoir à tout ressaisir.
           </p>
         </div>
 

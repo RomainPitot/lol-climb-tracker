@@ -13,6 +13,7 @@ const CHAMPSELECT_POLL_MS = 1000;
 export function useChampSelect(host, token) {
   const [connected, setConnected] = useState(false);
   const [phase, setPhase] = useState(null);
+  const [gameLoaded, setGameLoaded] = useState(false);
   const [session, setSession] = useState(null);
   const [sessionError, setSessionError] = useState("");
   const inChampSelect = phase === "ChampSelect";
@@ -25,10 +26,12 @@ export function useChampSelect(host, token) {
         if (cancelled) return;
         setConnected(true);
         setPhase(body.phase || null);
+        setGameLoaded(!!body.gameLoaded);
       } catch {
         if (!cancelled) {
           setConnected(false);
           setPhase(null);
+          setGameLoaded(false);
         }
       }
     };
@@ -72,5 +75,5 @@ export function useChampSelect(host, token) {
     };
   }, [inChampSelect, connected, host, token]);
 
-  return { connected, phase, inChampSelect, session, sessionError };
+  return { connected, phase, gameLoaded, inChampSelect, session, sessionError };
 }

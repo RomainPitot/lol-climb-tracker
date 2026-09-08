@@ -29,9 +29,9 @@ export default function App() {
   // tant que ce site reste ouvert dans un onglet, voir useAutoRiotImport.js.
   useAutoRiotImport(data, actions);
 
-  // Lien de "pairing" envoyé par GameDetectorLol sur Discord (voir notifier.py,
-  // send_pairing_link_if_needed) : configure l'adresse/le token du téléphone en un tap
-  // au lieu de les faire ressaisir à la main, puis nettoie l'URL une fois consommé.
+  // Lien de "pairing" (QR code ou "Copier le lien" dans Paramètres, voir
+  // GameDetectorSection.jsx) : configure l'adresse/le token du téléphone en un tap au lieu
+  // de les faire ressaisir à la main, puis nettoie l'URL une fois consommé.
   useEffect(() => {
     if (!loaded) return;
     const params = new URLSearchParams(window.location.search);
