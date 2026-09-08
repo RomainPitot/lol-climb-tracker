@@ -53,9 +53,9 @@ export default function RiotImportSection({ data, setSettings, importRiotResult 
   const [showWorkerGuide, setShowWorkerGuide] = useState(false);
 
   const configured = !!(form.gameName && (form.mode === "proxy" ? form.proxyUrl : form.apiKey));
-  // Champs de connexion (URL Worker, token, pseudo, région...) repliés une fois configurés
-  // — on ne les retouche presque jamais après le premier réglage, pas la peine de les
-  // laisser occuper l'écran à chaque fois qu'on vient juste chercher ses dernières games.
+  // Champs de connexion (URL Worker, token, pseudo, région, vérif auto...) repliés une fois
+  // configurés — on ne les retouche presque jamais après le premier réglage, pas la peine de
+  // les laisser occuper l'écran à chaque fois qu'on vient juste chercher ses dernières games.
   const [editingAccount, setEditingAccount] = useState(!configured);
 
   // Persiste chaque champ dès sa saisie (pas seulement au clic sur "Récupérer") : sans ça,
@@ -126,195 +126,193 @@ export default function RiotImportSection({ data, setSettings, importRiotResult 
   const regionLabel = RIOT_REGIONS.find((r) => r.platform === form.platform)?.label || form.platform;
 
   return (
-    <>
-      <div
-        style={{
-          padding: "12px 14px",
-          background: "var(--bg-elevated)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-md)",
-          marginBottom: 16,
-        }}
-      >
-        {configured && !editingAccount ? (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <CheckCircle2 size={18} color="var(--win)" style={{ flexShrink: 0 }} />
-              <div>
-                <div className="tnum" style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>
-                  {form.gameName}#{form.tagLine}
-                </div>
-                <div style={{ fontSize: 11.5, color: "var(--dim)" }}>
-                  {regionLabel} · {form.mode === "proxy" ? "via proxy" : "direct"}
-                </div>
+    <div
+      style={{
+        padding: "12px 14px",
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-md)",
+      }}
+    >
+      {configured && !editingAccount ? (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <CheckCircle2 size={18} color="var(--win)" style={{ flexShrink: 0 }} />
+            <div>
+              <div className="tnum" style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>
+                {form.gameName}#{form.tagLine}
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--dim)" }}>
+                {regionLabel} · {form.mode === "proxy" ? "via proxy" : "direct"}
+                {form.autoImport && ` · vérif. auto toutes les ${form.activeIntervalMin} min`}
               </div>
             </div>
-            <Btn onClick={() => setEditingAccount(true)}>
-              <Pencil size={14} /> Modifier
-            </Btn>
           </div>
-        ) : (
-          <>
-            {!configured && (
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)", marginBottom: 12 }}>
-                Aucun compte connecté — renseigne les informations ci-dessous.
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-              {MODES.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => patch({ mode: m.id })}
-                  className="hoverable"
-                  style={{
-                    flex: "1 1 220px",
-                    padding: "10px 12px",
-                    borderRadius: "var(--radius-md)",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    background: form.mode === m.id ? "rgba(212,175,55,0.1)" : "var(--card)",
-                    border: `1px solid ${form.mode === m.id ? "var(--gold)" : "var(--border)"}`,
-                  }}
-                >
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{m.title}</div>
-                  <div style={{ fontSize: 11, color: "var(--dim)" }}>{m.desc}</div>
-                </button>
-              ))}
+          <Btn onClick={() => setEditingAccount(true)}>
+            <Pencil size={14} /> Modifier
+          </Btn>
+        </div>
+      ) : (
+        <>
+          {!configured && (
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)", marginBottom: 12 }}>
+              Aucun compte connecté — renseigne les informations ci-dessous.
             </div>
+          )}
 
-            {form.mode === "proxy" && (
-              <div style={{ marginBottom: 14 }}>
-                <button
-                  onClick={() => setShowWorkerGuide((v) => !v)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    background: "none",
-                    border: "none",
-                    color: "var(--gold)",
-                    fontWeight: 700,
-                    fontSize: 12,
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                >
-                  <ChevronRight
-                    size={14}
-                    style={{ transform: showWorkerGuide ? "rotate(90deg)" : "none", transition: "transform .15s" }}
-                  />
-                  Voir le code du Worker à déployer (Cloudflare, gratuit, ~5 min)
-                </button>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+            {MODES.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => patch({ mode: m.id })}
+                className="hoverable"
+                style={{
+                  flex: "1 1 220px",
+                  padding: "10px 12px",
+                  borderRadius: "var(--radius-md)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  background: form.mode === m.id ? "rgba(212,175,55,0.1)" : "var(--card)",
+                  border: `1px solid ${form.mode === m.id ? "var(--gold)" : "var(--border)"}`,
+                }}
+              >
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{m.title}</div>
+                <div style={{ fontSize: 11, color: "var(--dim)" }}>{m.desc}</div>
+              </button>
+            ))}
+          </div>
 
-                {showWorkerGuide && <WorkerGuide />}
-              </div>
-            )}
+          {form.mode === "proxy" && (
+            <div style={{ marginBottom: 14 }}>
+              <button
+                onClick={() => setShowWorkerGuide((v) => !v)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "none",
+                  border: "none",
+                  color: "var(--gold)",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                <ChevronRight
+                  size={14}
+                  style={{ transform: showWorkerGuide ? "rotate(90deg)" : "none", transition: "transform .15s" }}
+                />
+                Voir le code du Worker à déployer (Cloudflare, gratuit, ~5 min)
+              </button>
 
-            {form.mode === "proxy" ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
-                <Field label="URL de ton Worker">
-                  <Input
-                    value={form.proxyUrl}
-                    onChange={(e) => patch({ proxyUrl: e.target.value })}
-                    placeholder="https://lol-proxy.tonnom.workers.dev"
-                    autoComplete="off"
-                    name="climb-euw-riot-proxy-url"
-                  />
-                </Field>
-                <Field label="Token du proxy">
-                  <Input
-                    value={form.proxyToken}
-                    onChange={(e) => patch({ proxyToken: e.target.value })}
-                    placeholder="le PROXY_TOKEN que tu as choisi"
-                    autoComplete="off"
-                    name="climb-euw-riot-proxy-token"
-                  />
-                </Field>
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
-                <Field label="Clé API Riot">
-                  <Input
-                    value={form.apiKey}
-                    onChange={(e) => patch({ apiKey: e.target.value })}
-                    placeholder="RGAPI-..."
-                    autoComplete="off"
-                    name="climb-euw-riot-api-key"
-                  />
-                </Field>
-              </div>
-            )}
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 14 }}>
-              <Field label="Nom (Riot ID)">
-                <Input value={form.gameName} onChange={(e) => patch({ gameName: e.target.value })} placeholder="ex: MonPseudo" />
-              </Field>
-              <Field label="Tag (#)">
-                <Input value={form.tagLine} onChange={(e) => patch({ tagLine: e.target.value })} placeholder="EUW" />
-              </Field>
-              <Field label="Région">
-                <Select value={form.platform} onChange={(e) => patch({ platform: e.target.value })}>
-                  {RIOT_REGIONS.map((r) => (
-                    <option key={r.platform} value={r.platform}>{r.label}</option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label="Nb de games à vérifier">
-                <Input type="number" value={form.count} onChange={(e) => patch({ count: Number(e.target.value) })} />
-              </Field>
+              {showWorkerGuide && <WorkerGuide />}
             </div>
+          )}
 
-            <Btn variant="primary" onClick={() => setEditingAccount(false)} disabled={!configured}>
-              <Check size={14} /> Terminé
-            </Btn>
-          </>
-        )}
-      </div>
-
-      <Btn variant="primary" onClick={run} disabled={loading || !canRun}>
-        {loading ? <Spinner /> : <Sparkles size={14} />} {loading ? "Récupération en cours…" : "Récupérer mes dernières games SoloQ"}
-      </Btn>
-
-      {msg && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{msg}</div>}
-      {error && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{error}</div>}
-
-      <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
-        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={form.autoImport}
-            onChange={(e) => patch({ autoImport: e.target.checked })}
-            style={{ marginTop: 2 }}
-          />
-          <span>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
-              Vérifier automatiquement (toutes les {form.activeIntervalMin} min)
-            </span>
-            <br />
-            <span style={{ fontSize: 11.5, color: "var(--dim)" }}>
-              Tant que ce site reste ouvert dans un onglet — les petits lots (souvent une seule game) donnent un LP
-              exact plutôt qu'estimé. Ne remplace pas un import manuel après une longue absence.
-            </span>
-          </span>
-        </label>
-        {form.autoImport && (
-          <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 12 }}>
-              <Field label="Intervalle de vérification (min)">
+          {form.mode === "proxy" ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
+              <Field label="URL de ton Worker">
                 <Input
-                  type="number"
-                  min={1}
-                  value={form.activeIntervalMin}
-                  onChange={(e) => patch({ activeIntervalMin: Number(e.target.value) })}
+                  value={form.proxyUrl}
+                  onChange={(e) => patch({ proxyUrl: e.target.value })}
+                  placeholder="https://lol-proxy.tonnom.workers.dev"
+                  autoComplete="off"
+                  name="climb-euw-riot-proxy-url"
+                />
+              </Field>
+              <Field label="Token du proxy">
+                <Input
+                  value={form.proxyToken}
+                  onChange={(e) => patch({ proxyToken: e.target.value })}
+                  placeholder="le PROXY_TOKEN que tu as choisi"
+                  autoComplete="off"
+                  name="climb-euw-riot-proxy-token"
                 />
               </Field>
             </div>
-            <AutoImportStatus settings={s} />
-          </>
-        )}
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
+              <Field label="Clé API Riot">
+                <Input
+                  value={form.apiKey}
+                  onChange={(e) => patch({ apiKey: e.target.value })}
+                  placeholder="RGAPI-..."
+                  autoComplete="off"
+                  name="climb-euw-riot-api-key"
+                />
+              </Field>
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 14 }}>
+            <Field label="Nom (Riot ID)">
+              <Input value={form.gameName} onChange={(e) => patch({ gameName: e.target.value })} placeholder="ex: MonPseudo" />
+            </Field>
+            <Field label="Tag (#)">
+              <Input value={form.tagLine} onChange={(e) => patch({ tagLine: e.target.value })} placeholder="EUW" />
+            </Field>
+            <Field label="Région">
+              <Select value={form.platform} onChange={(e) => patch({ platform: e.target.value })}>
+                {RIOT_REGIONS.map((r) => (
+                  <option key={r.platform} value={r.platform}>{r.label}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Nb de games à vérifier">
+              <Input type="number" value={form.count} onChange={(e) => patch({ count: Number(e.target.value) })} />
+            </Field>
+          </div>
+
+          <div style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={form.autoImport}
+                onChange={(e) => patch({ autoImport: e.target.checked })}
+                style={{ marginTop: 2 }}
+              />
+              <span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>Vérifier automatiquement</span>
+                <br />
+                <span style={{ fontSize: 11.5, color: "var(--dim)" }}>
+                  Tant que ce site reste ouvert dans un onglet — les petits lots (souvent une seule game) donnent un LP
+                  exact plutôt qu'estimé. Ne remplace pas un import manuel après une longue absence.
+                </span>
+              </span>
+            </label>
+            {form.autoImport && (
+              <div style={{ marginTop: 10, maxWidth: 220 }}>
+                <Field label="Intervalle de vérification (min)">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={form.activeIntervalMin}
+                    onChange={(e) => patch({ activeIntervalMin: Number(e.target.value) })}
+                  />
+                </Field>
+              </div>
+            )}
+          </div>
+
+          <Btn variant="primary" onClick={() => setEditingAccount(false)} disabled={!configured}>
+            <Check size={14} /> Terminé
+          </Btn>
+        </>
+      )}
+
+      <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
+        <Btn variant="primary" onClick={run} disabled={loading || !canRun}>
+          {loading ? <Spinner /> : <Sparkles size={14} />}{" "}
+          {loading ? "Récupération en cours…" : "Récupérer mes dernières games SoloQ"}
+        </Btn>
+
+        {msg && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{msg}</div>}
+        {error && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{error}</div>}
+
+        {form.autoImport && <AutoImportStatus settings={s} />}
       </div>
-    </>
+    </div>
   );
 }
 
