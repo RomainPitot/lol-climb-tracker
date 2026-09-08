@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Wifi, WifiOff, Settings2, Ban, Check } from "lucide-react";
-import { Card, SectionTitle, Eyebrow, Field, Input, Btn, Pill, Spinner } from "../components/ui/primitives.jsx";
+import { Wifi, WifiOff, Settings2, Ban, Check, Rocket, Search, X } from "lucide-react";
+import { Card, SectionTitle, Eyebrow, Field, Input, Select, Btn, Pill, Spinner } from "../components/ui/primitives.jsx";
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
@@ -8,6 +8,8 @@ import { useChampSelect } from "../hooks/useChampSelect.js";
 import { rankLabel } from "../lib/rank.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { gamePhaseLabel } from "../constants/gameDetector.js";
+import { ROLES } from "../constants/game.js";
+import { FR_ROLE_TO_LCU } from "../constants/riot.js";
 import {
   DEFAULT_HOST,
   sendChampSelectAction,
@@ -15,6 +17,10 @@ import {
   unavailableChampionIds,
   fetchRunePages,
   activateRunePage,
+  launchRiotClient,
+  fetchLobbyStatus,
+  startQueue,
+  cancelQueue,
 } from "../lib/gameDetector.js";
 
 // Sous-phase INTERNE au champ select (timer.phase de la session) — différent de la phase
@@ -146,14 +152,7 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
         )}
       </Card>
 
-      {connected && !inChampSelect && (
-        <Card className="p-6">
-          <div style={{ textAlign: "center", color: "var(--dim)", fontSize: 13, padding: "12px 0" }}>
-            En attente d'une sélection de champion — reste sur cette page, elle se met à jour automatiquement dès
-            qu'une game est trouvée et acceptée.
-          </div>
-        </Card>
-      )}
+      {connected && !inChampSelect && <QueuePanel host={host} token={token} phase={phase} />}
 
       {inChampSelect && (
         <>
@@ -443,6 +442,185 @@ Réponse concise, à puces, sans blabla.`;
         si les picks changent.
       </p>
       <AiCoachPanel buildPrompt={buildPrompt} buttonLabel="Générer le prompt d'analyse" resultTitle="Prompt d'analyse" />
+    </Card>
+  );
+}
+
+const LOBBY_POLL_MS = 3000;
+// Queues où League autorise le choix d'un rôle préféré (ARAM, blind pick... n'en ont pas) —
+// tenu en phase avec ROLE_QUEUES côté notifier.py, mais un fallback local suffit tant que
+// GameDetectorLol n'a pas encore répondu une première fois (roleQueues vient de /lobby).
+const FALLBACK_ROLE_QUEUES = { 420: "Solo/Duo classée", 440: "Flexible classée", 400: "Normale (Draft)" };
+
+/**
+ * Lancer le client LoL (s'il est fermé) et/ou lancer une recherche de partie avec ses
+ * rôles préférés, depuis le téléphone — remplace le fait d'attendre passivement d'être
+ * en champ select. `phase` vient du /status de GameDetectorLol : null = client pas ouvert
+ * du tout, "None"/"Lobby"/"Matchmaking" = client ouvert et pilotable ici, tout autre valeur
+ * (ReadyCheck, en fin de partie...) = rien à faire ici, juste attendre.
+ */
+function QueuePanel({ host, token, phase }) {
+  const [launching, setLaunching] = useState(false);
+  const [launchError, setLaunchError] = useState("");
+
+  const pilotable = phase === "None" || phase === "Lobby" || phase === "Matchmaking";
+
+  const [lobby, setLobby] = useState(null);
+  const [roleQueues, setRoleQueues] = useState(FALLBACK_ROLE_QUEUES);
+  const [queueId, setQueueId] = useState(420);
+  const [firstRole, setFirstRole] = useState(ROLES[0]);
+  const [secondRole, setSecondRole] = useState(ROLES[1]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!pilotable) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const body = await fetchLobbyStatus(host, token);
+        if (cancelled) return;
+        setLobby(body.lobby);
+        if (body.roleQueues && Object.keys(body.roleQueues).length) setRoleQueues(body.roleQueues);
+      } catch {
+        // Silencieux — /status (déjà affiché plus haut) suffit à signaler un vrai souci de connexion.
+      }
+    };
+    poll();
+    const id = setInterval(poll, LOBBY_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [pilotable, host, token]);
+
+  const launch = async () => {
+    setLaunching(true);
+    setLaunchError("");
+    try {
+      await launchRiotClient(host, token);
+    } catch (e) {
+      setLaunchError(e.message);
+    } finally {
+      setLaunching(false);
+    }
+  };
+
+  const roleAware = Object.keys(roleQueues).map(Number).includes(queueId);
+
+  const search = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await startQueue(host, token, {
+        queueId,
+        firstPreference: roleAware ? FR_ROLE_TO_LCU[firstRole] : undefined,
+        secondPreference: roleAware ? FR_ROLE_TO_LCU[secondRole] : undefined,
+      });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const cancel = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await cancelQueue(host, token);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (phase === null) {
+    return (
+      <Card className="p-6">
+        <div style={{ textAlign: "center", padding: "8px 0" }}>
+          <p style={{ fontSize: 13, color: "var(--dim)", marginBottom: 14 }}>
+            Le client League of Legends n'est pas ouvert sur ton PC.
+          </p>
+          <Btn variant="primary" onClick={launch} disabled={launching}>
+            {launching ? <Spinner /> : <Rocket size={14} />} {launching ? "Lancement…" : "Lancer LoL"}
+          </Btn>
+          {launchError && <div style={{ fontSize: 12, color: "var(--loss)", marginTop: 10 }}>{launchError}</div>}
+        </div>
+      </Card>
+    );
+  }
+
+  if (!pilotable) {
+    return (
+      <Card className="p-6">
+        <div style={{ textAlign: "center", color: "var(--dim)", fontSize: 13, padding: "12px 0" }}>
+          En attente d'une sélection de champion — reste sur cette page, elle se met à jour automatiquement dès
+          qu'une game est trouvée et acceptée.
+        </div>
+      </Card>
+    );
+  }
+
+  const searching = phase === "Matchmaking" || !!lobby?.searching;
+
+  return (
+    <Card className="p-5">
+      <Eyebrow style={{ marginBottom: 10 }}>Rechercher une partie</Eyebrow>
+
+      {searching ? (
+        <div style={{ textAlign: "center", padding: "10px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14 }}>
+            <Spinner /> <span style={{ fontSize: 13, color: "var(--text)" }}>Recherche de partie en cours…</span>
+          </div>
+          <Btn onClick={cancel} disabled={busy}>
+            <X size={14} /> Annuler
+          </Btn>
+        </div>
+      ) : (
+        <>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 14 }}
+          >
+            <Field label="Queue">
+              <Select value={queueId} onChange={(e) => setQueueId(Number(e.target.value))}>
+                {Object.entries(roleQueues).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            {roleAware && (
+              <>
+                <Field label="Rôle principal">
+                  <Select value={firstRole} onChange={(e) => setFirstRole(e.target.value)}>
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Rôle secondaire">
+                  <Select value={secondRole} onChange={(e) => setSecondRole(e.target.value)}>
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </>
+            )}
+          </div>
+          {error && <div style={{ fontSize: 12, color: "var(--loss)", marginBottom: 10 }}>{error}</div>}
+          <Btn variant="primary" onClick={search} disabled={busy}>
+            {busy ? <Spinner /> : <Search size={14} />} {busy ? "…" : "Rechercher une partie"}
+          </Btn>
+        </>
+      )}
     </Card>
   );
 }

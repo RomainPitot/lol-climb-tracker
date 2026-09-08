@@ -33,6 +33,17 @@ export const RIOT_ROLE_MAP = {
   UTILITY: "Support",
 };
 
+/** Sens inverse de RIOT_ROLE_MAP — pour envoyer une préférence de rôle (français, choisie
+ * dans l'UI) au LCU via GameDetectorLol (/lobby/queue attend TOP/JUNGLE/MIDDLE/BOTTOM/UTILITY
+ * ou "FILL"), voir lib/gameDetector.js startQueue. */
+export const FR_ROLE_TO_LCU = {
+  Top: "TOP",
+  Jungle: "JUNGLE",
+  Mid: "MIDDLE",
+  ADC: "BOTTOM",
+  Support: "UTILITY",
+};
+
 /**
  * Code du Cloudflare Worker à déployer côté utilisateur.
  * La clé Riot vit dans les secrets du Worker et ne transite jamais par le navigateur.

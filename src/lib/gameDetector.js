@@ -67,6 +67,51 @@ export async function activateRunePage(host, token, pageId) {
   return body;
 }
 
+/** Lance le Riot Client (League of Legends) si le client n'est pas encore ouvert. */
+export async function launchRiotClient(host, token) {
+  const res = await fetch(`${baseUrl(host)}/client/launch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+  });
+  const body = await parseJson(res);
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return body;
+}
+
+/** Lobby courant (queue, préférences de rôle, recherche en cours) + queues supportant les
+ * préférences de rôle (`roleQueues`, ex: {420: "Solo/Duo classée", ...}). */
+export async function fetchLobbyStatus(host, token) {
+  const res = await fetch(`${baseUrl(host)}/lobby`, { headers: authHeaders(token) });
+  const body = await parseJson(res);
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return { lobby: body.lobby || null, roleQueues: body.roleQueues || {} };
+}
+
+/** Crée le lobby pour cette queue, règle les rôles (si la queue les supporte) puis lance
+ * la recherche de partie. `firstPreference`/`secondPreference` : codes LCU (TOP, JUNGLE,
+ * MIDDLE, BOTTOM, UTILITY) ou "FILL" — voir riotRoleToLcu dans constants/riot.js. */
+export async function startQueue(host, token, { queueId, firstPreference, secondPreference }) {
+  const res = await fetch(`${baseUrl(host)}/lobby/queue`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify({ queueId, firstPreference, secondPreference }),
+  });
+  const body = await parseJson(res);
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return body;
+}
+
+/** Annule la recherche de partie en cours. */
+export async function cancelQueue(host, token) {
+  const res = await fetch(`${baseUrl(host)}/lobby/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+  });
+  const body = await parseJson(res);
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return body;
+}
+
 /** L'action pick/ban actionnable par le joueur local, si son tour est arrivé. */
 export function findMyAction(session) {
   if (!session) return null;
