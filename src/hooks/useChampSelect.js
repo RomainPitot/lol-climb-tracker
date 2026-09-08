@@ -14,6 +14,10 @@ export function useChampSelect(host, token) {
   const [connected, setConnected] = useState(false);
   const [phase, setPhase] = useState(null);
   const [gameLoaded, setGameLoaded] = useState(false);
+  // Un appareil distant (le téléphone, pas ce PC) a interrogé /status récemment — voir
+  // notifier.py (_last_remote_status_at) : sert à savoir que le QR de pairing a bien été
+  // scanné et utilisé, pour le faire disparaître automatiquement (voir ChampSelectPage).
+  const [remoteConnected, setRemoteConnected] = useState(false);
   const [session, setSession] = useState(null);
   const [sessionError, setSessionError] = useState("");
   const inChampSelect = phase === "ChampSelect";
@@ -27,11 +31,13 @@ export function useChampSelect(host, token) {
         setConnected(true);
         setPhase(body.phase || null);
         setGameLoaded(!!body.gameLoaded);
+        setRemoteConnected(!!body.remoteConnected);
       } catch {
         if (!cancelled) {
           setConnected(false);
           setPhase(null);
           setGameLoaded(false);
+          setRemoteConnected(false);
         }
       }
     };
@@ -75,5 +81,5 @@ export function useChampSelect(host, token) {
     };
   }, [inChampSelect, connected, host, token]);
 
-  return { connected, phase, gameLoaded, inChampSelect, session, sessionError };
+  return { connected, phase, gameLoaded, remoteConnected, inChampSelect, session, sessionError };
 }

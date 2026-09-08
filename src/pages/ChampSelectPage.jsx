@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { Wifi, WifiOff, Settings2, Ban, Check, Rocket, Search, X, Star } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Wifi, WifiOff, Settings2, Ban, Check, Rocket, Search, X, Star, Play, QrCode } from "lucide-react";
 import { Card, SectionTitle, Eyebrow, Field, Input, Select, Btn, Pill, Spinner, ToggleChip } from "../components/ui/primitives.jsx";
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
+import QrModal from "../components/QrModal.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { useChampSelect } from "../hooks/useChampSelect.js";
+import { usePairingLink } from "../hooks/usePairingLink.js";
 import { rankLabel } from "../lib/rank.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { gamePhaseLabel } from "../constants/gameDetector.js";
@@ -52,7 +54,27 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
   const { champions } = useChampionList();
   const byKey = useMemo(() => Object.fromEntries(champions.map((c) => [c.champKey, c])), [champions]);
 
-  const { connected, phase, gameLoaded, inChampSelect, session, sessionError } = useChampSelect(host, token);
+  const { connected, phase, gameLoaded, remoteConnected, inChampSelect, session, sessionError } = useChampSelect(host, token);
+
+  // "Lancer GameDetectorLol" -> dès qu'il devient détecté juste après ce clic, propose
+  // directement le QR en grand (pas la peine de rechercher le bouton "Afficher en grand"
+  // dans Paramètres) ; il se referme seul dès qu'un appareil distant (le téléphone) se met
+  // à interroger le script (voir remoteConnected, notifier.py) — signe qu'il a bien scanné.
+  const [awaitingLaunch, setAwaitingLaunch] = useState(false);
+  const [showLaunchQr, setShowLaunchQr] = useState(false);
+  const wasConnected = useRef(connected);
+  useEffect(() => {
+    if (awaitingLaunch && !wasConnected.current && connected) {
+      setShowLaunchQr(true);
+      setAwaitingLaunch(false);
+    }
+    wasConnected.current = connected;
+  }, [connected, awaitingLaunch]);
+  useEffect(() => {
+    if (remoteConnected) setShowLaunchQr(false);
+  }, [remoteConnected]);
+  const { qrDataUrl: launchQrDataUrl, error: launchQrError } = usePairingLink(showLaunchQr);
+
   const myAction = findMyAction(session);
   // Ton pick à venir, même si ce n'est pas encore ton tour (voir findMyPendingPick) — permet
   // de présélectionner ton champion pendant les bans adverses, comme dans le client officiel.
@@ -155,10 +177,42 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
         </div>
 
         {!connected && (
-          <p style={{ fontSize: 12, color: "var(--dim)", marginTop: 8 }}>
-            Vérifie que GameDetectorLol tourne sur ton PC, que ton téléphone est sur le même Wi-Fi, et que
-            l'adresse ci-dessous est correcte (elle s'affiche dans la fenêtre du script au démarrage).
-          </p>
+          <>
+            <p style={{ fontSize: 12, color: "var(--dim)", marginTop: 8, marginBottom: 10 }}>
+              Vérifie que GameDetectorLol tourne sur ton PC, que ton téléphone est sur le même Wi-Fi, et que
+              l'adresse ci-dessous est correcte (elle s'affiche dans la fenêtre du script au démarrage). Si tu es
+              sur ce PC, tu peux aussi le lancer directement :
+            </p>
+            <a
+              href="gamedetectorlol://lancer"
+              style={{ textDecoration: "none" }}
+              onClick={() => setAwaitingLaunch(true)}
+            >
+              <Btn type="button">
+                <Play size={14} /> Lancer GameDetectorLol
+              </Btn>
+            </a>
+          </>
+        )}
+
+        {connected && !remoteConnected && !showLaunchQr && (
+          <Btn onClick={() => setShowLaunchQr(true)} style={{ marginTop: 8 }}>
+            <QrCode size={14} /> Connecter mon téléphone
+          </Btn>
+        )}
+
+        {showLaunchQr && (
+          <div style={{ marginTop: 10, fontSize: 12, color: "var(--dim)" }}>
+            {launchQrError ? (
+              <span style={{ color: "var(--loss)" }}>{launchQrError}</span>
+            ) : launchQrDataUrl ? (
+              "En attente du scan… le QR se referme automatiquement une fois ton téléphone connecté."
+            ) : (
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Spinner /> Génération du QR code…
+              </span>
+            )}
+          </div>
         )}
 
         {editingConfig && (
@@ -370,6 +424,14 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
             </>
           )}
         </>
+      )}
+
+      {showLaunchQr && launchQrDataUrl && (
+        <QrModal
+          dataUrl={launchQrDataUrl}
+          onClose={() => setShowLaunchQr(false)}
+          title="Scanne pour connecter ton téléphone"
+        />
       )}
     </div>
   );
