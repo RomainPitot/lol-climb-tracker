@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, ReferenceArea, ReferenceLine, Tooltip, ResponsiveContainer } from "recharts";
 import { ChevronDown, Percent, Zap, Swords, Trophy, Layers } from "lucide-react";
 import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, ToggleChip } from "../components/ui/primitives.jsx";
 import RankBadge from "../components/RankBadge.jsx";
@@ -11,6 +11,7 @@ import FocusTracker from "../components/dashboard/FocusTracker.jsx";
 import { PERIODS } from "../constants/game.js";
 import { roleBenchmark, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
+import { buildLpChartBands } from "../lib/lpChart.js";
 import { computeAgg, filterByPeriod, getColor, mostFrequentRole } from "../lib/stats.js";
 import { computeGeneralAchievements } from "../lib/achievements.js";
 import { representativeGames } from "../lib/gameModel.js";
@@ -66,15 +67,28 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   const bench = roleBenchmark(objectiveTier, dominantRole);
   const a20 = useMemo(() => computeAgg(recent20), [recent20]);
 
-  // Score composite rang+LP : donne une courbe continue à travers les promotions.
+  // Score composite rang+LP : donne une courbe continue à travers les promotions. Le
+  // palier/LP réels de chaque point restent à côté (tier/div/lpAfter) pour un tooltip
+  // lisible ("Émeraude II — 45 LP") plutôt que le score brut, qui ne veut rien dire seul.
   const lpSeries = useMemo(
     () =>
       sorted.map((g, i) => ({
         i: i + 1,
         lp: rankValue(g.rankAfterTier, g.rankAfterDiv) * 100 + Number(g.lpAfter || 0),
+        tier: g.rankAfterTier,
+        div: g.rankAfterDiv,
+        lpAfter: Number(g.lpAfter || 0),
       })),
     [sorted]
   );
+
+  // Bandes/lignes de division façon u.gg (voir lib/lpChart.js) — une couleur par palier
+  // (pas par division), calculées sur la plage réellement couverte par la courbe.
+  const lpBands = useMemo(() => {
+    if (lpSeries.length < 2) return null;
+    const scores = lpSeries.map((p) => p.lp);
+    return buildLpChartBands(Math.min(...scores), Math.max(...scores));
+  }, [lpSeries]);
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const heroColor = TIER_COLORS[currentRank.tier] || "var(--gold)";
@@ -242,24 +256,58 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
         </button>
 
         <div style={{ marginTop: 10 }}>
-          {lpSeries.length > 1 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={lpSeries}>
+          {lpSeries.length > 1 && lpBands ? (
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={lpSeries} margin={{ left: 4, right: 8 }}>
                 <defs>
-                  <linearGradient id="lpGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--gold)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--gold)" stopOpacity={0} />
+                  {/* Courbe : mêmes couleurs que les bandes de fond, en opaque. */}
+                  <linearGradient id="lpStroke" x1="0" y1="0" x2="0" y2="1">
+                    {lpBands.gradientStops.map((s, i) => (
+                      <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={1} />
+                    ))}
+                  </linearGradient>
+                  {/* Remplissage sous la courbe : mêmes arrêts, translucides. */}
+                  <linearGradient id="lpFill" x1="0" y1="0" x2="0" y2="1">
+                    {lpBands.gradientStops.map((s, i) => (
+                      <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={0.22} />
+                    ))}
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+
+                {lpBands.areas.map((a) => (
+                  <ReferenceArea
+                    key={a.tier}
+                    y1={Math.max(a.y1, lpBands.domainMin)}
+                    y2={Math.min(a.y2, lpBands.domainMax)}
+                    fill={a.color}
+                    fillOpacity={0.07}
+                    stroke="none"
+                    ifOverflow="hidden"
+                  />
+                ))}
+                {lpBands.lines.map((l) => (
+                  <ReferenceLine
+                    key={l.score}
+                    y={l.score}
+                    stroke={l.color}
+                    strokeOpacity={0.45}
+                    strokeDasharray="3 3"
+                    ifOverflow="hidden"
+                    label={{ value: l.label, position: "insideLeft", fill: l.color, fontSize: 10.5, fontWeight: 600 }}
+                  />
+                ))}
+
                 <XAxis dataKey="i" stroke="var(--dim)" fontSize={11} tickLine={false} />
-                <YAxis stroke="var(--dim)" fontSize={11} tickLine={false} domain={["auto", "auto"]} />
+                <YAxis hide domain={[lpBands.domainMin, lpBands.domainMax]} />
                 <Tooltip
                   contentStyle={TOOLTIP_STYLE}
                   labelFormatter={(v) => `Game #${v}`}
-                  formatter={(v) => [v, "Score rang"]}
+                  formatter={(_, __, item) => [
+                    `${rankLabel(item.payload.tier, item.payload.div)} — ${item.payload.lpAfter} LP`,
+                    "Rang",
+                  ]}
                 />
-                <Area type="monotone" dataKey="lp" stroke="var(--gold)" fill="url(#lpGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="lp" stroke="url(#lpStroke)" fill="url(#lpFill)" strokeWidth={2.5} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
