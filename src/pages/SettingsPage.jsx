@@ -1,32 +1,21 @@
 import { useState } from "react";
-import { Check, Upload, RotateCcw, Download, AlertTriangle } from "lucide-react";
-import { SectionTitle, Field, Input, Select, TextArea, Btn, Collapsible } from "../components/ui/primitives.jsx";
+import { Check, RotateCcw, Download, AlertTriangle } from "lucide-react";
+import { SectionTitle, Field, Input, Select, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GoalsSection from "../components/settings/GoalsSection.jsx";
 import GameDetectorSection from "../components/settings/GameDetectorSection.jsx";
 import { TIERS, APEX, DIVS } from "../constants/ranks.js";
 import { rankLabel } from "../lib/rank.js";
-import { csvToGames } from "../lib/importers.js";
-import { emptyGame } from "../lib/gameModel.js";
-import { uid } from "../lib/format.js";
-
-const HIST_FIELDS = [
-  "games", "wins", "losses", "kills", "deaths", "assists", "lp", "cs",
-  "damage", "gold", "maxKills", "maxDeaths", "doubles", "triples", "quadras", "pentas",
-];
 
 export default function SettingsPage({
-  data, sorted, currentRank, addGoal, deleteGoal, setHistorical,
-  setThresholds, setCurrentRank, setSettings, importGames, resetAll, resetStats,
+  data, sorted, currentRank, addGoal, deleteGoal,
+  setThresholds, setCurrentRank, setSettings, resetAll, resetStats,
 }) {
-  const [hist, setHist] = useState(data.historical);
   const [th, setTh] = useState(data.thresholds);
   const [rankForm, setRankForm] = useState({
     tier: currentRank.tier,
     div: currentRank.div || "IV",
     lp: currentRank.lp,
   });
-  const [pasteText, setPasteText] = useState("");
-  const [jsonText, setJsonText] = useState("");
   const [msg, setMsg] = useState("");
   const [msgError, setMsgError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -47,53 +36,6 @@ export default function SettingsPage({
     notify("Rang actuel mis à jour.");
   };
 
-  /** Vérifie que les totaux saisis à la main tiennent debout avant d'enregistrer. */
-  const checkConsistency = () => {
-    const issues = [];
-    ["yone", "tahm"].forEach((k) => {
-      const h = hist[k];
-      if (h.wins + h.losses !== h.games) {
-        issues.push(`${k}: W(${h.wins}) + L(${h.losses}) ≠ games (${h.games})`);
-      }
-    });
-    if (hist.global.wins + hist.global.losses !== hist.global.games) {
-      issues.push(`global: W(${hist.global.wins}) + L(${hist.global.losses}) ≠ games (${hist.global.games})`);
-    }
-    if (hist.yone.games + hist.tahm.games > hist.global.games) {
-      issues.push("Yone + Tahm dépasse le total global — vérifie les chiffres.");
-    }
-    return issues;
-  };
-
-  const saveHist = () => {
-    const issues = checkConsistency();
-    if (issues.length) {
-      notify(`Incohérences détectées : ${issues.join(" | ")}`, true);
-      return;
-    }
-    setHistorical(hist);
-    notify("Statistiques historiques enregistrées.");
-  };
-
-  const doImportCsv = () => {
-    if (!pasteText.trim()) return;
-    const n = importGames(csvToGames(pasteText));
-    notify(`${n} games importées.`);
-    setPasteText("");
-  };
-
-  const doImportJson = () => {
-    try {
-      const arr = JSON.parse(jsonText);
-      if (!Array.isArray(arr)) throw new Error("not array");
-      const n = importGames(arr.map((g) => ({ id: uid(), ...emptyGame(), ...g })));
-      notify(`${n} games importées (JSON).`);
-      setJsonText("");
-    } catch {
-      notify("JSON invalide.", true);
-    }
-  };
-
   /** Sauvegarde complète : tout l'état vit dans le navigateur, un export est la seule copie. */
   const exportBackup = () => {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -105,8 +47,6 @@ export default function SettingsPage({
     URL.revokeObjectURL(url);
   };
 
-  const updateHistField = (key, field, val) =>
-    setHist((p) => ({ ...p, [key]: { ...p[key], [field]: Number(val) } }));
   const updateTh = (key, field, val) =>
     setTh((p) => ({ ...p, [key]: { ...p[key], [field]: Number(val) } }));
 
@@ -239,101 +179,10 @@ export default function SettingsPage({
         </Btn>
       </Collapsible>
 
-      <Collapsible
-        title="Statistiques historiques"
-        sub="Chiffres d'avant le début du tracking (Yone, Tahm Kench, global) — jamais mélangés aux stats calculées game par game."
-      >
-        {["yone", "tahm"].map((k) => (
-          <div key={k} style={{ marginBottom: 16 }}>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: k === "yone" ? "var(--yone)" : "var(--tahm)",
-                marginBottom: 8,
-              }}
-            >
-              {k === "tahm" ? "Tahm Kench" : "Yone"}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(90px, 1fr))", gap: 8 }}>
-              {HIST_FIELDS.map((f) => (
-                <Field key={f} label={f}>
-                  <Input type="number" value={hist[k][f]} onChange={(e) => updateHistField(k, f, e.target.value)} />
-                </Field>
-              ))}
-            </div>
-          </div>
-        ))}
-
-        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "var(--text)" }}>Global</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(90px, 1fr))", gap: 8, marginBottom: 12 }}>
-          {["games", "wins", "losses", "lp"].map((f) => (
-            <Field key={f} label={f}>
-              <Input type="number" value={hist.global[f]} onChange={(e) => updateHistField("global", f, e.target.value)} />
-            </Field>
-          ))}
-          <Field label="tier">
-            <Select
-              value={hist.global.tier}
-              onChange={(e) => setHist((p) => ({ ...p, global: { ...p.global, tier: e.target.value } }))}
-            >
-              {[...TIERS, ...APEX].map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="div">
-            <Select
-              value={hist.global.div}
-              onChange={(e) => setHist((p) => ({ ...p, global: { ...p.global, div: e.target.value } }))}
-            >
-              {DIVS.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-
-        <Btn variant="primary" onClick={saveHist}>
-          <Check size={14} /> Enregistrer &amp; vérifier cohérence
+      <Collapsible title="Export JSON" sub="Sauvegarde tes données — elles ne vivent que dans ce navigateur.">
+        <Btn onClick={exportBackup}>
+          <Download size={14} /> Exporter une sauvegarde complète
         </Btn>
-      </Collapsible>
-
-      <Collapsible title="Import CSV / copier-coller de tableau">
-        <p style={{ fontSize: 12, color: "var(--dim)", marginBottom: 10 }}>
-          En-têtes : date, time, champion, role, rolestatus, win, lpchange, kills, deaths, assists, cs, duration,
-          damage, gold, vision, matchup, matchupadc, matchupsupport, side.
-        </p>
-        <TextArea
-          rows={5}
-          value={pasteText}
-          onChange={(e) => setPasteText(e.target.value)}
-          placeholder="date,champion,role,win,kills,deaths,assists,cs,duration,damage,gold,vision..."
-        />
-        <div style={{ marginTop: 10 }}>
-          <Btn onClick={doImportCsv}>
-            <Upload size={14} /> Importer
-          </Btn>
-        </div>
-      </Collapsible>
-
-      <Collapsible title="Import / export JSON" sub="Sauvegarde tes données — elles ne vivent que dans ce navigateur.">
-        <div style={{ marginBottom: 14 }}>
-          <Btn onClick={exportBackup}>
-            <Download size={14} /> Exporter une sauvegarde complète
-          </Btn>
-        </div>
-        <TextArea
-          rows={5}
-          value={jsonText}
-          onChange={(e) => setJsonText(e.target.value)}
-          placeholder='[{"date":"2026-08-01","champion":"Yone",...}]'
-        />
-        <div style={{ marginTop: 10 }}>
-          <Btn onClick={doImportJson}>
-            <Upload size={14} /> Importer des games (JSON)
-          </Btn>
-        </div>
       </Collapsible>
 
       <Collapsible title="Zone sensible">
