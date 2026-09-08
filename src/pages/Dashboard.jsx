@@ -83,12 +83,19 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   );
 
   // Bandes/lignes de division façon u.gg (voir lib/lpChart.js) — une couleur par palier
-  // (pas par division), calculées sur la plage réellement couverte par la courbe.
+  // (pas par division), calculées sur la plage réellement couverte par la courbe. Le bas
+  // de cette plage ne descend jamais sous le rang de départ (avant la toute première game
+  // trackée) : sans ce plancher, un rang jamais vraiment rejoué depuis (ou juste mal réglé
+  // au départ) ajouterait plein de divisions inutiles et rendrait le graphique illisible.
   const lpBands = useMemo(() => {
     if (lpSeries.length < 2) return null;
     const scores = lpSeries.map((p) => p.lp);
-    return buildLpChartBands(Math.min(...scores), Math.max(...scores));
-  }, [lpSeries]);
+    const first = sorted[0];
+    const startScore = first
+      ? rankValue(first.rankBeforeTier, first.rankBeforeDiv) * 100 + Number(first.lpBefore || 0)
+      : -Infinity;
+    return buildLpChartBands(Math.max(Math.min(...scores), startScore), Math.max(...scores));
+  }, [lpSeries, sorted]);
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const heroColor = TIER_COLORS[currentRank.tier] || "var(--gold)";
