@@ -26,9 +26,13 @@ function DivisionPips({ tier, div, color, size = 6 }) {
   );
 }
 
-export default function RankBadge({ tier, div, lp, size = "lg" }) {
+/** `name` (ex: pseudo Riot) remplace le rang comme intitulé principal quand fourni — le
+ * rang devient alors une ligne secondaire, plus discrète, juste dessous (voir Dashboard,
+ * carte héro). Sans `name`, comportement inchangé : le rang reste l'intitulé principal. */
+export default function RankBadge({ tier, div, lp, size = "lg", name }) {
   const c = TIER_COLORS[tier] || "var(--dim)";
   const big = size === "lg";
+  const rank = rankLabel(tier, div);
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: big ? 18 : 12 }}>
@@ -59,8 +63,16 @@ export default function RankBadge({ tier, div, lp, size = "lg" }) {
             lineHeight: 1.05,
           }}
         >
-          {rankLabel(tier, div)}
+          {name || rank}
         </div>
+        {name && (
+          <div
+            className="tnum"
+            style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: big ? 15 : 12, color: "var(--dim)", marginTop: 2 }}
+          >
+            {rank}
+          </div>
+        )}
         {lp !== undefined && (
           <div className="tnum" style={{ fontSize: big ? 14 : 12, color: c, fontWeight: 700, marginTop: 2 }}>
             {lp} LP
