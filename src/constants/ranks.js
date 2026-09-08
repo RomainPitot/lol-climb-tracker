@@ -8,18 +8,9 @@ export const DIV_NUM = { IV: 1, III: 2, II: 3, I: 4 };
 /** Toutes les divisions Fer IV → Diamant I, dans l'ordre croissant. */
 export const FULL_LADDER = TIERS.flatMap((tier) => DIVS.map((div) => ({ tier, div })));
 
-/** Sous-ensemble affiché dans la barre de progression du dashboard. */
-export const LADDER = [
-  { tier: "Émeraude", div: "IV" },
-  { tier: "Émeraude", div: "III" },
-  { tier: "Émeraude", div: "II" },
-  { tier: "Émeraude", div: "I" },
-  { tier: "Diamant", div: "IV" },
-  { tier: "Diamant", div: "III" },
-  { tier: "Diamant", div: "II" },
-  { tier: "Diamant", div: "I" },
-  { tier: "Maître", div: null },
-];
+/** Ladder complète affichée sur le dashboard : tous les paliers du jeu, Fer IV → Challenger
+ * (les paliers apex n'ont pas de division — un seul palier LP continu chacun). */
+export const FULL_GAME_LADDER = [...FULL_LADDER, ...APEX.map((tier) => ({ tier, div: null }))];
 
 export const TIER_COLORS = {
   Fer: "#8B8D92",

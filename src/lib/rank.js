@@ -1,4 +1,4 @@
-import { TIERS, APEX, DIV_NUM, FULL_LADDER, LADDER } from "../constants/ranks.js";
+import { TIERS, APEX, DIV_NUM, FULL_LADDER, FULL_GAME_LADDER } from "../constants/ranks.js";
 import { gameTime } from "./format.js";
 
 /** Valeur ordonnable d'un rang : les paliers apex passent au-dessus de tout le reste. */
@@ -24,14 +24,14 @@ export function rankLabel(tier, div) {
   return APEX.includes(tier) ? tier : `${tier} ${div || ""}`.trim();
 }
 
-/** Index dans LADDER (barre de progression) du palier atteint. */
-export function ladderIndex(tier, div) {
+/** Index dans `ladder` (par défaut la ladder complète du jeu) du palier atteint. */
+export function ladderIndex(tier, div, ladder = FULL_GAME_LADDER) {
   const v = rankValue(tier, div);
   let idx = 0;
-  LADDER.forEach((s, i) => {
+  ladder.forEach((s, i) => {
     if (rankValue(s.tier, s.div) <= v) idx = i;
   });
-  return Math.max(0, Math.min(LADDER.length - 1, idx));
+  return Math.max(0, Math.min(ladder.length - 1, idx));
 }
 
 /**

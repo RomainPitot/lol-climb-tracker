@@ -112,8 +112,13 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
         </div>
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
-          <Eyebrow style={{ marginBottom: 10 }}>Progression vers Master</Eyebrow>
-          <LadderTrack tier={currentRank.tier} div={currentRank.div} />
+          <Eyebrow style={{ marginBottom: 10 }}>
+            Progression sur l'échelle des rangs{" "}
+            <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>
+              (objectif : {objectiveTier})
+            </span>
+          </Eyebrow>
+          <LadderTrack tier={currentRank.tier} div={currentRank.div} objectiveTier={objectiveTier} />
         </div>
       </Card>
 
