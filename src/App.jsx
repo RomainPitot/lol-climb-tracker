@@ -6,7 +6,6 @@ import AddGame from "./pages/AddGame.jsx";
 import ChampionsPage from "./pages/ChampionsPage.jsx";
 import TierlistPage from "./pages/TierlistPage.jsx";
 import ChampSelectPage from "./pages/ChampSelectPage.jsx";
-import SessionsPage from "./pages/SessionsPage.jsx";
 import CoachPage from "./pages/CoachPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import { useTrackerData } from "./hooks/useTrackerData.js";
@@ -18,7 +17,6 @@ const PAGES = {
   champions: ChampionsPage,
   tierlist: TierlistPage,
   champselect: ChampSelectPage,
-  sessions: SessionsPage,
   coach: CoachPage,
   settings: SettingsPage,
 };

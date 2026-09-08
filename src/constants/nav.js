@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   PlusCircle,
   Users,
-  Users2,
   Bot,
   Shuffle,
   Crosshair,
@@ -15,7 +14,6 @@ export const NAV = [
   { id: "champions", label: "Champions", icon: Users },
   { id: "tierlist", label: "Tierlist", icon: Shuffle },
   { id: "champselect", label: "Sélection de champion", icon: Crosshair },
-  { id: "sessions", label: "Sessions", icon: Users2 },
   { id: "coach", label: "Coach IA", icon: Bot },
   { id: "settings", label: "Paramètres", icon: SettingsIcon },
 ];
