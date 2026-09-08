@@ -165,13 +165,6 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
             <>
               <TeamsAndBans session={session} byKey={byKey} />
 
-              <MatchupAnalysis
-                session={session}
-                byKey={byKey}
-                sorted={representativeGames(sorted, !!s.includeExcludedGames)}
-                currentRank={currentRank}
-              />
-
               <Card className="p-5 mt-4">
                 {myAction ? (
                   <>
@@ -268,6 +261,13 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
               </Card>
 
               <RunesPanel host={host} token={token} />
+
+              <MatchupAnalysis
+                session={session}
+                byKey={byKey}
+                sorted={representativeGames(sorted, !!s.includeExcludedGames)}
+                currentRank={currentRank}
+              />
             </>
           )}
         </>
@@ -314,6 +314,19 @@ function TeamsAndBans({ session, byKey }) {
           <PlayerSlot key={p.cellId} player={p} byKey={byKey} isMe={p.cellId === session.localPlayerCellId} />
         ))}
       </div>
+
+      {/* La LCU ne révèle un champion adverse qu'une fois son pick verrouillé — session.theirTeam
+          reflète déjà cette règle (championId à 0 tant que non révélé, géré par PlayerSlot). */}
+      {(session.theirTeam || []).length > 0 && (
+        <>
+          <Eyebrow style={{ marginTop: 18, marginBottom: 8 }}>Équipe ennemie</Eyebrow>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {session.theirTeam.map((p) => (
+              <PlayerSlot key={p.cellId} player={p} byKey={byKey} isMe={false} />
+            ))}
+          </div>
+        </>
+      )}
     </Card>
   );
 }

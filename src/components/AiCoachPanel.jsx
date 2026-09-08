@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, Copy, Check } from "lucide-react";
+import { Sparkles, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, Btn, Eyebrow } from "./ui/primitives.jsx";
 
 /**
@@ -42,10 +42,13 @@ export default function AiCoachPanel({
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const generate = () => {
     setError("");
     setCopied(false);
+    // Un nouveau prompt s'affiche toujours déplié, même si le précédent avait été replié.
+    setCollapsed(false);
     try {
       setText(`${system}\n\n${buildPrompt()}`);
     } catch (e) {
@@ -77,27 +80,50 @@ export default function AiCoachPanel({
 
       {text && (
         <Card className="p-4 mt-3 fade-in">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <Eyebrow color="var(--gold)">{resultTitle}</Eyebrow>
-            <Btn onClick={copy}>
-              {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copié" : "Copier"}
-            </Btn>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => setCollapsed((v) => !v)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                marginBottom: collapsed ? 0 : 10,
+              }}
+              aria-expanded={!collapsed}
+            >
+              <Eyebrow color="var(--gold)">{resultTitle}</Eyebrow>
+              {collapsed ? <ChevronDown size={14} color="var(--dim)" /> : <ChevronUp size={14} color="var(--dim)" />}
+            </button>
+            {!collapsed && (
+              <Btn onClick={copy}>
+                {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copié" : "Copier"}
+              </Btn>
+            )}
           </div>
-          <pre
-            style={{
-              whiteSpace: "pre-wrap",
-              fontFamily: "var(--body)",
-              fontSize: 12.5,
-              color: "var(--text)",
-              lineHeight: 1.6,
-              margin: 0,
-            }}
-          >
-            {text}
-          </pre>
-          <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 10 }}>
-            Colle ce texte dans Claude, ChatGPT, ou l'IA de ton choix — gratuit, avec l'abonnement que tu as déjà.
-          </p>
+
+          {!collapsed && (
+            <>
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "var(--body)",
+                  fontSize: 12.5,
+                  color: "var(--text)",
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
+                {text}
+              </pre>
+              <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 10 }}>
+                Colle ce texte dans Claude, ChatGPT, ou l'IA de ton choix — gratuit, avec l'abonnement que tu as déjà.
+              </p>
+            </>
+          )}
         </Card>
       )}
     </div>
