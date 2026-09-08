@@ -2,6 +2,31 @@ import { rankValue, rankLabel } from "./rank.js";
 import { computeAgg } from "./stats.js";
 import { round1, round2 } from "./format.js";
 
+/** Libellé court d'un objectif — pour une pastille compacte (dashboard), pas la ligne de
+ * progression détaillée de computeGoalProgress ci-dessous. */
+export function goalPillLabel(goal) {
+  switch (goal.type) {
+    case "reach_rank":
+      return rankLabel(goal.tier, goal.div);
+    case "wr_champion":
+      return `${goal.threshold}% WR ${goal.champion}`;
+    case "deaths_below":
+      return `< ${goal.threshold} morts`;
+    case "csmin_above":
+      return `${goal.threshold} CS/min`;
+    case "kda_above":
+      return `${goal.threshold} KDA`;
+    case "kills_above":
+      return `${goal.threshold} kills/game`;
+    case "games_without_champion":
+      return `${goal.count} games sans ${goal.champion}`;
+    case "games_champion":
+      return `${goal.count} games ${goal.champion}`;
+    default:
+      return "Objectif";
+  }
+}
+
 /** Les objectifs de perf se jugent sur une fenêtre récente, pas sur tout l'historique. */
 const RECENT_WINDOW = 20;
 

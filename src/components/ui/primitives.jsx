@@ -60,13 +60,19 @@ const PILL_TONES = {
   win: { bg: "rgba(15,214,138,0.14)", fg: "var(--win)" },
   loss: { bg: "rgba(255,92,92,0.14)", fg: "var(--loss)" },
   gold: { bg: "rgba(212,175,55,0.14)", fg: "var(--gold)" },
+  // Séries en cours (victoires, bonnes games sur un objectif) — voir lib/streaks.js.
+  fire: { bg: "rgba(255,120,40,0.16)", fg: "#FF8C28" },
 };
 
-export const Pill = ({ children, tone = "neutral", ...rest }) => {
+export const Pill = ({ children, tone = "neutral", className, ...rest }) => {
   const t = PILL_TONES[tone] || PILL_TONES.neutral;
   return (
     <span
-      className="tnum"
+      // className séparé de {...rest} et fusionné explicitement : un {...rest} placé après
+      // un className littéral écrase silencieusement ce dernier (spread JSX, dernière
+      // valeur qui gagne) — sans ça, tout appelant passant sa propre className (ex: pour
+      // l'effet "série en cours", voir flame-badge) perdait "tnum" plutôt que de l'ajouter.
+      className={["tnum", className].filter(Boolean).join(" ")}
       style={{
         display: "inline-flex",
         alignItems: "center",

@@ -568,3 +568,18 @@ a {
     rankup-emblem-in 550ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both,
     rankup-glow-pulse 1.8s ease-out 750ms infinite;
 }
+
+/*
+ * Pastille "série en cours" (victoires d'affilée, bonnes games sur un objectif — voir
+ * lib/streaks.js) : un halo orange qui pulse doucement en continu, plus discret que les
+ * animations d'atterrissage ci-dessus puisqu'elle reste affichée tant que la série dure.
+ */
+@keyframes flame-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 120, 40, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(255, 120, 40, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 120, 40, 0); }
+}
+
+.flame-badge {
+  animation: flame-pulse 1.7s ease-out infinite;
+}

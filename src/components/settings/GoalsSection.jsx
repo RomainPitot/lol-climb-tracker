@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Target, Trash2 } from "lucide-react";
+import { Target, Trash2, Flame } from "lucide-react";
 import { Card, Pill, Field, Input, Select, Btn, EmptyChart, IconBtn } from "../ui/primitives.jsx";
 import { TIERS, APEX, DIVS } from "../../constants/ranks.js";
 import { GOAL_TYPES } from "../../constants/game.js";
 import { ROSTER } from "../../constants/roster.js";
 import { computeGoalProgress } from "../../lib/goals.js";
+import { goalStreak, isStreakNotable } from "../../lib/streaks.js";
 
 const NEEDS_CHAMPION = ["wr_champion", "games_without_champion", "games_champion"];
 const NEEDS_COUNT = ["games_without_champion", "games_champion"];
@@ -109,6 +110,7 @@ export default function GoalsSection({ data, sorted, addGoal, deleteGoal }) {
 
         {data.goals.map((goal) => {
           const p = computeGoalProgress(goal, sorted);
+          const streak = goalStreak(goal, sorted);
           return (
             <Card key={goal.id} className="p-4">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -124,6 +126,11 @@ export default function GoalsSection({ data, sorted, addGoal, deleteGoal }) {
                 >
                   {GOAL_TYPES.find((t) => t.id === goal.type)?.label}
                   {p.met && <Pill tone="win">Atteint</Pill>}
+                  {isStreakNotable(streak) && (
+                    <Pill tone="fire" className="flame-badge" title={`${streak} bonnes games d'affilée sur cet objectif`}>
+                      <Flame size={11} style={{ marginRight: 3 }} /> {streak}
+                    </Pill>
+                  )}
                 </div>
                 <IconBtn onClick={() => deleteGoal(goal.id)} aria-label="Supprimer l'objectif">
                   <Trash2 size={14} />

@@ -20,13 +20,23 @@ function buildNodes(currentTier) {
   return nodes;
 }
 
-/** Frise Fer → Challenger, avec le palier courant déplié et l'objectif mis en avant. */
-export default function LadderTrack({ tier, div, objectiveTier }) {
+/**
+ * Frise Fer → Challenger, avec le palier courant déplié et l'objectif (ou les objectifs —
+ * plusieurs paliers visés peuvent être définis, voir Paramètres > Objectifs) mis en avant.
+ */
+export default function LadderTrack({ tier, div, objectiveTiers }) {
   const nodes = useMemo(() => buildNodes(tier), [tier]);
   const currentTierIdx = ALL_TIERS.indexOf(tier);
-  // Premier nœud qui correspond à l'objectif (la division IV s'il est déplié) — un seul
-  // marqueur au début du palier visé, pas un par division.
-  const objectiveIdx = objectiveTier ? nodes.findIndex((n) => n.tier === objectiveTier) : -1;
+  // Premier nœud de chaque palier visé (la division IV s'il est déplié) — un seul marqueur
+  // par palier objectif, pas un par division.
+  const objectiveIdxs = useMemo(() => {
+    const set = new Set();
+    for (const t of objectiveTiers || []) {
+      const idx = nodes.findIndex((n) => n.tier === t);
+      if (idx >= 0) set.add(idx);
+    }
+    return set;
+  }, [objectiveTiers, nodes]);
 
   return (
     <div style={{ display: "flex", alignItems: "center", width: "100%", overflowX: "auto", padding: "10px 2px 6px" }}>
@@ -36,7 +46,7 @@ export default function LadderTrack({ tier, div, objectiveTier }) {
           ? DIV_NUM[node.div] < DIV_NUM[div]
           : tierIdx < currentTierIdx;
         const isCurrent = node.expanded ? node.div === div : tierIdx === currentTierIdx;
-        const isObjective = i === objectiveIdx;
+        const isObjective = objectiveIdxs.has(i);
         const big = isCurrent || (!node.expanded && node.tier === tier);
         const size = big ? 40 : node.expanded ? 30 : 34;
 

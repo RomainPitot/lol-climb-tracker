@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, ReferenceArea, ReferenceLine, Tooltip, ResponsiveContainer } from "recharts";
-import { ChevronDown, Percent, Zap, Swords, Trophy, Layers } from "lucide-react";
+import { ChevronDown, Percent, Zap, Swords, Trophy, Layers, Flame, Check } from "lucide-react";
 import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, Select } from "../components/ui/primitives.jsx";
 import RankBadge from "../components/RankBadge.jsx";
 import LadderTrack from "../components/LadderTrack.jsx";
@@ -15,6 +15,8 @@ import { buildLpChartBands, trimToRealStart } from "../lib/lpChart.js";
 import { computeAgg, filterByPeriod, getColor, mostFrequentRole } from "../lib/stats.js";
 import { computeGeneralAchievements } from "../lib/achievements.js";
 import { representativeGames } from "../lib/gameModel.js";
+import { computeGoalProgress, goalPillLabel } from "../lib/goals.js";
+import { currentWinStreak, goalStreak, isStreakNotable } from "../lib/streaks.js";
 import { round1, round2 } from "../lib/format.js";
 
 const TOOLTIP_STYLE = {
@@ -58,6 +60,23 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   }, [filtered]);
 
   const objectiveTier = objectiveTierOf(data.goals);
+  // Tous les paliers visés par un objectif "atteindre un rang" (il peut y en avoir
+  // plusieurs — voir Paramètres > Objectifs), pas seulement le plus élevé : ce dernier
+  // (objectiveTier ci-dessus) reste le seul repère pour les benchmarks CS/min etc.
+  // ci-dessous, qui ont besoin d'une seule cible, mais la frise en marque bien tous.
+  const rankObjectiveTiers = useMemo(() => {
+    const tiers = [...new Set(data.goals.filter((g) => g.type === "reach_rank" && g.tier).map((g) => g.tier))];
+    return tiers.length ? tiers : [objectiveTier];
+  }, [data.goals, objectiveTier]);
+
+  // Série de victoires en cours, et pour chaque objectif défini, série de games qui le
+  // remplissent individuellement (voir lib/streaks.js) — affichées avec une flamme dans le
+  // bandeau du haut quand elles sont assez longues pour être notables.
+  const winStreak = useMemo(() => currentWinStreak(sorted), [sorted]);
+  const goalStreaks = useMemo(
+    () => data.goals.map((g) => ({ goal: g, progress: computeGoalProgress(g, sorted), streak: goalStreak(g, sorted) })),
+    [data.goals, sorted]
+  );
   // CS/min et vision/min n'ont pas la même cible selon le rôle — on prend le rôle le
   // plus joué sur la fenêtre récente (elle peut mélanger plusieurs rôles) plutôt qu'un
   // repère unique valable seulement pour un laner. KDA/deaths restent partagés entre
@@ -114,7 +133,28 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
               <Pill tone={allAgg.wr >= 50 ? "win" : "loss"}>
                 {allAgg.wins}W / {allAgg.losses}L — {round1(allAgg.wr)}% WR
               </Pill>
-              <Pill tone="gold">Objectif : {objectiveTier}</Pill>
+              {isStreakNotable(winStreak) && (
+                <Pill tone="fire" className="flame-badge" title={`${winStreak} victoires d'affilée`}>
+                  <Flame size={11} style={{ marginRight: 3 }} /> {winStreak}
+                </Pill>
+              )}
+
+              {data.goals.length ? (
+                goalStreaks.map(({ goal, progress, streak }) => (
+                  <Pill
+                    key={goal.id}
+                    tone={progress.met ? "win" : "gold"}
+                    className={isStreakNotable(streak) ? "flame-badge" : undefined}
+                    title={progress.label}
+                  >
+                    {progress.met && <Check size={11} style={{ marginRight: 3 }} />}
+                    {goalPillLabel(goal)}
+                    {isStreakNotable(streak) && <Flame size={11} style={{ marginLeft: 4 }} />}
+                  </Pill>
+                ))
+              ) : (
+                <Pill tone="gold">Objectif : {objectiveTier}</Pill>
+              )}
             </div>
           </div>
 
@@ -131,10 +171,10 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           <Eyebrow style={{ marginBottom: 10 }}>
             Progression sur l'échelle des rangs{" "}
             <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>
-              (objectif : {objectiveTier})
+              ({rankObjectiveTiers.length > 1 ? "objectifs" : "objectif"} : {rankObjectiveTiers.join(", ")})
             </span>
           </Eyebrow>
-          <LadderTrack tier={currentRank.tier} div={currentRank.div} objectiveTier={objectiveTier} />
+          <LadderTrack tier={currentRank.tier} div={currentRank.div} objectiveTiers={rankObjectiveTiers} />
         </div>
       </Card>
 
