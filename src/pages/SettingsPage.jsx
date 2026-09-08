@@ -16,7 +16,7 @@ const HIST_FIELDS = [
 
 export default function SettingsPage({
   data, sorted, currentRank, addGoal, deleteGoal, setHistorical,
-  setThresholds, setCurrentRank, setSettings, importGames, resetAll,
+  setThresholds, setCurrentRank, setSettings, importGames, resetAll, resetStats,
 }) {
   const [hist, setHist] = useState(data.historical);
   const [th, setTh] = useState(data.thresholds);
@@ -30,6 +30,7 @@ export default function SettingsPage({
   const [msg, setMsg] = useState("");
   const [msgError, setMsgError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmResetStats, setConfirmResetStats] = useState(false);
 
   const notify = (text, isError = false) => {
     setMsg(text);
@@ -336,6 +337,35 @@ export default function SettingsPage({
       </Collapsible>
 
       <Collapsible title="Zone sensible">
+        <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid var(--border)" }}>
+          {!confirmResetStats ? (
+            <Btn variant="danger" onClick={() => setConfirmResetStats(true)}>
+              <RotateCcw size={14} /> Réinitialiser les games et statistiques
+            </Btn>
+          ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, color: "var(--text)" }}>
+                Confirmer la suppression des games et statistiques ?
+              </span>
+              <Btn
+                variant="danger"
+                onClick={() => {
+                  resetStats();
+                  setConfirmResetStats(false);
+                }}
+              >
+                Oui, effacer les games et stats
+              </Btn>
+              <Btn onClick={() => setConfirmResetStats(false)}>Annuler</Btn>
+            </div>
+          )}
+          <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 8 }}>
+            Efface les games, objectifs, historique, seuils et rang courant — garde la
+            config de connexion (URL/token du Worker, clé API, GameDetectorLol, webhook
+            Discord) pour ne pas avoir à tout ressaisir.
+          </p>
+        </div>
+
         {!confirmReset ? (
           <Btn variant="danger" onClick={() => setConfirmReset(true)}>
             <RotateCcw size={14} /> Réinitialiser toutes les données
@@ -357,6 +387,10 @@ export default function SettingsPage({
             <Btn onClick={() => setConfirmReset(false)}>Annuler</Btn>
           </div>
         )}
+        <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 8 }}>
+          Efface absolument tout, y compris la config de connexion — à réserver à un vrai
+          "repartir de zéro".
+        </p>
       </Collapsible>
     </div>
   );

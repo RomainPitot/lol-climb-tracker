@@ -4,6 +4,30 @@ import { applyLpChange, recomputeCurrentRank, sortByDate } from "../lib/rank.js"
 import { uid } from "../lib/format.js";
 
 /**
+ * Clés de `settings` gardées par resetStats (voir plus bas) — la config de connexion
+ * (identifiants/URL/tokens), jamais les games ni rien qui en dérive. Tout le reste de
+ * `settings` (focus en cours, dernier palier fêté, statut du dernier auto-import...)
+ * repart à zéro avec le reste des stats : ça n'a plus de sens une fois l'historique effacé.
+ */
+const KEEP_SETTINGS_ON_STATS_RESET = [
+  "riotMode",
+  "riotApiKey",
+  "riotProxyUrl",
+  "riotProxyToken",
+  "riotGameName",
+  "riotTagLine",
+  "riotPlatform",
+  "riotCount",
+  "riotAutoImport",
+  "riotActiveIntervalMin",
+  "riotPuuid",
+  "gameDetectorHost",
+  "gameDetectorToken",
+  "discordNotificationsEnabled",
+  "discordWebhookUrl",
+];
+
+/**
  * Source unique de vérité de l'app : charge l'état depuis localStorage,
  * expose les mutations, et persiste après chaque changement.
  *
@@ -189,6 +213,22 @@ export function useTrackerData() {
 
       resetAll() {
         save(emptyState());
+      },
+
+      /**
+       * Comme resetAll, mais garde la config de connexion (clés/URL/tokens Riot,
+       * GameDetectorLol, webhook Discord) — pour repartir sur des games et des stats
+       * propres sans avoir à ressaisir tout ça. Tout le reste (games, objectifs,
+       * historique, seuils, rang courant, pool de champions, focus...) repart à zéro.
+       */
+      resetStats() {
+        const cur = dataRef.current;
+        const empty = emptyState();
+        const preserved = {};
+        for (const key of KEEP_SETTINGS_ON_STATS_RESET) {
+          if (cur.settings[key] !== undefined) preserved[key] = cur.settings[key];
+        }
+        save({ ...empty, settings: { ...empty.settings, ...preserved } });
       },
     };
   }, [save]);
