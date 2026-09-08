@@ -50,7 +50,7 @@ points concrets, 2-3 points à améliorer concrets, et un verdict en une phrase.
   };
 
   return (
-    <Card className="p-5 mt-5">
+    <Card className="p-5 mb-5">
       <Eyebrow style={{ marginBottom: 10 }}>Bilan de ta dernière game</Eyebrow>
 
       {skippedLast && (

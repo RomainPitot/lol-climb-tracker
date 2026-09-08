@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Sparkles, Upload, ChevronRight, KeyRound, ExternalLink, CheckCircle2, Pencil, Check } from "lucide-react";
-import { Field, Input, Select, TextArea, Btn, Spinner } from "../ui/primitives.jsx";
+import { Sparkles, ChevronRight, CheckCircle2, Pencil, Check } from "lucide-react";
+import { Field, Input, Select, Btn, Spinner } from "../ui/primitives.jsx";
 import { RIOT_REGIONS, WORKER_CODE } from "../../constants/riot.js";
-import { fetchRiotGames, diagnoseRiotError, rotateRiotKey, diagnoseRotateError } from "../../lib/riotApi.js";
-import { riotMatchToGame } from "../../lib/importers.js";
+import { fetchRiotGames, diagnoseRiotError } from "../../lib/riotApi.js";
 import { rankLabel } from "../../lib/rank.js";
 import { DEFAULT_ACTIVE_INTERVAL_MIN } from "../../hooks/useAutoRiotImport.js";
 
@@ -30,12 +29,11 @@ const FIELD_TO_SETTING = {
   tagLine: "riotTagLine",
   platform: "riotPlatform",
   count: "riotCount",
-  adminToken: "riotAdminToken",
   autoImport: "riotAutoImport",
   activeIntervalMin: "riotActiveIntervalMin",
 };
 
-export default function RiotImportSection({ data, setSettings, importGames, importRiotResult }) {
+export default function RiotImportSection({ data, setSettings, importRiotResult }) {
   const s = data.settings;
   const [form, setForm] = useState({
     mode: s.riotMode || "proxy",
@@ -46,22 +44,13 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
     tagLine: s.riotTagLine || "EUW",
     platform: s.riotPlatform || "euw1",
     count: s.riotCount || 20,
-    adminToken: s.riotAdminToken || "",
     autoImport: s.riotAutoImport || false,
     activeIntervalMin: s.riotActiveIntervalMin || DEFAULT_ACTIVE_INTERVAL_MIN,
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
-  const [matchJsonText, setMatchJsonText] = useState("");
-  const [manualPuuid, setManualPuuid] = useState(s.riotPuuid || "");
   const [showWorkerGuide, setShowWorkerGuide] = useState(false);
-
-  // La nouvelle clé n'est jamais persistée : elle ne sert qu'une fois, pour cet appel.
-  const [newRiotKey, setNewRiotKey] = useState("");
-  const [rotating, setRotating] = useState(false);
-  const [rotateMsg, setRotateMsg] = useState("");
-  const [rotateError, setRotateError] = useState("");
 
   const configured = !!(form.gameName && (form.mode === "proxy" ? form.proxyUrl : form.apiKey));
   // Champs de connexion (URL Worker, token, pseudo, région...) repliés une fois configurés
@@ -101,8 +90,6 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
         rank: result.rank,
         rankHistory: result.rankHistory,
       });
-      if (result.puuid) setManualPuuid(result.puuid);
-
       // Le LP par game n'est jamais fourni tel quel par Riot — voir estimateLpChanges dans
       // riotApi.js. Chaque game de ce lot est marquée individuellement exacte ou estimée
       // selon qu'une vérification de rang isolée a pu la délimiter ou non (≈ dans l'historique).
@@ -129,44 +116,9 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
           lpNote
       );
     } catch (e) {
-      setError(
-        `Échec de la récupération automatique (${e.message}). ${diagnoseRiotError(e, form.mode)} En attendant, utilise le repli manuel juste en dessous.`
-      );
+      setError(`Échec de la récupération automatique (${e.message}). ${diagnoseRiotError(e, form.mode)}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const rotateKey = async () => {
-    setRotating(true);
-    setRotateMsg("");
-    setRotateError("");
-    try {
-      await rotateRiotKey({ proxyUrl: form.proxyUrl, adminToken: form.adminToken }, newRiotKey.trim());
-      setRotateMsg("Clé mise à jour sur le Worker. Tu peux relancer une récupération.");
-      setNewRiotKey("");
-    } catch (e) {
-      setRotateError(`Échec de la mise à jour (${e.message}). ${diagnoseRotateError(e)}`);
-    } finally {
-      setRotating(false);
-    }
-  };
-
-  const importMatchJson = () => {
-    setError("");
-    try {
-      const parsed = JSON.parse(matchJsonText);
-      const matches = Array.isArray(parsed) ? parsed : [parsed];
-      const games = matches.map((m) => riotMatchToGame(m, manualPuuid)).filter(Boolean);
-      if (!games.length) {
-        setError("Aucune game trouvée pour ce PUUID dans le JSON collé — vérifie le PUUID.");
-        return;
-      }
-      const n = importGames(games);
-      setMsg(`${n} game(s) importée(s) depuis le JSON collé.`);
-      setMatchJsonText("");
-    } catch {
-      setError("JSON de match invalide.");
     }
   };
 
@@ -362,87 +314,6 @@ export default function RiotImportSection({ data, setSettings, importGames, impo
           </>
         )}
       </div>
-
-      {form.mode === "proxy" && (
-        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
-            Renouveler la clé Riot
-          </div>
-          <p style={{ fontSize: 12, color: "var(--dim)", marginBottom: 10 }}>
-            Une clé de dev Riot expire toutes les 24h. Régénère-la sur le portail Riot (un clic, une fois connecté),
-            colle la nouvelle ici : elle est poussée directement dans les secrets du Worker, sans passer par le
-            dashboard Cloudflare. Nécessite d'avoir configuré <code>ADMIN_TOKEN</code>, <code>CF_API_TOKEN</code> et{" "}
-            <code>CF_ACCOUNT_ID</code> sur le Worker — voir <code>docs/RIOT_PROXY.md</code>.
-          </p>
-          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-            <a
-              href="https://developer.riotgames.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: "none" }}
-            >
-              <Btn type="button">
-                <ExternalLink size={14} /> Ouvrir developer.riotgames.com
-              </Btn>
-            </a>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 10 }}>
-            <Field label="Admin token (ADMIN_TOKEN du Worker)">
-              <Input
-                value={form.adminToken}
-                onChange={(e) => patch({ adminToken: e.target.value })}
-                placeholder="différent du token du proxy"
-                autoComplete="off"
-                name="climb-euw-riot-admin-token"
-              />
-            </Field>
-            <Field label="Nouvelle clé Riot">
-              <Input
-                value={newRiotKey}
-                onChange={(e) => setNewRiotKey(e.target.value)}
-                placeholder="RGAPI-..."
-                autoComplete="off"
-                name="climb-euw-riot-new-key"
-              />
-            </Field>
-          </div>
-          <Btn
-            variant="primary"
-            onClick={rotateKey}
-            disabled={rotating || !form.proxyUrl || !form.adminToken || !newRiotKey.trim()}
-          >
-            {rotating ? <Spinner /> : <KeyRound size={14} />} {rotating ? "Mise à jour…" : "Mettre à jour la clé sur le Worker"}
-          </Btn>
-          {rotateMsg && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--win)" }}>{rotateMsg}</div>}
-          {rotateError && <div className="fade-in" style={{ marginTop: 10, fontSize: 12.5, color: "var(--loss)" }}>{rotateError}</div>}
-        </div>
-      )}
-
-      <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
-          Repli manuel (si la récupération auto échoue)
-        </div>
-        <p style={{ fontSize: 12, color: "var(--dim)", marginBottom: 8 }}>
-          Ouvre l'URL du match dans un nouvel onglet (ça contourne le blocage CORS) et colle le JSON obtenu ici. Un ou
-          plusieurs objets match (tableau) sont acceptés.
-        </p>
-        <Field label="PUUID (rempli automatiquement après une récupération réussie, sinon à indiquer)">
-          <Input value={manualPuuid} onChange={(e) => setManualPuuid(e.target.value)} placeholder="puuid du compte" />
-        </Field>
-        <div style={{ marginTop: 8 }}>
-          <TextArea
-            rows={4}
-            value={matchJsonText}
-            onChange={(e) => setMatchJsonText(e.target.value)}
-            placeholder='{"metadata":{...},"info":{...}} ou [ {...}, {...} ]'
-          />
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <Btn onClick={importMatchJson}>
-            <Upload size={14} /> Importer ce(s) match(s)
-          </Btn>
-        </div>
-      </div>
     </>
   );
 }
@@ -495,9 +366,10 @@ function WorkerGuide() {
           les champs ci-dessous.
         </li>
         <li>
-          Ta clé Riot expirant toutes les 24h (clé de dev), reviens mettre à jour le secret{" "}
-          <span style={em}>RIOT_API_KEY</span> régulièrement — ou configure la rotation automatique (section{" "}
-          <span style={em}>Renouveler la clé Riot</span> plus bas, voir <span style={em}>docs/RIOT_PROXY.md</span>).
+          Une clé de dev Riot expire toutes les 24h — il faudrait revenir mettre à jour le secret{" "}
+          <span style={em}>RIOT_API_KEY</span> chaque jour. Demande plutôt une <em>Personal API Key</em> sur le
+          portail Riot (gratuite, pour ton usage perso) : elle n'expire pas, un seul copier-coller ici et c'est réglé
+          pour de bon.
         </li>
       </ol>
       <pre
