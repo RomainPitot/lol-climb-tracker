@@ -9,6 +9,7 @@ import { useChampSelect } from "../hooks/useChampSelect.js";
 import { usePairingLink } from "../hooks/usePairingLink.js";
 import { rankLabel } from "../lib/rank.js";
 import { representativeGames } from "../lib/gameModel.js";
+import { matchupHistoryLine } from "../lib/matchups.js";
 import { gamePhaseLabel } from "../constants/gameDetector.js";
 import { ROLES } from "../constants/game.js";
 import { FR_ROLE_TO_LCU } from "../constants/riot.js";
@@ -567,12 +568,19 @@ function MatchupAnalysis({ session, byKey, sorted, currentRank }) {
     const theirBans = (session.bans?.theirTeamBans || []).filter(Boolean).map((id) => byKey[id]?.name || `#${id}`);
     const me = session.myTeam.find((p) => p.cellId === session.localPlayerCellId);
     const myChamp = byKey[me?.championId]?.name;
+    // Adversaire(s) de même rôle assigné, une fois leur pick révélé — même correspondance
+    // texte que le champ "matchup" saisi à la main sur les games (voir GameFormFields).
+    const enemyLaners = (session.theirTeam || [])
+      .filter((p) => p.assignedPosition === me?.assignedPosition)
+      .map((p) => byKey[p.championId]?.name)
+      .filter(Boolean);
 
     return `=== SÉLECTION DE CHAMPION EN COURS (League of Legends) ===
 Rang du joueur : ${rankLabel(currentRank.tier, currentRank.div)}
 Mon rôle : ${POSITION_LABEL[me?.assignedPosition] || "inconnu"}
 Mon champion : ${myChamp || "pas encore choisi/verrouillé"}
 ${personalHistoryLine(sorted, myChamp)}
+${enemyLaners.map((opp) => matchupHistoryLine(sorted, myChamp, opp)).filter(Boolean).join("\n")}
 
 === MON ÉQUIPE ===
 ${teamLines(session.myTeam, byKey, session.localPlayerCellId).join("\n")}

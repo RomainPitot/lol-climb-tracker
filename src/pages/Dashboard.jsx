@@ -12,6 +12,7 @@ import AlertsPanel from "../components/dashboard/AlertsPanel.jsx";
 import PrioritiesPanel from "../components/dashboard/PrioritiesPanel.jsx";
 import NegativeStreakBanner from "../components/dashboard/NegativeStreakBanner.jsx";
 import UntaggedReminder from "../components/dashboard/UntaggedReminder.jsx";
+import PopulationReference from "../components/dashboard/PopulationReference.jsx";
 import { PERIODS } from "../constants/game.js";
 import { roleBenchmark, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
@@ -259,6 +260,8 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
       </Card>
 
       <FocusTracker data={data} sorted={sorted} setSettings={setSettings} />
+
+      <PopulationReference repSorted={repSorted} bench={bench} />
 
       <Collapsible
         title={`Succès — ${unlockedCount}/${achievements.length} débloqués`}
