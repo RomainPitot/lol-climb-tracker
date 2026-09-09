@@ -4,6 +4,7 @@ import { Card, SectionTitle, Eyebrow, Field, Input, Select, Btn, Pill, Spinner, 
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import QrModal from "../components/QrModal.jsx";
+import PoolSuggestions from "../components/PoolSuggestions.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { useChampSelect } from "../hooks/useChampSelect.js";
 import { usePairingLink } from "../hooks/usePairingLink.js";
@@ -416,6 +417,15 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
               <SpellsPanel host={host} token={token} session={session} />
 
               <RunesPanel host={host} token={token} />
+
+              <PoolSuggestions
+                session={session}
+                byKey={byKey}
+                championPool={data.championPool}
+                sorted={representativeGames(sorted, !!s.includeExcludedGames)}
+                me={session.myTeam.find((p) => p.cellId === session.localPlayerCellId)}
+                unavailableIds={unavailable}
+              />
 
               <MatchupAnalysis
                 session={session}
