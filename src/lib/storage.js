@@ -40,6 +40,9 @@ export function emptyState() {
     // versionné : la note se met à jour en place, réutilisable avant chaque nouvelle game
     // contre le même adversaire plutôt que ressaisie à chaque fois.
     matchupNotes: {},
+    // Ids des tutos Learn déjà ouverts (voir pages/LearnPage.jsx) — juste pour afficher une
+    // coche et une progression ("X/N lus"), pas une donnée de coaching.
+    learnRead: [],
   };
 }
 
@@ -59,6 +62,7 @@ function normalize(state) {
   if (!Array.isArray(d.rankHistory)) d.rankHistory = [];
   if (!Array.isArray(d.corrections)) d.corrections = [];
   if (!d.matchupNotes || typeof d.matchupNotes !== "object") d.matchupNotes = {};
+  if (!Array.isArray(d.learnRead)) d.learnRead = [];
   return d;
 }
 

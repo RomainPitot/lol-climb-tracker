@@ -244,6 +244,13 @@ export function useTrackerData() {
         save({ ...cur, matchupNotes: next });
       },
 
+      /** Marque un tuto Learn comme lu (idempotent) — voir pages/LearnPage.jsx. */
+      markLearnRead(articleId) {
+        const cur = dataRef.current;
+        if ((cur.learnRead || []).includes(articleId)) return;
+        save({ ...cur, learnRead: [...(cur.learnRead || []), articleId] });
+      },
+
       /**
        * Comme resetAll, mais garde la config de connexion (clés/URL/tokens Riot,
        * GameDetectorLol) — pour repartir sur des games et des stats propres sans avoir à
