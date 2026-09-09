@@ -1,5 +1,20 @@
 import { useState } from "react";
-import { ChevronLeft, PlayCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  PlayCircle,
+  Crosshair,
+  Map,
+  Users,
+  Flag,
+  Package,
+  Brain,
+  Layers,
+  Video,
+  Timer,
+  ArrowRightLeft,
+  Compass,
+  MessageSquare,
+} from "lucide-react";
 import { Card, SectionTitle, Eyebrow } from "../components/ui/primitives.jsx";
 import WaveDiagram from "../components/learn/WaveDiagram.jsx";
 import RunesDiagram from "../components/learn/RunesDiagram.jsx";
@@ -10,6 +25,33 @@ import { LEARN_COVERS } from "../components/learn/LearnCover.jsx";
 import { LEARN_ARTICLES } from "../constants/learnContent.js";
 
 const DIAGRAMS = { wave: WaveDiagram, runes: RunesDiagram, vision: VisionDiagram, trades: TradesDiagram, macro: MacroDiagram };
+
+/** Icônes disponibles pour un cover générique (article sans diagramme bespoke, voir
+ * constants/learnContent.js champ `cover: { icon, color }`). */
+const ICONS = { Crosshair, Map, Users, Flag, Package, Brain, Layers, Video, Timer, ArrowRightLeft, Compass, MessageSquare };
+
+/** Petite image de présentation sur une carte de la liste — un diagramme bespoke condensé
+ * (voir LEARN_COVERS) si l'article en a un, sinon une icône colorée générique. */
+function ArticleCover({ article }) {
+  const Cover = LEARN_COVERS[article.diagram];
+  if (Cover) {
+    return (
+      <div style={{ height: 72, background: "var(--bg-elevated)" }}>
+        <Cover />
+      </div>
+    );
+  }
+  if (article.cover) {
+    const Icon = ICONS[article.cover.icon];
+    if (!Icon) return null;
+    return (
+      <div style={{ height: 72, background: `${article.cover.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon size={28} color={article.cover.color} strokeWidth={1.75} />
+      </div>
+    );
+  }
+  return null;
+}
 
 export default function LearnPage() {
   const [activeId, setActiveId] = useState(null);
@@ -24,39 +66,32 @@ export default function LearnPage() {
       </SectionTitle>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
-        {LEARN_ARTICLES.map((a) => {
-          const Cover = LEARN_COVERS[a.diagram];
-          return (
-            <button
-              key={a.id}
-              onClick={() => setActiveId(a.id)}
-              className="hoverable"
-              style={{
-                textAlign: "left",
-                padding: 0,
-                borderRadius: "var(--radius-lg)",
-                background: "var(--card)",
-                border: "1px solid var(--border)",
-                cursor: "pointer",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {Cover && (
-                <div style={{ height: 72, background: "var(--bg-elevated)" }}>
-                  <Cover />
-                </div>
-              )}
-              <div style={{ padding: 16 }}>
-                <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 16, color: "var(--text)", marginBottom: 6 }}>
-                  {a.title}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--dim)", lineHeight: 1.4 }}>{a.tagline}</div>
+        {LEARN_ARTICLES.map((a) => (
+          <button
+            key={a.id}
+            onClick={() => setActiveId(a.id)}
+            className="hoverable"
+            style={{
+              textAlign: "left",
+              padding: 0,
+              borderRadius: "var(--radius-lg)",
+              background: "var(--card)",
+              border: "1px solid var(--border)",
+              cursor: "pointer",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <ArticleCover article={a} />
+            <div style={{ padding: 16 }}>
+              <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 16, color: "var(--text)", marginBottom: 6 }}>
+                {a.title}
               </div>
-            </button>
-          );
-        })}
+              <div style={{ fontSize: 12, color: "var(--dim)", lineHeight: 1.4 }}>{a.tagline}</div>
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   );
