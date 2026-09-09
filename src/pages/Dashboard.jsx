@@ -8,6 +8,7 @@ import StatLadder from "../components/StatLadder.jsx";
 import ProgressionDetails from "../components/dashboard/ProgressionDetails.jsx";
 import GamesHistory from "../components/dashboard/GamesHistory.jsx";
 import FocusTracker from "../components/dashboard/FocusTracker.jsx";
+import AlertsPanel from "../components/dashboard/AlertsPanel.jsx";
 import { PERIODS } from "../constants/game.js";
 import { roleBenchmark, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
@@ -116,6 +117,8 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
 
   return (
     <div>
+      <AlertsPanel data={data} sorted={sorted} />
+
       <Card className="hero-card p-6 mb-6" style={{ "--hero-color": heroColor }}>
         <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 260px" }}>
