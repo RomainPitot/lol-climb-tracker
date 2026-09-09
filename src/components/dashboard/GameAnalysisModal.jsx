@@ -299,6 +299,31 @@ export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose 
         </>
         )}
 
+        {!t && game.teamObjectivesFallback && (
+          <>
+            <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <Swords size={12} /> Objectifs d'équipe (totaux)
+            </Eyebrow>
+            <p style={{ fontSize: 11, color: "var(--dim)", marginBottom: 8 }}>
+              Timeline indisponible pour cette game — totaux sans timestamp, filet de sécurité seulement.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 18, fontSize: 12.5 }}>
+              {Object.entries({ dragon: "Dragons", baron: "Barons", herald: "Heralds", tower: "Tourelles", inhibitor: "Inhibiteurs" }).map(
+                ([key, label]) => {
+                  const o = game.teamObjectivesFallback[key];
+                  return (
+                    <div key={key} style={{ display: "flex", gap: 8 }}>
+                      <span style={{ color: "var(--text)", minWidth: 90 }}>{label}</span>
+                      <span className="tnum" style={{ color: "var(--win)" }}>{o.mine} pris</span>
+                      <span className="tnum" style={{ color: "var(--loss)" }}>{o.theirs} perdus</span>
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          </>
+        )}
+
         {game.build && (
           <>
             <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>

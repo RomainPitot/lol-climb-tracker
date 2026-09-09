@@ -35,9 +35,21 @@ function draftBlock(g) {
  * vision. Absent (chaîne vide) pour une game sans timeline (ajoutée à la main, ou import
  * antérieur à cette fonctionnalité) — jamais de valeur inventée à la place.
  */
+/** Filet de sécurité (voir lib/importers.js teamObjectivesFallback) — seulement quand la
+ * Timeline n'a pas pu être récupérée : des totaux sans timestamp, moins utiles que
+ * timelineBlock mais mieux que rien. */
+function teamObjectivesFallbackBlock(g) {
+  if (g.timelineSummary || !g.teamObjectivesFallback) return "";
+  const o = g.teamObjectivesFallback;
+  const parts = Object.entries({ dragon: "dragons", baron: "barons", herald: "heralds", tower: "tourelles", inhibitor: "inhibiteurs" })
+    .map(([key, label]) => `${label} ${o[key].mine}-${o[key].theirs}`)
+    .join(", ");
+  return `\n  Objectifs d'équipe (totaux, sans timeline) : ${parts}`;
+}
+
 function timelineBlock(g) {
   const t = g.timelineSummary;
-  if (!t) return "";
+  if (!t) return teamObjectivesFallbackBlock(g);
 
   const lines = [];
   const d10 = t.diffs[10];

@@ -57,6 +57,10 @@ export function emptyGame() {
     // réelle dans la comp...). null tant que jamais renseigné plutôt qu'un objet vide, pour
     // distinguer "pas encore taguée" de "taguée sans rien à dire".
     draft: null,
+    // Filet de sécurité objectifs d'équipe (totaux, sans timestamp) — voir
+    // lib/importers.js. Seulement utile quand timelineSummary.objectives est absent
+    // (échec de récupération de la Timeline, ou game ajoutée à la main).
+    teamObjectivesFallback: null,
   };
 }
 

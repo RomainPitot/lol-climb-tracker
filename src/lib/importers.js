@@ -89,6 +89,23 @@ export function riotMatchToGame(match, puuid) {
         }
       : null;
 
+  // Filet de sécurité pour les objectifs d'équipe : uniquement utile quand la Timeline n'a
+  // pas pu être récupérée (rate limit, match trop ancien...) — voir riotApi.js. Quand elle
+  // est là, timelineSummary.objectives (avec timestamp + vision approximative) est
+  // largement plus riche ; ces totaux ne servent alors à rien et restent juste présents.
+  const myTeam = info.teams?.find((tm) => tm.teamId === me.teamId);
+  const enemyTeam = info.teams?.find((tm) => tm.teamId !== me.teamId);
+  const teamObjectivesFallback =
+    myTeam && enemyTeam
+      ? {
+          dragon: { mine: myTeam.objectives?.dragon?.kills ?? 0, theirs: enemyTeam.objectives?.dragon?.kills ?? 0 },
+          baron: { mine: myTeam.objectives?.baron?.kills ?? 0, theirs: enemyTeam.objectives?.baron?.kills ?? 0 },
+          herald: { mine: myTeam.objectives?.riftHerald?.kills ?? 0, theirs: enemyTeam.objectives?.riftHerald?.kills ?? 0 },
+          tower: { mine: myTeam.objectives?.tower?.kills ?? 0, theirs: enemyTeam.objectives?.tower?.kills ?? 0 },
+          inhibitor: { mine: myTeam.objectives?.inhibitor?.kills ?? 0, theirs: enemyTeam.objectives?.inhibitor?.kills ?? 0 },
+        }
+      : null;
+
   return {
     id: uid(),
     matchId: match.metadata?.matchId,
@@ -129,5 +146,6 @@ export function riotMatchToGame(match, puuid) {
     build,
     tacticalNotes: [],
     vodUrl: "",
+    teamObjectivesFallback,
   };
 }
