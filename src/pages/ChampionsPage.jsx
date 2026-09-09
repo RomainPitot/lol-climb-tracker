@@ -8,6 +8,7 @@ import { computeAgg, groupByChampion, streaksOf, movingAverage, getColor } from 
 import { representativeGames } from "../lib/gameModel.js";
 import { matchupsFor, MIN_MATCHUP_GAMES } from "../lib/matchups.js";
 import MatchupNotesPanel from "../components/MatchupNotesPanel.jsx";
+import MatchupAdviceCard from "../components/MatchupAdviceCard.jsx";
 import { round1, round2 } from "../lib/format.js";
 
 const MA_WINDOW = 10;
@@ -187,6 +188,8 @@ export default function ChampionsPage({ data, sorted, saveMatchupNote, deleteMat
         {hist && <HistoricalBlock hist={hist} accent={accent} />}
 
         {matchups.length > 0 && <MatchupsBlock matchups={matchups} accent={accent} th={th} />}
+
+        <MatchupAdviceCard champion={active} sorted={repSorted} data={data} />
 
         <MatchupNotesPanel
           champion={active}
