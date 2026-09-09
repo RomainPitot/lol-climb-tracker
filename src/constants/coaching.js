@@ -52,3 +52,15 @@ export const TACTICAL_NOTE_VALUES = {
   roam: ["Réussi", "Neutre", "Raté", "Très coûteux"],
   teamfight: ["Bon fight", "Mauvais fight", "Nécessaire", "Évitable"],
 };
+
+/**
+ * Disponibilité de Flash (ou autre summoner défensif clé) au moment d'une mort — pas dans
+ * l'API Riot sous aucune forme (deaths[].flashAvailable de la Timeline reste toujours null,
+ * voir lib/riotTimeline.js), donc un tag manuel optionnel : un signal à vérifier soi-même,
+ * jamais une conclusion automatique — le joueur/coach garde la classification finale.
+ */
+export const FLASH_AVAILABILITY = [
+  { id: "yes", label: "Dispo" },
+  { id: "no", label: "Pas dispo" },
+  { id: "unknown", label: "Je ne sais plus" },
+];

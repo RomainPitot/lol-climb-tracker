@@ -5,10 +5,11 @@ import { detectSessions } from "./sessions.js";
 import { computeGoalProgress } from "./goals.js";
 import { isBotLaneRole } from "./gameModel.js";
 import { round1, round2 } from "./format.js";
-import { DEATH_TYPES, DEATH_CAUSES } from "../constants/coaching.js";
+import { DEATH_TYPES, DEATH_CAUSES, FLASH_AVAILABILITY } from "../constants/coaching.js";
 
 const deathTypeLabel = (id) => DEATH_TYPES.find((t) => t.id === id)?.label;
 const deathCauseLabel = (id) => DEATH_CAUSES.find((c) => c.id === id)?.label;
+const flashLabel = (id) => FLASH_AVAILABILITY.find((f) => f.id === id)?.label;
 
 /**
  * Détail minute par minute d'une game (voir lib/riotTimeline.js) condensé en quelques
@@ -34,8 +35,9 @@ function timelineBlock(g) {
       const classif = tag?.type
         ? ` [${deathTypeLabel(tag.type) || tag.type}${tag.cause ? ` — ${deathCauseLabel(tag.cause) || tag.cause}` : ""}]`
         : " [non classée]";
+      const flash = tag?.flashAvailable ? ` [Flash: ${flashLabel(tag.flashAvailable) || tag.flashAvailable}]` : "";
       const note = tag?.note ? ` (${tag.note})` : "";
-      return `${clock} tué par ${death.killer || "?"}${death.assists?.length ? ` +${death.assists.join(",")}` : ""}${classif}${note}`;
+      return `${clock} tué par ${death.killer || "?"}${death.assists?.length ? ` +${death.assists.join(",")}` : ""}${classif}${flash}${note}`;
     });
     lines.push(`  Morts (${t.deaths.length}) : ${deathLines.join(" ; ")}`);
   }

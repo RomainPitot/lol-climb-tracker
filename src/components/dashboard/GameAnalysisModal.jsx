@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, Skull, Eye, Swords, ShoppingBag, Plus, Trash2, Video, ListChecks } from "lucide-react";
 import { Btn, IconBtn, Select, Input, Eyebrow, Pill, Spinner } from "../ui/primitives.jsx";
-import { DEATH_TYPES, DEATH_CAUSES, TACTICAL_NOTE_TYPES, TACTICAL_NOTE_VALUES } from "../../constants/coaching.js";
+import { DEATH_TYPES, DEATH_CAUSES, TACTICAL_NOTE_TYPES, TACTICAL_NOTE_VALUES, FLASH_AVAILABILITY } from "../../constants/coaching.js";
 import { REVERSE_CHAMP } from "../../constants/roster.js";
 import { fetchItemNames, fetchRuneTree } from "../../lib/ddragon.js";
 
@@ -65,7 +65,7 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
   const updateTag = (i, patch) => {
     setDeathTags((prev) => {
       const next = [...prev];
-      next[i] = { ...(next[i] || { type: "", cause: "", note: "" }), ...patch };
+      next[i] = { ...(next[i] || { type: "", cause: "", note: "", flashAvailable: "" }), ...patch };
       return next;
     });
   };
@@ -219,6 +219,16 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
                     <option value="">Cause — non classée</option>
                     {DEATH_CAUSES.map((c) => (
                       <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </Select>
+                  <Select
+                    value={tag.flashAvailable || ""}
+                    onChange={(e) => updateTag(i, { flashAvailable: e.target.value })}
+                    title="Pas dans l'API Riot — un signal à vérifier toi-même, jamais une conclusion automatique"
+                  >
+                    <option value="">Flash au moment de la mort — non renseigné</option>
+                    {FLASH_AVAILABILITY.map((f) => (
+                      <option key={f.id} value={f.id}>{f.label}</option>
                     ))}
                   </Select>
                   <Input
