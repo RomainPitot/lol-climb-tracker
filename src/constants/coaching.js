@@ -64,3 +64,15 @@ export const FLASH_AVAILABILITY = [
   { id: "no", label: "Pas dispo" },
   { id: "unknown", label: "Je ne sais plus" },
 ];
+
+/**
+ * Tag manuel "build réel vs plan de matchup" (voir lib/matchupNotes.js) — pas de
+ * comparaison automatique possible (le plan recommandé est du texte libre, pas une liste
+ * d'ids d'item), donc un jugement du joueur/coach après avoir mis les deux côte à côte.
+ */
+export const BUILD_VS_PLAN_TAGS = [
+  { id: "optimal", label: "Optimal" },
+  { id: "acceptable", label: "Acceptable" },
+  { id: "bad_build", label: "Mauvais build" },
+  { id: "bad_timing", label: "Mauvais timing" },
+];

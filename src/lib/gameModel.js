@@ -48,6 +48,10 @@ export function emptyGame() {
     // Lien vers l'enregistrement de la game (Twitch/YouTube...), si le joueur en a un —
     // Riot ne fournit aucune vidéo, ça reste à la charge du joueur (voir GameAnalysisModal).
     vodUrl: "",
+    // Comparaison manuelle build réel vs plan de matchup enregistré (voir
+    // constants/coaching.js BUILD_VS_PLAN_TAGS, lib/matchupNotes.js) — jamais déduit
+    // automatiquement, le plan recommandé est du texte libre.
+    buildTag: "",
   };
 }
 

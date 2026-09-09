@@ -10,7 +10,7 @@ import { round1 } from "../../lib/format.js";
 const COLUMNS = ["Date", "Champion", "Statut rôle", "Résultat", "Rang", "LP", "KDA", "CS/min", "Dégâts", "Vision", ""];
 const cell = { padding: "9px 12px" };
 
-export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGame }) {
+export default function GamesHistory({ data, sorted, deleteGame, deleteGames, updateGame }) {
   const rows = [...sorted].reverse();
   const [checked, setChecked] = useState(() => new Set());
   const [confirmId, setConfirmId] = useState(null);
@@ -200,6 +200,7 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
       {analyzingGame && (
         <GameAnalysisModal
           game={analyzingGame}
+          matchupNotes={data?.matchupNotes}
           onClose={() => setAnalyzingGame(null)}
           onSave={(patch) => {
             updateGame(analyzingGame.id, patch);

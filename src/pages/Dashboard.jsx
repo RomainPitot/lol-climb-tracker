@@ -444,6 +444,7 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
       </Card>
 
       <GamesHistory
+        data={data}
         sorted={sorted}
         deleteGame={deleteGame}
         deleteGames={deleteGames}

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { X, Skull, Eye, Swords, ShoppingBag, Plus, Trash2, Video, ListChecks } from "lucide-react";
 import { Btn, IconBtn, Select, Input, Eyebrow, Pill, Spinner } from "../ui/primitives.jsx";
-import { DEATH_TYPES, DEATH_CAUSES, TACTICAL_NOTE_TYPES, TACTICAL_NOTE_VALUES, FLASH_AVAILABILITY } from "../../constants/coaching.js";
+import { DEATH_TYPES, DEATH_CAUSES, TACTICAL_NOTE_TYPES, TACTICAL_NOTE_VALUES, FLASH_AVAILABILITY, BUILD_VS_PLAN_TAGS } from "../../constants/coaching.js";
 import { REVERSE_CHAMP } from "../../constants/roster.js";
 import { fetchItemNames, fetchRuneTree } from "../../lib/ddragon.js";
+import { getMatchupNote } from "../../lib/matchupNotes.js";
+import { isBotLaneRole } from "../../lib/gameModel.js";
 
 const champName = (raw) => (raw ? REVERSE_CHAMP[raw] || raw : "?");
 
@@ -45,11 +47,17 @@ function DiffCell({ value, suffix = "" }) {
  * (type + cause, listes fermées — voir constants/coaching.js) : c'est la seule partie que
  * la Timeline Riot ne peut jamais dire elle-même (le "pourquoi").
  */
-export default function GameAnalysisModal({ game, onSave, onClose }) {
+export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose }) {
   const t = game.timelineSummary;
   const [deathTags, setDeathTags] = useState(game.deathTags?.length ? game.deathTags : (t?.deaths || []).map(() => null));
   const [tacticalNotes, setTacticalNotes] = useState(game.tacticalNotes || []);
   const [vodUrl, setVodUrl] = useState(game.vodUrl || "");
+  const [buildTag, setBuildTag] = useState(game.buildTag || "");
+
+  // Adversaire de lane connu sur cette game (matchup/matchupAdc — le premier renseigné) —
+  // même correspondance texte que le plan de matchup (voir lib/matchupNotes.js).
+  const opponentName = isBotLaneRole(game.role) ? game.matchupAdc : game.matchup;
+  const matchupNote = getMatchupNote(matchupNotes || {}, game.champion, opponentName);
   const [newNoteType, setNewNoteType] = useState(null);
   const [newNoteValue, setNewNoteValue] = useState("");
   const [newNoteText, setNewNoteText] = useState("");
@@ -279,6 +287,22 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
               <ShoppingBag size={12} /> Build & runes
             </Eyebrow>
             <BuildSection build={game.build} />
+            {matchupNote?.recommendedBuild && (
+              <p style={{ fontSize: 12, color: "var(--dim)", marginTop: -6, marginBottom: 10 }}>
+                Plan enregistré vs {opponentName} : <span style={{ color: "var(--text)" }}>{matchupNote.recommendedBuild}</span>
+              </p>
+            )}
+            <Select
+              value={buildTag}
+              onChange={(e) => setBuildTag(e.target.value)}
+              style={{ marginBottom: 20, maxWidth: 260 }}
+              title="Un jugement à toi — pas de comparaison automatique possible (le plan est du texte libre)"
+            >
+              <option value="">Build vs plan — non taggé</option>
+              {BUILD_VS_PLAN_TAGS.map((b) => (
+                <option key={b.id} value={b.id}>{b.label}</option>
+              ))}
+            </Select>
           </>
         )}
 
@@ -351,7 +375,7 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
         />
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Btn variant="primary" onClick={() => onSave({ deathTags, tacticalNotes, vodUrl: vodUrl.trim() })}>
+          <Btn variant="primary" onClick={() => onSave({ deathTags, tacticalNotes, vodUrl: vodUrl.trim(), buildTag })}>
             Enregistrer
           </Btn>
           <Btn onClick={onClose}>Fermer</Btn>
