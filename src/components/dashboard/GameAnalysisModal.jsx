@@ -16,6 +16,9 @@ const OBJECTIVE_LABEL = {
   INHIBITOR_BUILDING: "Inhibiteur",
 };
 
+const ZONE_LABEL = { lane: "Lane", river: "River", jungle: "Jungle", base: "Base" };
+const PHASE_LABEL = { early: "Early", mid: "Mid", late: "Late" };
+
 function msToClock(ms) {
   const totalSec = Math.round(ms / 1000);
   const m = Math.floor(totalSec / 60);
@@ -172,6 +175,19 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
                     <span className="tnum" style={{ fontWeight: 700, color: "var(--loss)" }}>{msToClock(d.timestamp)}</span>{" "}
                     tué par <strong>{champName(d.killer)}</strong>
                     {d.assists.length > 0 && <> (+ {d.assists.map(champName).join(", ")})</>}
+                    {d.phase && (
+                      <span style={{ marginLeft: 8, display: "inline-block" }}>
+                        <Pill tone="gold">{PHASE_LABEL[d.phase]}</Pill>
+                      </span>
+                    )}
+                    {d.zone && (
+                      <span
+                        style={{ marginLeft: 6, fontSize: 11, color: "var(--dim)" }}
+                        title="Zone approximative — déduite de la position, pas une donnée Riot brute"
+                      >
+                        {ZONE_LABEL[d.zone] || d.zone} · {d.context === "teamfight" ? "teamfight ≈" : "solo ≈"}
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 11.5, color: "var(--dim)" }} className="tnum">
                     {d.myLevelAtDeath != null && `Niv. ${d.myLevelAtDeath} · `}

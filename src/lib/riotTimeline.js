@@ -26,6 +26,68 @@ const OBJECTIVE_VISION_RADIUS = 2200;
  * posée pour cet objectif". */
 const OBJECTIVE_VISION_WINDOW_MS = 3 * 60 * 1000;
 
+// Repères approximatifs de la carte Summoner's Rift (unités Riot, carte ~14820 de large) —
+// juste assez précis pour classer une position en zone grossière, jamais présenté comme
+// une donnée Riot brute (voir classifyDeathZone). Coordonnées communément admises par les
+// outils communautaires (bases, fosses des objectifs neutres).
+const BLUE_BASE = { x: 1500, y: 1500 };
+const RED_BASE = { x: 13300, y: 13300 };
+const DRAGON_PIT = { x: 9800, y: 4400 };
+const BARON_PIT = { x: 4900, y: 10900 };
+const MAP_SIZE = 14820;
+const NEAR_BASE_RADIUS = 3000;
+const NEAR_PIT_RADIUS = 2500;
+const LANE_BAND = 1800;
+
+/** Nombre de participants (l'un ou l'autre camp, victime exclue) dont la position connue
+ * au snapshot de cette minute est proche du point de mort — approximatif : la position
+ * réelle au moment exact de la mort peut avoir jusqu'à ~1 min d'écart avec ce snapshot. */
+const NEARBY_RADIUS = 2000;
+/** Combattants (killer + assists, ou monde proche) à partir duquel une mort compte comme
+ * un teamfight plutôt qu'un duel — 3 = la victime + au moins deux autres impliqués. */
+const TEAMFIGHT_THRESHOLD = 3;
+
+const PHASE_BOUNDARIES_MIN = { early: 14, mid: 25 };
+
+function phaseOf(timestampMs) {
+  const min = timestampMs / 60000;
+  if (min < PHASE_BOUNDARIES_MIN.early) return "early";
+  if (min < PHASE_BOUNDARIES_MIN.mid) return "mid";
+  return "late";
+}
+
+/**
+ * Zone approximative d'une position (lane/river/jungle/base) — une heuristique de
+ * distance aux repères de la carte ci-dessus, PAS une donnée Riot : à annoncer comme telle
+ * partout où c'est affiché (voir GameAnalysisModal).
+ */
+function classifyDeathZone(pos) {
+  if (!pos || pos.x == null) return null;
+  if (distance(pos, BLUE_BASE) < NEAR_BASE_RADIUS || distance(pos, RED_BASE) < NEAR_BASE_RADIUS) return "base";
+  if (distance(pos, DRAGON_PIT) < NEAR_PIT_RADIUS || distance(pos, BARON_PIT) < NEAR_PIT_RADIUS) return "river";
+
+  const distToMidLane = Math.abs(pos.x - pos.y) / Math.SQRT2;
+  const distToTopLane = Math.min(pos.x, MAP_SIZE - pos.y);
+  const distToBotLane = Math.min(pos.y, MAP_SIZE - pos.x);
+  if (Math.min(distToMidLane, distToTopLane, distToBotLane) < LANE_BAND) return "lane";
+  return "jungle";
+}
+
+/** Solo kill vs teamfight — combine le nombre de combattants directement crédités
+ * (killer + assists) et la présence d'autres participants à proximité au même snapshot
+ * (voir NEARBY_RADIUS) : une estimation, pas un fait (la position exacte au moment de la
+ * mort peut différer du dernier snapshot minute par minute). */
+function classifyDeathContext(frame, position, victimId, creditedCombatants) {
+  if (creditedCombatants >= TEAMFIGHT_THRESHOLD) return "teamfight";
+  if (!position) return creditedCombatants >= 2 ? "teamfight" : "solo";
+  let nearby = 0;
+  for (const pf of Object.values(frame.participantFrames || {})) {
+    if (pf.participantId === victimId) continue;
+    if (distance(pf.position, position) <= NEARBY_RADIUS) nearby++;
+  }
+  return Math.max(creditedCombatants, nearby) >= TEAMFIGHT_THRESHOLD ? "teamfight" : "solo";
+}
+
 export async function fetchMatchTimeline(matchId, continent, conn) {
   return riotFetch(`https://${continent}.api.riotgames.com/lol/match/v5/matches/${matchId}/timeline`, conn);
 }
@@ -109,11 +171,16 @@ export function buildTimelineSummary(timeline, match, puuid) {
         if (ev.itemId === CONTROL_WARD_ITEM_ID) controlWardsBought++;
       } else if (ev.type === "CHAMPION_KILL" && ev.victimId === myId) {
         const mine = frame.participantFrames?.[myId];
+        const assists = (ev.assistingParticipantIds || []).map((id) => champById[id]).filter(Boolean);
         deaths.push({
           timestamp: ev.timestamp,
+          phase: phaseOf(ev.timestamp),
           position: ev.position || null,
+          // Approximations, jamais des faits Riot bruts — voir classifyDeathZone/Context.
+          zone: classifyDeathZone(ev.position),
+          context: classifyDeathContext(frame, ev.position, myId, 1 + assists.length),
           killer: champById[ev.killerId] || null,
-          assists: (ev.assistingParticipantIds || []).map((id) => champById[id]).filter(Boolean),
+          assists,
           myGoldAtDeath: mine?.currentGold ?? null,
           myLevelAtDeath: mine?.level ?? null,
           myCsAtDeath: mine ? mine.minionsKilled + mine.jungleMinionsKilled : null,
@@ -126,6 +193,7 @@ export function buildTimelineSummary(timeline, match, puuid) {
         const takenByMyTeam = teamById[ev.killerId] === myTeamId;
         objectives.push({
           timestamp: ev.timestamp,
+          phase: phaseOf(ev.timestamp),
           kind: ev.monsterType, // DRAGON | RIFTHERALD | BARON_NASHOR | HORDE (grubs)
           takenByMyTeam,
           // Approximation, jamais un fait certain : une ward de mon équipe active dans un
@@ -138,6 +206,7 @@ export function buildTimelineSummary(timeline, match, puuid) {
       } else if (ev.type === "BUILDING_KILL") {
         objectives.push({
           timestamp: ev.timestamp,
+          phase: phaseOf(ev.timestamp),
           kind: ev.buildingType, // TOWER_BUILDING | INHIBITOR_BUILDING
           laneType: ev.laneType || null,
           takenByMyTeam: teamById[ev.killerId] === myTeamId,

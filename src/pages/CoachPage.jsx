@@ -9,6 +9,7 @@ import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { computeFocus } from "../lib/focus.js";
 import { evaluateCorrection, CORRECTION_STATUS_LABEL } from "../lib/corrections.js";
+import { summarizeDeathPatterns } from "../lib/deathPatterns.js";
 import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
 
@@ -56,6 +57,17 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
           .join("\n")}\n`
       : "";
 
+    const deathPattern = summarizeDeathPatterns(repSorted.slice(-ACCOUNT_ANALYSIS_WINDOW));
+    const deathPatternBlock = deathPattern
+      ? `\n=== PATTERN DE MORTS DÉTECTÉ (${deathPattern.total} morts, ${ACCOUNT_ANALYSIS_WINDOW} dernières games) ===\n${[
+          deathPattern.phase && `${deathPattern.phase.sharePct}% des morts arrivent en ${deathPattern.phase.label}.`,
+          deathPattern.zone && `${deathPattern.zone.sharePct}% des morts arrivent ${deathPattern.zone.label} (approximation de position).`,
+          deathPattern.context && `${deathPattern.context.sharePct}% des morts arrivent ${deathPattern.context.label}.`,
+        ]
+          .filter(Boolean)
+          .join("\n")}\n`
+      : "";
+
     const demande = focus
       ? `Commente en priorité ma progression sur ce focus précis (${focus.label}) — est-ce que ça s'améliore vraiment, qu'est-ce qui coince encore, faut-il continuer dessus ou en changer. Complète avec 2 points forts et 1 autre point faible si pertinent, mais le focus passe avant.`
       : `Fais un bilan complet de mon compte, pas juste de la sélection ci-dessus : 3 points forts, les 3 points faibles qui me coûtent le plus de LP en ce moment (par ordre de priorité), et une seule action concrète à appliquer dès ma prochaine game.`;
@@ -63,7 +75,7 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
       ? " Signale en premier toute régression listée ci-dessus — c'est plus urgent qu'un nouveau point faible."
       : "";
 
-    return `${base}${focusBlock}${correctionsBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
+    return `${base}${focusBlock}${correctionsBlock}${deathPatternBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
   };
 
   const selectedGames = useMemo(() => sorted.filter((g) => selected.has(g.id)), [sorted, selected]);
