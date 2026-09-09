@@ -4,6 +4,7 @@ import {
   Bot,
   Shuffle,
   Smartphone,
+  GraduationCap,
   Settings as SettingsIcon,
 } from "lucide-react";
 
@@ -13,5 +14,6 @@ export const NAV = [
   { id: "tierlist", label: "Tierlist", icon: Shuffle },
   { id: "champselect", label: "Phone control", icon: Smartphone },
   { id: "coach", label: "Coach IA", icon: Bot },
+  { id: "learn", label: "Learn", icon: GraduationCap },
   { id: "settings", label: "Paramètres", icon: SettingsIcon },
 ];

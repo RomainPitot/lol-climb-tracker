@@ -7,6 +7,7 @@ import ChampionsPage from "./pages/ChampionsPage.jsx";
 import TierlistPage from "./pages/TierlistPage.jsx";
 import ChampSelectPage from "./pages/ChampSelectPage.jsx";
 import CoachPage from "./pages/CoachPage.jsx";
+import LearnPage from "./pages/LearnPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import { useTrackerData } from "./hooks/useTrackerData.js";
 import { useAutoRiotImport } from "./hooks/useAutoRiotImport.js";
@@ -21,6 +22,7 @@ const PAGES = {
   tierlist: TierlistPage,
   champselect: ChampSelectPage,
   coach: CoachPage,
+  learn: LearnPage,
   settings: SettingsPage,
 };
 
