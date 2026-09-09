@@ -230,6 +230,20 @@ export function useTrackerData() {
         save({ ...cur, corrections: (cur.corrections || []).filter((c) => c.id !== id) });
       },
 
+      /** Enregistre/met à jour la note de préparation d'un matchup (voir lib/matchupNotes.js)
+       * — un seul plan par matchup, remplacé en place plutôt qu'accumulé en historique. */
+      saveMatchupNote(key, note) {
+        const cur = dataRef.current;
+        save({ ...cur, matchupNotes: { ...(cur.matchupNotes || {}), [key]: { ...note, updatedAt: Date.now() } } });
+      },
+
+      deleteMatchupNote(key) {
+        const cur = dataRef.current;
+        const next = { ...(cur.matchupNotes || {}) };
+        delete next[key];
+        save({ ...cur, matchupNotes: next });
+      },
+
       /**
        * Comme resetAll, mais garde la config de connexion (clés/URL/tokens Riot,
        * GameDetectorLol) — pour repartir sur des games et des stats propres sans avoir à

@@ -35,6 +35,11 @@ export function emptyState() {
     // peut en avoir plusieurs, chacun avec une métrique cible ; corrigé/en régression sont
     // toujours calculés depuis les games réelles, jamais cochés à la main.
     corrections: [],
+    // Notes de préparation par matchup (plan de lane) — voir lib/matchupNotes.js. Clé
+    // "champion|adversaire" (simple texte, comme le champ matchup existant sur les games),
+    // versionné : la note se met à jour en place, réutilisable avant chaque nouvelle game
+    // contre le même adversaire plutôt que ressaisie à chaque fois.
+    matchupNotes: {},
   };
 }
 
@@ -53,6 +58,7 @@ function normalize(state) {
   else for (const r of ROLES) if (!d.championWeights[r] || typeof d.championWeights[r] !== "object") d.championWeights[r] = {};
   if (!Array.isArray(d.rankHistory)) d.rankHistory = [];
   if (!Array.isArray(d.corrections)) d.corrections = [];
+  if (!d.matchupNotes || typeof d.matchupNotes !== "object") d.matchupNotes = {};
   return d;
 }
 

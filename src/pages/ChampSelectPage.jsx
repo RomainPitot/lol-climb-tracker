@@ -10,6 +10,7 @@ import { usePairingLink } from "../hooks/usePairingLink.js";
 import { rankLabel } from "../lib/rank.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { matchupHistoryLine } from "../lib/matchups.js";
+import { getMatchupNote } from "../lib/matchupNotes.js";
 import { gamePhaseLabel } from "../constants/gameDetector.js";
 import { ROLES } from "../constants/game.js";
 import { FR_ROLE_TO_LCU } from "../constants/riot.js";
@@ -421,6 +422,7 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
                 byKey={byKey}
                 sorted={representativeGames(sorted, !!s.includeExcludedGames)}
                 currentRank={currentRank}
+                matchupNotes={data.matchupNotes}
               />
             </>
           )}
@@ -562,7 +564,7 @@ function personalHistoryLine(sorted, championName) {
  * à coller dans Claude/ChatGPT sur le téléphone. Généré au clic (jamais automatiquement)
  * pour rester utilisable à n'importe quel moment de la sélection (bans ou picks).
  */
-function MatchupAnalysis({ session, byKey, sorted, currentRank }) {
+function MatchupAnalysis({ session, byKey, sorted, currentRank, matchupNotes }) {
   const buildPrompt = () => {
     const myBans = (session.bans?.myTeamBans || []).filter(Boolean).map((id) => byKey[id]?.name || `#${id}`);
     const theirBans = (session.bans?.theirTeamBans || []).filter(Boolean).map((id) => byKey[id]?.name || `#${id}`);
@@ -581,6 +583,14 @@ Mon rôle : ${POSITION_LABEL[me?.assignedPosition] || "inconnu"}
 Mon champion : ${myChamp || "pas encore choisi/verrouillé"}
 ${personalHistoryLine(sorted, myChamp)}
 ${enemyLaners.map((opp) => matchupHistoryLine(sorted, myChamp, opp)).filter(Boolean).join("\n")}
+${enemyLaners
+  .map((opp) => {
+    const note = getMatchupNote(matchupNotes, myChamp, opp);
+    if (!note) return "";
+    return `Mon plan de lane ${myChamp} vs ${opp} : ${[note.recommendedBuild && `build ${note.recommendedBuild}`, note.allInConditions && `all-in si ${note.allInConditions}`, note.dangerousTimings && `attention à ${note.dangerousTimings}`].filter(Boolean).join(" ; ")}`;
+  })
+  .filter(Boolean)
+  .join("\n")}
 
 === MON ÉQUIPE ===
 ${teamLines(session.myTeam, byKey, session.localPlayerCellId).join("\n")}

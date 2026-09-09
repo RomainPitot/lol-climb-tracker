@@ -7,6 +7,7 @@ import { sortByDate } from "../lib/rank.js";
 import { computeAgg, groupByChampion, streaksOf, movingAverage, getColor } from "../lib/stats.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { matchupsFor, MIN_MATCHUP_GAMES } from "../lib/matchups.js";
+import MatchupNotesPanel from "../components/MatchupNotesPanel.jsx";
 import { round1, round2 } from "../lib/format.js";
 
 const MA_WINDOW = 10;
@@ -14,7 +15,7 @@ const MA_WINDOW = 10;
 /** Stats historiques importées, disponibles seulement pour les deux mains champions. */
 const HISTORICAL_KEY = { Yone: "yone", "Tahm Kench": "tahm" };
 
-export default function ChampionsPage({ data, sorted }) {
+export default function ChampionsPage({ data, sorted, saveMatchupNote, deleteMatchupNote }) {
   const th = data.thresholds;
   const [active, setActive] = useState("Yone");
 
@@ -186,6 +187,13 @@ export default function ChampionsPage({ data, sorted }) {
         {hist && <HistoricalBlock hist={hist} accent={accent} />}
 
         {matchups.length > 0 && <MatchupsBlock matchups={matchups} accent={accent} th={th} />}
+
+        <MatchupNotesPanel
+          champion={active}
+          data={data}
+          saveMatchupNote={saveMatchupNote}
+          deleteMatchupNote={deleteMatchupNote}
+        />
 
         {chartData.length > 1 ? (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
