@@ -5,6 +5,50 @@ import { detectSessions } from "./sessions.js";
 import { computeGoalProgress } from "./goals.js";
 import { isBotLaneRole } from "./gameModel.js";
 import { round1, round2 } from "./format.js";
+import { DEATH_TYPES, DEATH_CAUSES } from "../constants/coaching.js";
+
+const deathTypeLabel = (id) => DEATH_TYPES.find((t) => t.id === id)?.label;
+const deathCauseLabel = (id) => DEATH_CAUSES.find((c) => c.id === id)?.label;
+
+/**
+ * Détail minute par minute d'une game (voir lib/riotTimeline.js) condensé en quelques
+ * lignes lisibles par une IA — diffs de lane à 10/15 (les plus parlants), morts avec leur
+ * classification manuelle si tagguée, objectifs perdus/pris avec l'approximation de
+ * vision. Absent (chaîne vide) pour une game sans timeline (ajoutée à la main, ou import
+ * antérieur à cette fonctionnalité) — jamais de valeur inventée à la place.
+ */
+function timelineBlock(g) {
+  const t = g.timelineSummary;
+  if (!t) return "";
+
+  const lines = [];
+  const d10 = t.diffs[10];
+  const d15 = t.diffs[15];
+  if (d10) lines.push(`  Lane @10 vs ${d10.csDiff == null ? "?" : t.opponentChampion || "adversaire"} : CS ${d10.csDiff >= 0 ? "+" : ""}${d10.csDiff ?? "?"}, or ${d10.goldDiff >= 0 ? "+" : ""}${d10.goldDiff ?? "?"}, XP ${d10.xpDiff >= 0 ? "+" : ""}${d10.xpDiff ?? "?"}`);
+  if (d15) lines.push(`  Lane @15 : CS ${d15.csDiff >= 0 ? "+" : ""}${d15.csDiff ?? "?"}, or ${d15.goldDiff >= 0 ? "+" : ""}${d15.goldDiff ?? "?"}, XP ${d15.xpDiff >= 0 ? "+" : ""}${d15.xpDiff ?? "?"}`);
+
+  if (t.deaths.length) {
+    const deathLines = t.deaths.map((death, i) => {
+      const tag = g.deathTags?.[i];
+      const clock = `${Math.floor(death.timestamp / 60000)}:${String(Math.round((death.timestamp % 60000) / 1000)).padStart(2, "0")}`;
+      const classif = tag?.type
+        ? ` [${deathTypeLabel(tag.type) || tag.type}${tag.cause ? ` — ${deathCauseLabel(tag.cause) || tag.cause}` : ""}]`
+        : " [non classée]";
+      const note = tag?.note ? ` (${tag.note})` : "";
+      return `${clock} tué par ${death.killer || "?"}${death.assists?.length ? ` +${death.assists.join(",")}` : ""}${classif}${note}`;
+    });
+    lines.push(`  Morts (${t.deaths.length}) : ${deathLines.join(" ; ")}`);
+  }
+
+  const lostObjectives = t.objectives.filter((o) => !o.takenByMyTeam && (o.kind === "DRAGON" || o.kind === "RIFTHERALD" || o.kind === "BARON_NASHOR" || o.kind === "HORDE"));
+  const takenWithoutVision = t.objectives.filter((o) => o.takenByMyTeam && o.myTeamHadVisionApprox === false);
+  if (lostObjectives.length) lines.push(`  Objectifs perdus : ${lostObjectives.map((o) => o.kind).join(", ")}`);
+  if (takenWithoutVision.length) lines.push(`  Objectifs pris sans vision ≈ posée avant : ${takenWithoutVision.map((o) => o.kind).join(", ")}`);
+
+  lines.push(`  Vision : ${t.wards.placed} wards posées, ${t.wards.destroyed} détruites, ${t.wards.controlWardsBought} control ward(s)`);
+
+  return lines.length ? `\n${lines.join("\n")}` : "";
+}
 
 /** Nombre minimum de games hors sélection pour que la comparaison ait un sens. */
 export const MIN_COMPARISON_GAMES = 3;
@@ -33,7 +77,7 @@ export function gameLine(g) {
     g.gameComment ? `Game: ${g.gameComment}` : "",
   ];
 
-  return `- ${bits.filter(Boolean).join(" — ")}`;
+  return `- ${bits.filter(Boolean).join(" — ")}${timelineBlock(g)}`;
 }
 
 function buildAlerts({ selAgg, restAgg, selectedGames, enoughRest, sessions, champs }) {

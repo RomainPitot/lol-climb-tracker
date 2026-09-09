@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Trash2, Pencil, X, Flag } from "lucide-react";
+import { Trash2, Pencil, X, Flag, Microscope } from "lucide-react";
 import { Card, Pill, Btn, Collapsible, IconBtn } from "../ui/primitives.jsx";
 import ChampAvatar from "../ChampAvatar.jsx";
 import EditGameModal from "../EditGameModal.jsx";
+import GameAnalysisModal from "./GameAnalysisModal.jsx";
 import { rankLabel } from "../../lib/rank.js";
 import { round1 } from "../../lib/format.js";
 
@@ -15,6 +16,7 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
   const [confirmId, setConfirmId] = useState(null);
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [editingGame, setEditingGame] = useState(null);
+  const [analyzingGame, setAnalyzingGame] = useState(null);
 
   const toggle = (id) =>
     setChecked((prev) => {
@@ -155,6 +157,11 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                     <IconBtn onClick={() => setEditingGame(g)} aria-label="Modifier">
                       <Pencil size={14} />
                     </IconBtn>
+                    {g.timelineSummary && (
+                      <IconBtn onClick={() => setAnalyzingGame(g)} aria-label="Analyse détaillée (Coach IA)">
+                        <Microscope size={14} />
+                      </IconBtn>
+                    )}
                     {confirmId === g.id ? (
                       <>
                         <button
@@ -188,6 +195,17 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
           onSave={(patch) => {
             updateGame(editingGame.id, patch);
             setEditingGame(null);
+          }}
+        />
+      )}
+
+      {analyzingGame && (
+        <GameAnalysisModal
+          game={analyzingGame}
+          onClose={() => setAnalyzingGame(null)}
+          onSave={(deathTags) => {
+            updateGame(analyzingGame.id, { deathTags });
+            setAnalyzingGame(null);
           }}
         />
       )}

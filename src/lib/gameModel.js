@@ -32,6 +32,12 @@ export function emptyGame() {
     tilt: 1,
     excluded: false,
     excludedReason: "",
+    // Détail minute par minute (diffs CS/or/XP, morts avec contexte, wards, objectifs) —
+    // voir lib/riotTimeline.js. Toujours vide pour une game ajoutée à la main : seul
+    // l'import Riot le remplit. `deathTags` (classification par mort par le coach — type,
+    // cause) est un tableau parallèle à `timelineSummary.deaths`, une entrée par mort.
+    timelineSummary: null,
+    deathTags: [],
   };
 }
 

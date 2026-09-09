@@ -42,8 +42,12 @@ Deaths : ${last.deaths} (référence ${round1(baseAgg.deaths)})
 Vision/min : ${round1(visionMin)} (référence ${round1(baseAgg.visionMin)})
 
 === DEMANDE ===
-Fais le bilan de CETTE game précisément (pas de généralités sur mon profil) : 2-3 bons
-points concrets, 2-3 points à améliorer concrets, et un verdict en une phrase. Format :
+Fais le bilan de CETTE game précisément (pas de généralités sur mon profil). Si le détail
+minute par minute est présent ci-dessus (diffs de lane, morts avec contexte, objectifs,
+vision), base-toi dessus en priorité — c'est plus précis que les stats finales seules : cite
+des moments concrets (ex: "mort à 14:20 sans ward river" plutôt que "trop de morts").
+2-3 bons points concrets, 2-3 points à améliorer concrets, et un verdict en une phrase.
+Format :
 ### Bons points
 ### Points à améliorer
 ### Verdict`;

@@ -3,6 +3,7 @@ import { RIOT_TIER_TO_FR } from "../constants/riot.js";
 import { riotMatchToGame } from "./importers.js";
 import { applyLpChange, rankScore } from "./rank.js";
 import { gameTime } from "./format.js";
+import { fetchMatchTimeline, buildTimelineSummary } from "./riotTimeline.js";
 
 /** Queue ID de la SoloQ classée. */
 const QUEUE_SOLO_RANKED = 420;
@@ -242,7 +243,20 @@ export async function fetchRiotGames(conn, existingMatchIds, beforeRank, rankHis
       conn
     );
     const game = riotMatchToGame(match, puuid);
-    if (game) games.push(game);
+    if (!game) continue;
+
+    // La timeline est un appel séparé, en plus — un échec ici (rate limit, match trop
+    // ancien...) ne doit jamais faire perdre la game elle-même : le bilan Coach IA retombe
+    // juste sur les stats de base, sans le détail minute par minute (voir coachRecap.js).
+    try {
+      const timeline = await fetchMatchTimeline(id, continent, conn);
+      game.timelineSummary = buildTimelineSummary(timeline, match, puuid);
+    } catch {
+      game.timelineSummary = null;
+    }
+    game.deathTags = game.timelineSummary ? game.timelineSummary.deaths.map(() => null) : [];
+
+    games.push(game);
   }
 
   let rank = null;
