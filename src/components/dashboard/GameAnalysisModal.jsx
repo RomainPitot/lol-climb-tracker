@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { X, Skull, Eye, Swords, ShoppingBag } from "lucide-react";
+import { X, Skull, Eye, Swords, ShoppingBag, Plus, Trash2, Video, ListChecks } from "lucide-react";
 import { Btn, IconBtn, Select, Input, Eyebrow, Pill, Spinner } from "../ui/primitives.jsx";
-import { DEATH_TYPES, DEATH_CAUSES } from "../../constants/coaching.js";
+import { DEATH_TYPES, DEATH_CAUSES, TACTICAL_NOTE_TYPES, TACTICAL_NOTE_VALUES } from "../../constants/coaching.js";
 import { REVERSE_CHAMP } from "../../constants/roster.js";
 import { fetchItemNames, fetchRuneTree } from "../../lib/ddragon.js";
 
@@ -48,6 +48,11 @@ function DiffCell({ value, suffix = "" }) {
 export default function GameAnalysisModal({ game, onSave, onClose }) {
   const t = game.timelineSummary;
   const [deathTags, setDeathTags] = useState(game.deathTags?.length ? game.deathTags : (t?.deaths || []).map(() => null));
+  const [tacticalNotes, setTacticalNotes] = useState(game.tacticalNotes || []);
+  const [vodUrl, setVodUrl] = useState(game.vodUrl || "");
+  const [newNoteType, setNewNoteType] = useState(null);
+  const [newNoteValue, setNewNoteValue] = useState("");
+  const [newNoteText, setNewNoteText] = useState("");
 
   useEffect(() => {
     const onKey = (e) => {
@@ -65,7 +70,15 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
     });
   };
 
-  if (!t && !game.build) return null; // ne devrait pas être ouvert sans l'un des deux — voir GamesHistory
+  const addTacticalNote = () => {
+    if (!newNoteType || !newNoteValue) return;
+    setTacticalNotes((prev) => [...prev, { id: `${Date.now()}`, type: newNoteType, value: newNoteValue, note: newNoteText.trim() }]);
+    setNewNoteType(null);
+    setNewNoteValue("");
+    setNewNoteText("");
+  };
+
+  const removeTacticalNote = (id) => setTacticalNotes((prev) => prev.filter((n) => n.id !== id));
 
   const intervals = t
     ? Object.keys(t.diffs)
@@ -259,9 +272,77 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
           </>
         )}
 
-        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <Btn variant="primary" onClick={() => onSave(deathTags)}>
-            Enregistrer les tags
+        <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+          <ListChecks size={12} /> Notes tactiques
+        </Eyebrow>
+        <p style={{ fontSize: 11.5, color: "var(--dim)", marginBottom: 10 }}>
+          Wave, recall, roam, teamfight — la Timeline Riot ne dit jamais rien là-dessus, tout est à toi de noter.
+        </p>
+
+        {tacticalNotes.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+            {tacticalNotes.map((n) => {
+              const typeLabel = TACTICAL_NOTE_TYPES.find((tt) => tt.id === n.type)?.label || n.type;
+              return (
+                <div key={n.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, padding: "6px 10px", borderRadius: "var(--radius-md)", background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+                  <Pill tone="gold">{typeLabel}</Pill>
+                  <strong style={{ color: "var(--text)" }}>{n.value}</strong>
+                  {n.note && <span style={{ color: "var(--dim)" }}>— {n.note}</span>}
+                  <IconBtn onClick={() => removeTacticalNote(n.id)} aria-label="Supprimer la note" style={{ marginLeft: "auto" }}>
+                    <Trash2 size={13} />
+                  </IconBtn>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+          {TACTICAL_NOTE_TYPES.map((tt) => (
+            <Btn
+              key={tt.id}
+              onClick={() => {
+                setNewNoteType(tt.id);
+                setNewNoteValue("");
+              }}
+              variant={newNoteType === tt.id ? "primary" : undefined}
+            >
+              {tt.label}
+            </Btn>
+          ))}
+        </div>
+
+        {newNoteType && (
+          <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8, marginBottom: 20 }}>
+            <Select value={newNoteValue} onChange={(e) => setNewNoteValue(e.target.value)}>
+              <option value="">Classification…</option>
+              {TACTICAL_NOTE_VALUES[newNoteType].map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
+            </Select>
+            <Input value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} placeholder="Note (optionnel)" />
+            <Btn variant="primary" onClick={addTacticalNote} disabled={!newNoteValue}>
+              <Plus size={14} /> Ajouter
+            </Btn>
+          </div>
+        )}
+
+        <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+          <Video size={12} /> VOD
+        </Eyebrow>
+        <p style={{ fontSize: 11.5, color: "var(--dim)", marginBottom: 8 }}>
+          Riot ne fournit aucune vidéo — si tu as enregistré cette game (Twitch, YouTube...), colle le lien ici.
+        </p>
+        <Input
+          value={vodUrl}
+          onChange={(e) => setVodUrl(e.target.value)}
+          placeholder="https://twitch.tv/videos/… ou https://youtube.com/…"
+          style={{ marginBottom: 20 }}
+        />
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <Btn variant="primary" onClick={() => onSave({ deathTags, tacticalNotes, vodUrl: vodUrl.trim() })}>
+            Enregistrer
           </Btn>
           <Btn onClick={onClose}>Fermer</Btn>
         </div>

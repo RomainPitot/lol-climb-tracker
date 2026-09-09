@@ -41,6 +41,13 @@ export function emptyGame() {
     // Build final (items + runes) — voir lib/importers.js riotMatchToGame. Toujours vide
     // pour une game ajoutée à la main.
     build: null,
+    // Notes tactiques manuelles (wave/recall/roam/teamfight) — voir constants/coaching.js
+    // et GameAnalysisModal. Jamais rempli automatiquement : la Timeline Riot n'expose
+    // aucun de ces événements.
+    tacticalNotes: [],
+    // Lien vers l'enregistrement de la game (Twitch/YouTube...), si le joueur en a un —
+    // Riot ne fournit aucune vidéo, ça reste à la charge du joueur (voir GameAnalysisModal).
+    vodUrl: "",
   };
 }
 

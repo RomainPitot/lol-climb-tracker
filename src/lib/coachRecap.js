@@ -50,6 +50,15 @@ function timelineBlock(g) {
   return lines.length ? `\n${lines.join("\n")}` : "";
 }
 
+/** Notes tactiques manuelles (wave/recall/roam/teamfight, voir constants/coaching.js) —
+ * disponibles même sans timeline (game ajoutée à la main), la Timeline Riot ne les
+ * expose jamais elle-même de toute façon. */
+function tacticalNotesBlock(g) {
+  if (!g.tacticalNotes?.length) return "";
+  const lines = g.tacticalNotes.map((n) => `  ${n.type} : ${n.value}${n.note ? ` (${n.note})` : ""}`);
+  return `\n${lines.join("\n")}`;
+}
+
 /** Nombre minimum de games hors sélection pour que la comparaison ait un sens. */
 export const MIN_COMPARISON_GAMES = 3;
 
@@ -77,7 +86,7 @@ export function gameLine(g) {
     g.gameComment ? `Game: ${g.gameComment}` : "",
   ];
 
-  return `- ${bits.filter(Boolean).join(" — ")}${timelineBlock(g)}`;
+  return `- ${bits.filter(Boolean).join(" — ")}${timelineBlock(g)}${tacticalNotesBlock(g)}`;
 }
 
 function buildAlerts({ selAgg, restAgg, selectedGames, enoughRest, sessions, champs }) {

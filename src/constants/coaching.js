@@ -31,3 +31,24 @@ export const DEATH_CAUSES = [
   { id: "ally_error", label: "Erreur d'un allié" },
   { id: "other", label: "Autre" },
 ];
+
+/**
+ * Notes tactiques manuelles (wave/recall/roam/teamfight) — la Timeline Riot n'expose
+ * AUCUN de ces événements directement (contrairement aux morts/objectifs/wards), donc rien
+ * à automatiser ici : ce sont des tags 100% posés par le joueur/coach, volontairement
+ * réduits à quelques boutons + une liste courte pour rester rapides à saisir juste après
+ * la game (voir GameAnalysisModal) plutôt qu'un formulaire long.
+ */
+export const TACTICAL_NOTE_TYPES = [
+  { id: "wave", label: "Wave" },
+  { id: "recall", label: "Recall" },
+  { id: "roam", label: "Roam" },
+  { id: "teamfight", label: "Teamfight" },
+];
+
+export const TACTICAL_NOTE_VALUES = {
+  wave: ["Freeze", "Slow push", "Fast push", "Neutre", "Crash", "Bounce", "Reset"],
+  recall: ["Optimal", "Acceptable", "Mauvais", "Très mauvais"],
+  roam: ["Réussi", "Neutre", "Raté", "Très coûteux"],
+  teamfight: ["Bon fight", "Mauvais fight", "Nécessaire", "Évitable"],
+};

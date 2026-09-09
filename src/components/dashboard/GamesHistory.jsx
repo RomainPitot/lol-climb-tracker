@@ -157,11 +157,9 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                     <IconBtn onClick={() => setEditingGame(g)} aria-label="Modifier">
                       <Pencil size={14} />
                     </IconBtn>
-                    {(g.timelineSummary || g.build) && (
-                      <IconBtn onClick={() => setAnalyzingGame(g)} aria-label="Analyse détaillée (Coach IA)">
-                        <Microscope size={14} />
-                      </IconBtn>
-                    )}
+                    <IconBtn onClick={() => setAnalyzingGame(g)} aria-label="Analyse détaillée (Coach IA)">
+                      <Microscope size={14} />
+                    </IconBtn>
                     {confirmId === g.id ? (
                       <>
                         <button
@@ -203,8 +201,8 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
         <GameAnalysisModal
           game={analyzingGame}
           onClose={() => setAnalyzingGame(null)}
-          onSave={(deathTags) => {
-            updateGame(analyzingGame.id, { deathTags });
+          onSave={(patch) => {
+            updateGame(analyzingGame.id, patch);
             setAnalyzingGame(null);
           }}
         />

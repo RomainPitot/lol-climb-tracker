@@ -127,5 +127,7 @@ export function riotMatchToGame(match, puuid) {
     excluded: false,
     excludedReason: "",
     build,
+    tacticalNotes: [],
+    vodUrl: "",
   };
 }
