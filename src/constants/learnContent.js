@@ -36,6 +36,7 @@ export const LEARN_ARTICLES = [
     id: "runes",
     title: "Choisir ses runes",
     tagline: "Lire un arbre de runes et adapter sa page au champion et au matchup, pas juste copier une build en ligne.",
+    diagram: "runes",
     sections: [
       {
         heading: "La structure d'une page",
@@ -59,6 +60,7 @@ export const LEARN_ARTICLES = [
     id: "vision",
     title: "Vision : wards et control wards",
     tagline: "Où et quand warder pour que la vision serve réellement à quelque chose, offensive ou défensive.",
+    diagram: "vision",
     sections: [
       {
         heading: "Vision offensive vs défensive",
@@ -82,6 +84,7 @@ export const LEARN_ARTICLES = [
     id: "trades-allin",
     title: "Trades et all-in en lane",
     tagline: "Reconnaître un bon trade, savoir quand all-in, et gérer les cooldowns adverses plutôt que jouer au hasard.",
+    diagram: "trades",
     sections: [
       {
         heading: "Qu'est-ce qu'un bon trade",
@@ -105,6 +108,7 @@ export const LEARN_ARTICLES = [
     id: "macro",
     title: "Macro : roams, objectifs, siège",
     tagline: "Quand quitter sa lane, comment prioriser un objectif, et gérer un siège de tour sans le gâcher.",
+    diagram: "macro",
     sections: [
       {
         heading: "Quand roamer",

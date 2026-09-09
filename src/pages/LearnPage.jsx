@@ -2,9 +2,13 @@ import { useState } from "react";
 import { ChevronLeft, PlayCircle } from "lucide-react";
 import { Card, SectionTitle, Eyebrow } from "../components/ui/primitives.jsx";
 import WaveDiagram from "../components/learn/WaveDiagram.jsx";
+import RunesDiagram from "../components/learn/RunesDiagram.jsx";
+import VisionDiagram from "../components/learn/VisionDiagram.jsx";
+import TradesDiagram from "../components/learn/TradesDiagram.jsx";
+import MacroDiagram from "../components/learn/MacroDiagram.jsx";
 import { LEARN_ARTICLES } from "../constants/learnContent.js";
 
-const DIAGRAMS = { wave: WaveDiagram };
+const DIAGRAMS = { wave: WaveDiagram, runes: RunesDiagram, vision: VisionDiagram, trades: TradesDiagram, macro: MacroDiagram };
 
 export default function LearnPage() {
   const [activeId, setActiveId] = useState(null);
