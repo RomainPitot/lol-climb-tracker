@@ -213,6 +213,23 @@ export function useTrackerData() {
         save(emptyState());
       },
 
+      /** Ajoute un correctif (voir lib/corrections.js) — construit par l'appelant via
+       * newCorrection() pour que la valeur de départ soit calculée sur les bonnes données. */
+      addCorrection(correction) {
+        const cur = dataRef.current;
+        save({ ...cur, corrections: [...(cur.corrections || []), correction] });
+      },
+
+      updateCorrection(id, patch) {
+        const cur = dataRef.current;
+        save({ ...cur, corrections: (cur.corrections || []).map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+      },
+
+      deleteCorrection(id) {
+        const cur = dataRef.current;
+        save({ ...cur, corrections: (cur.corrections || []).filter((c) => c.id !== id) });
+      },
+
       /**
        * Comme resetAll, mais garde la config de connexion (clés/URL/tokens Riot,
        * GameDetectorLol) — pour repartir sur des games et des stats propres sans avoir à

@@ -3,10 +3,12 @@ import { Sparkles, Copy, Check } from "lucide-react";
 import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip, Collapsible } from "../components/ui/primitives.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import GameRecapCard from "../components/GameRecapCard.jsx";
+import CorrectionsPanel from "../components/coach/CorrectionsPanel.jsx";
 import { computeAgg } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { computeFocus } from "../lib/focus.js";
+import { evaluateCorrection, CORRECTION_STATUS_LABEL } from "../lib/corrections.js";
 import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
 
@@ -23,7 +25,7 @@ const PRESETS = [
   { label: "Aucune", take: 0 },
 ];
 
-export default function CoachPage({ data, sorted, currentRank }) {
+export default function CoachPage({ data, sorted, currentRank, addCorrection, updateCorrection, deleteCorrection }) {
   const [selected, setSelected] = useState(() => new Set(sorted.slice(-20).map((g) => g.id)));
   const [recap, setRecap] = useState("");
   const [copied, setCopied] = useState(false);
@@ -41,11 +43,27 @@ export default function CoachPage({ data, sorted, currentRank }) {
     const focusBlock = focus
       ? `\n=== FOCUS EN COURS ===\nJe travaille sur ${focus.label} depuis ${focus.gamesCount} game(s) (valeur de départ : ${focus.startValue.toFixed(focus.decimals)}, valeur actuelle : ${focus.currentValue.toFixed(focus.decimals)}).${focus.note ? ` Note : ${focus.note}.` : ""}\n`
       : "";
+
+    const activeCorrections = (data.corrections || [])
+      .map((c) => evaluateCorrection(c, sorted, data.settings))
+      .filter((c) => c.status !== "todo");
+    const correctionsBlock = activeCorrections.length
+      ? `\n=== CORRECTIFS SUIVIS ===\n${activeCorrections
+          .map(
+            (c) =>
+              `- ${c.title} (${c.def?.label}, cible ${c.def?.invert ? "≤" : "≥"} ${c.targetValue}) : ${CORRECTION_STATUS_LABEL[c.derivedStatus]}${c.currentValue != null ? ` — actuel ${c.currentValue.toFixed(c.def.decimals)} sur ${c.gamesCount} game(s)` : ""}${c.derivedStatus === "regression" ? " — ATTENTION, retombé après avoir été corrigé" : ""}`
+          )
+          .join("\n")}\n`
+      : "";
+
     const demande = focus
       ? `Commente en priorité ma progression sur ce focus précis (${focus.label}) — est-ce que ça s'améliore vraiment, qu'est-ce qui coince encore, faut-il continuer dessus ou en changer. Complète avec 2 points forts et 1 autre point faible si pertinent, mais le focus passe avant.`
       : `Fais un bilan complet de mon compte, pas juste de la sélection ci-dessus : 3 points forts, les 3 points faibles qui me coûtent le plus de LP en ce moment (par ordre de priorité), et une seule action concrète à appliquer dès ma prochaine game.`;
+    const correctionsNote = activeCorrections.some((c) => c.derivedStatus === "regression")
+      ? " Signale en premier toute régression listée ci-dessus — c'est plus urgent qu'un nouveau point faible."
+      : "";
 
-    return `${base}${focusBlock}\n=== DEMANDE ===\n${demande} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
+    return `${base}${focusBlock}${correctionsBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
   };
 
   const selectedGames = useMemo(() => sorted.filter((g) => selected.has(g.id)), [sorted, selected]);
@@ -89,6 +107,14 @@ export default function CoachPage({ data, sorted, currentRank }) {
       </SectionTitle>
 
       <GameRecapCard data={data} sorted={sorted} />
+
+      <CorrectionsPanel
+        data={data}
+        sorted={sorted}
+        addCorrection={addCorrection}
+        updateCorrection={updateCorrection}
+        deleteCorrection={deleteCorrection}
+      />
 
       <Card className="p-5 mb-5">
         <Eyebrow style={{ marginBottom: 6 }}>Bilan de compte</Eyebrow>

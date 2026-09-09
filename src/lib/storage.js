@@ -30,6 +30,11 @@ export function emptyState() {
     // d'une nouvelle game) — voir lib/riotApi.js pour son usage : situer précisément une
     // game entre deux vérifications rapprochées rend son LP exact plutôt qu'estimé.
     rankHistory: [],
+    // Correctifs de coaching (problème → objectif → suivi → régression) — voir
+    // lib/corrections.js. Contrairement au focus (un seul actif, sans cible chiffrée), on
+    // peut en avoir plusieurs, chacun avec une métrique cible ; corrigé/en régression sont
+    // toujours calculés depuis les games réelles, jamais cochés à la main.
+    corrections: [],
   };
 }
 
@@ -47,6 +52,7 @@ function normalize(state) {
   if (!d.championWeights) d.championWeights = emptyChampionWeights();
   else for (const r of ROLES) if (!d.championWeights[r] || typeof d.championWeights[r] !== "object") d.championWeights[r] = {};
   if (!Array.isArray(d.rankHistory)) d.rankHistory = [];
+  if (!Array.isArray(d.corrections)) d.corrections = [];
   return d;
 }
 
