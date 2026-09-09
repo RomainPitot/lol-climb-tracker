@@ -196,6 +196,7 @@ export function buildTimelineSummary(timeline, match, puuid) {
           phase: phaseOf(ev.timestamp),
           kind: ev.monsterType, // DRAGON | RIFTHERALD | BARON_NASHOR | HORDE (grubs)
           takenByMyTeam,
+          position: ev.position || null,
           // Approximation, jamais un fait certain : une ward de mon équipe active dans un
           // rayon proche des ~3 min précédentes. Ne couvre que les prises de MON équipe —
           // je n'ai pas la vision adverse pour juger ses prises.
@@ -210,6 +211,7 @@ export function buildTimelineSummary(timeline, match, puuid) {
           kind: ev.buildingType, // TOWER_BUILDING | INHIBITOR_BUILDING
           laneType: ev.laneType || null,
           takenByMyTeam: teamById[ev.killerId] === myTeamId,
+          position: ev.position || null,
           myTeamHadVisionApprox: null, // pas calculé pour les structures — moins pertinent.
         });
       }
@@ -224,5 +226,9 @@ export function buildTimelineSummary(timeline, match, puuid) {
     objectives,
     items,
     wards: { placed: wardsPlaced, destroyed: wardsDestroyed, controlWardsBought },
+    // Positions des wards posées (pour la heatmap — voir lib/heatmap.js) ; pas conservées
+    // avant cet ajout, donc absentes sur les games importées plus tôt (pas d'estimation
+    // de remplacement, la heatmap ignore simplement ce qu'elle n'a pas).
+    wardPositions: myWards.map((w) => ({ x: w.x, y: w.y })),
   };
 }

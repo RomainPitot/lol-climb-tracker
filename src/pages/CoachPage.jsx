@@ -4,6 +4,7 @@ import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip, Co
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import GameRecapCard from "../components/GameRecapCard.jsx";
 import CorrectionsPanel from "../components/coach/CorrectionsPanel.jsx";
+import MapHeatmap from "../components/coach/MapHeatmap.jsx";
 import { computeAgg } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
 import { representativeGames } from "../lib/gameModel.js";
@@ -127,6 +128,8 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
         updateCorrection={updateCorrection}
         deleteCorrection={deleteCorrection}
       />
+
+      <MapHeatmap data={data} sorted={sorted} />
 
       <Card className="p-5 mb-5">
         <Eyebrow style={{ marginBottom: 6 }}>Bilan de compte</Eyebrow>
