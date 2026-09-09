@@ -52,6 +52,11 @@ export function emptyGame() {
     // constants/coaching.js BUILD_VS_PLAN_TAGS, lib/matchupNotes.js) — jamais déduit
     // automatiquement, le plan recommandé est du texte libre.
     buildTag: "",
+    // Draft (voir GameAnalysisModal, constants/coaching.js) — 100% manuel, jamais déduit :
+    // le match Riot ne dit rien de la logique de composition (win conditions, fonction
+    // réelle dans la comp...). null tant que jamais renseigné plutôt qu'un objet vide, pour
+    // distinguer "pas encore taguée" de "taguée sans rien à dire".
+    draft: null,
   };
 }
 

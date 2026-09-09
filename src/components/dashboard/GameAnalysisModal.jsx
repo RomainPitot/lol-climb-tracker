@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
-import { X, Skull, Eye, Swords, ShoppingBag, Plus, Trash2, Video, ListChecks } from "lucide-react";
-import { Btn, IconBtn, Select, Input, Eyebrow, Pill, Spinner } from "../ui/primitives.jsx";
-import { DEATH_TYPES, DEATH_CAUSES, TACTICAL_NOTE_TYPES, TACTICAL_NOTE_VALUES, FLASH_AVAILABILITY, BUILD_VS_PLAN_TAGS } from "../../constants/coaching.js";
+import { X, Skull, Eye, Swords, ShoppingBag, Plus, Trash2, Video, ListChecks, Layers } from "lucide-react";
+import { Btn, IconBtn, Select, Input, Eyebrow, Pill, Spinner, ToggleChip } from "../ui/primitives.jsx";
+import {
+  DEATH_TYPES,
+  DEATH_CAUSES,
+  TACTICAL_NOTE_TYPES,
+  TACTICAL_NOTE_VALUES,
+  FLASH_AVAILABILITY,
+  BUILD_VS_PLAN_TAGS,
+  DRAFT_WIN_CONDITIONS,
+  DRAFT_OUTCOME_TAGS,
+  COMP_FUNCTIONS,
+} from "../../constants/coaching.js";
 import { REVERSE_CHAMP } from "../../constants/roster.js";
 import { fetchItemNames, fetchRuneTree } from "../../lib/ddragon.js";
 import { getMatchupNote } from "../../lib/matchupNotes.js";
@@ -53,6 +63,14 @@ export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose 
   const [tacticalNotes, setTacticalNotes] = useState(game.tacticalNotes || []);
   const [vodUrl, setVodUrl] = useState(game.vodUrl || "");
   const [buildTag, setBuildTag] = useState(game.buildTag || "");
+  const [draft, setDraft] = useState(
+    game.draft || { allyBans: "", enemyBans: "", allyComp: "", enemyComp: "", winConditions: [], outcomeTag: "", myFunction: "" }
+  );
+  const toggleWinCondition = (wc) =>
+    setDraft((prev) => ({
+      ...prev,
+      winConditions: prev.winConditions.includes(wc) ? prev.winConditions.filter((w) => w !== wc) : [...prev.winConditions, wc],
+    }));
 
   // Adversaire de lane connu sur cette game (matchup/matchupAdc — le premier renseigné) —
   // même correspondance texte que le plan de matchup (voir lib/matchupNotes.js).
@@ -307,6 +325,42 @@ export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose 
         )}
 
         <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+          <Layers size={12} /> Draft
+        </Eyebrow>
+        <p style={{ fontSize: 11.5, color: "var(--dim)", marginBottom: 10 }}>
+          100% manuel — le match Riot ne dit rien de la logique de composition. Une défaite n'est jamais
+          automatiquement une "draft diff" : ce jugement reste le tien.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8, marginBottom: 10 }}>
+          <Input value={draft.allyComp} onChange={(e) => setDraft((p) => ({ ...p, allyComp: e.target.value }))} placeholder="Picks alliés (séparés par des virgules)" />
+          <Input value={draft.enemyComp} onChange={(e) => setDraft((p) => ({ ...p, enemyComp: e.target.value }))} placeholder="Picks ennemis (séparés par des virgules)" />
+          <Input value={draft.allyBans} onChange={(e) => setDraft((p) => ({ ...p, allyBans: e.target.value }))} placeholder="Bans alliés" />
+          <Input value={draft.enemyBans} onChange={(e) => setDraft((p) => ({ ...p, enemyBans: e.target.value }))} placeholder="Bans ennemis" />
+        </div>
+        <div style={{ fontSize: 11, color: "var(--dim)", marginBottom: 6 }}>Win conditions de la comp (plusieurs possibles)</div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+          {DRAFT_WIN_CONDITIONS.map((wc) => (
+            <ToggleChip key={wc} active={draft.winConditions.includes(wc)} onClick={() => toggleWinCondition(wc)}>
+              {wc}
+            </ToggleChip>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8, marginBottom: 20 }}>
+          <Select value={draft.myFunction} onChange={(e) => setDraft((p) => ({ ...p, myFunction: e.target.value }))} title="Peut différer du rôle officiel (ex: support engage vs support peel)">
+            <option value="">Ma fonction réelle dans la comp — non renseignée</option>
+            {COMP_FUNCTIONS.map((f) => (
+              <option key={f.id} value={f.id}>{f.label}</option>
+            ))}
+          </Select>
+          <Select value={draft.outcomeTag} onChange={(e) => setDraft((p) => ({ ...p, outcomeTag: e.target.value }))}>
+            <option value="">Bilan de la draft — non renseigné</option>
+            {DRAFT_OUTCOME_TAGS.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </Select>
+        </div>
+
+        <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
           <ListChecks size={12} /> Notes tactiques
         </Eyebrow>
         <p style={{ fontSize: 11.5, color: "var(--dim)", marginBottom: 10 }}>
@@ -375,7 +429,7 @@ export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose 
         />
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Btn variant="primary" onClick={() => onSave({ deathTags, tacticalNotes, vodUrl: vodUrl.trim(), buildTag })}>
+          <Btn variant="primary" onClick={() => onSave({ deathTags, tacticalNotes, vodUrl: vodUrl.trim(), buildTag, draft })}>
             Enregistrer
           </Btn>
           <Btn onClick={onClose}>Fermer</Btn>

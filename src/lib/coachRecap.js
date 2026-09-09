@@ -5,11 +5,28 @@ import { detectSessions } from "./sessions.js";
 import { computeGoalProgress } from "./goals.js";
 import { isBotLaneRole } from "./gameModel.js";
 import { round1, round2 } from "./format.js";
-import { DEATH_TYPES, DEATH_CAUSES, FLASH_AVAILABILITY } from "../constants/coaching.js";
+import { DEATH_TYPES, DEATH_CAUSES, FLASH_AVAILABILITY, DRAFT_OUTCOME_TAGS, COMP_FUNCTIONS } from "../constants/coaching.js";
 
 const deathTypeLabel = (id) => DEATH_TYPES.find((t) => t.id === id)?.label;
 const deathCauseLabel = (id) => DEATH_CAUSES.find((c) => c.id === id)?.label;
 const flashLabel = (id) => FLASH_AVAILABILITY.find((f) => f.id === id)?.label;
+const draftOutcomeLabel = (id) => DRAFT_OUTCOME_TAGS.find((o) => o.id === id)?.label;
+const compFunctionLabel = (id) => COMP_FUNCTIONS.find((f) => f.id === id)?.label;
+
+/** Draft manuelle (voir constants/coaching.js) — jamais utilisée pour transformer une
+ * défaite en "draft diff" automatiquement, seulement pour reporter le jugement déjà posé
+ * par le joueur (outcomeTag), s'il en a mis un. */
+function draftBlock(g) {
+  const d = g.draft;
+  if (!d) return "";
+  const lines = [];
+  if (d.allyComp || d.enemyComp) lines.push(`  Comp : ${d.allyComp || "?"} vs ${d.enemyComp || "?"}`);
+  if (d.allyBans || d.enemyBans) lines.push(`  Bans : alliés ${d.allyBans || "—"} / ennemis ${d.enemyBans || "—"}`);
+  if (d.winConditions?.length) lines.push(`  Win conditions de la comp : ${d.winConditions.join(", ")}`);
+  if (d.myFunction) lines.push(`  Ma fonction réelle : ${compFunctionLabel(d.myFunction) || d.myFunction}`);
+  if (d.outcomeTag) lines.push(`  Bilan draft (jugement du joueur) : ${draftOutcomeLabel(d.outcomeTag) || d.outcomeTag}`);
+  return lines.length ? `\n${lines.join("\n")}` : "";
+}
 
 /**
  * Détail minute par minute d'une game (voir lib/riotTimeline.js) condensé en quelques
@@ -88,7 +105,7 @@ export function gameLine(g) {
     g.gameComment ? `Game: ${g.gameComment}` : "",
   ];
 
-  return `- ${bits.filter(Boolean).join(" — ")}${timelineBlock(g)}${tacticalNotesBlock(g)}`;
+  return `- ${bits.filter(Boolean).join(" — ")}${timelineBlock(g)}${tacticalNotesBlock(g)}${draftBlock(g)}`;
 }
 
 function buildAlerts({ selAgg, restAgg, selectedGames, enoughRest, sessions, champs }) {

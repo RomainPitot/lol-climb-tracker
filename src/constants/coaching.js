@@ -76,3 +76,30 @@ export const BUILD_VS_PLAN_TAGS = [
   { id: "bad_build", label: "Mauvais build" },
   { id: "bad_timing", label: "Mauvais timing" },
 ];
+
+/**
+ * Draft (voir GameAnalysisModal, section "Draft") — 100% manuel, la Timeline/le match Riot
+ * ne disent rien de la logique de composition. Win conditions : plusieurs possibles par
+ * comp (multi-select), le reste : un seul tag qui reflète le jugement du joueur après coup.
+ * Règle explicite du GDD à respecter dans toute l'app : ne jamais transformer
+ * automatiquement une défaite en "draft diff" — ce tag reste toujours posé à la main.
+ */
+export const DRAFT_WIN_CONDITIONS = ["Scaling", "Engage", "Disengage", "Peel", "Poke", "Siège", "Split push"];
+
+export const DRAFT_OUTCOME_TAGS = [
+  { id: "correct", label: "Draft correcte" },
+  { id: "problematic", label: "Draft problématique" },
+  { id: "bad_execution", label: "Bonne draft, mauvaise exécution" },
+  { id: "wincon_missed", label: "Condition de victoire non respectée" },
+];
+
+/** Fonction stratégique réelle du joueur dans la comp — peut différer du rôle officiel
+ * (ex: un support engage vs un support peel/enchanteur). */
+export const COMP_FUNCTIONS = [
+  { id: "carry", label: "Carry" },
+  { id: "frontline", label: "Frontline / Tank" },
+  { id: "engage", label: "Engage" },
+  { id: "peel", label: "Peel" },
+  { id: "setup", label: "Setup / Enchanteur" },
+  { id: "other", label: "Autre" },
+];
