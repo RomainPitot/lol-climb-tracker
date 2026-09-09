@@ -15,14 +15,14 @@ import {
   Compass,
   MessageSquare,
 } from "lucide-react";
-import { Card, SectionTitle, Eyebrow } from "../components/ui/primitives.jsx";
+import { Card, SectionTitle, Eyebrow, ToggleChip } from "../components/ui/primitives.jsx";
 import WaveDiagram from "../components/learn/WaveDiagram.jsx";
 import RunesDiagram from "../components/learn/RunesDiagram.jsx";
 import VisionDiagram from "../components/learn/VisionDiagram.jsx";
 import TradesDiagram from "../components/learn/TradesDiagram.jsx";
 import MacroDiagram from "../components/learn/MacroDiagram.jsx";
 import { LEARN_COVERS } from "../components/learn/LearnCover.jsx";
-import { LEARN_ARTICLES } from "../constants/learnContent.js";
+import { LEARN_ARTICLES, LEARN_CATEGORIES } from "../constants/learnContent.js";
 
 const DIAGRAMS = { wave: WaveDiagram, runes: RunesDiagram, vision: VisionDiagram, trades: TradesDiagram, macro: MacroDiagram };
 
@@ -36,7 +36,7 @@ function ArticleCover({ article }) {
   const Cover = LEARN_COVERS[article.diagram];
   if (Cover) {
     return (
-      <div style={{ height: 72, background: "var(--bg-elevated)" }}>
+      <div style={{ height: 116, background: "var(--bg-elevated)" }}>
         <Cover />
       </div>
     );
@@ -45,19 +45,25 @@ function ArticleCover({ article }) {
     const Icon = ICONS[article.cover.icon];
     if (!Icon) return null;
     return (
-      <div style={{ height: 72, background: `${article.cover.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon size={28} color={article.cover.color} strokeWidth={1.75} />
+      <div style={{ height: 116, background: `${article.cover.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon size={40} color={article.cover.color} strokeWidth={1.6} />
       </div>
     );
   }
   return null;
 }
 
+/** Nombre max de cartes par ligne visé sur grand écran (voir le calcul de maxWidth de la
+ * grille ci-dessous) — un simple filtre par catégorie plutôt qu'un système de tags croisés,
+ * chaque article n'ayant qu'une seule catégorie. */
 export default function LearnPage() {
   const [activeId, setActiveId] = useState(null);
+  const [category, setCategory] = useState(null);
   const active = LEARN_ARTICLES.find((a) => a.id === activeId);
 
   if (active) return <ArticleView article={active} onBack={() => setActiveId(null)} />;
+
+  const filtered = category ? LEARN_ARTICLES.filter((a) => a.category === category) : LEARN_ARTICLES;
 
   return (
     <div>
@@ -65,8 +71,23 @@ export default function LearnPage() {
         Learn
       </SectionTitle>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
-        {LEARN_ARTICLES.map((a) => (
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
+        <ToggleChip active={category === null} onClick={() => setCategory(null)}>
+          Tous ({LEARN_ARTICLES.length})
+        </ToggleChip>
+        {LEARN_CATEGORIES.map((c) => {
+          const count = LEARN_ARTICLES.filter((a) => a.category === c.id).length;
+          if (!count) return null;
+          return (
+            <ToggleChip key={c.id} active={category === c.id} onClick={() => setCategory(c.id)}>
+              {c.label} ({count})
+            </ToggleChip>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, maxWidth: 1120 }}>
+        {filtered.map((a) => (
           <button
             key={a.id}
             onClick={() => setActiveId(a.id)}
@@ -84,11 +105,11 @@ export default function LearnPage() {
             }}
           >
             <ArticleCover article={a} />
-            <div style={{ padding: 16 }}>
-              <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 16, color: "var(--text)", marginBottom: 6 }}>
+            <div style={{ padding: 18 }}>
+              <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 17, color: "var(--text)", marginBottom: 8 }}>
                 {a.title}
               </div>
-              <div style={{ fontSize: 12, color: "var(--dim)", lineHeight: 1.4 }}>{a.tagline}</div>
+              <div style={{ fontSize: 12.5, color: "var(--dim)", lineHeight: 1.5 }}>{a.tagline}</div>
             </div>
           </button>
         ))}

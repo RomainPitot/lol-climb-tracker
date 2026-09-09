@@ -7,11 +7,21 @@
  * vidéo (champ `video`, une URL YouTube à ajouter à la main — aucune n'est pré-remplie
  * pour ne pas inventer un lien qui n'existe pas).
  */
+/** Catégories pour filtrer la liste (voir LearnPage.jsx) — un article a toujours
+ * exactement une catégorie, pour un filtre simple plutôt qu'un système de tags croisés. */
+export const LEARN_CATEGORIES = [
+  { id: "lane", label: "Lane & fondamentaux" },
+  { id: "vision", label: "Vision" },
+  { id: "macro", label: "Macro & équipe" },
+  { id: "prep", label: "Préparation & progression" },
+];
+
 export const LEARN_ARTICLES = [
   {
     id: "wave-management",
     title: "Gestion de wave",
     tagline: "Freeze, slow push, fast push, crash — les 4 états d'une wave et quand les utiliser.",
+    category: "lane",
     diagram: "wave",
     sections: [
       {
@@ -36,6 +46,7 @@ export const LEARN_ARTICLES = [
     id: "runes",
     title: "Choisir ses runes",
     tagline: "Lire un arbre de runes et adapter sa page au champion et au matchup, pas juste copier une build en ligne.",
+    category: "prep",
     diagram: "runes",
     sections: [
       {
@@ -60,6 +71,7 @@ export const LEARN_ARTICLES = [
     id: "vision",
     title: "Vision : wards et control wards",
     tagline: "Où et quand warder pour que la vision serve réellement à quelque chose, offensive ou défensive.",
+    category: "vision",
     diagram: "vision",
     sections: [
       {
@@ -84,6 +96,7 @@ export const LEARN_ARTICLES = [
     id: "trades-allin",
     title: "Trades et all-in en lane",
     tagline: "Reconnaître un bon trade, savoir quand all-in, et gérer les cooldowns adverses plutôt que jouer au hasard.",
+    category: "lane",
     diagram: "trades",
     sections: [
       {
@@ -108,6 +121,7 @@ export const LEARN_ARTICLES = [
     id: "macro",
     title: "Macro : roams, objectifs, siège",
     tagline: "Quand quitter sa lane, comment prioriser un objectif, et gérer un siège de tour sans le gâcher.",
+    category: "macro",
     diagram: "macro",
     sections: [
       {
@@ -132,6 +146,7 @@ export const LEARN_ARTICLES = [
     id: "cs-efficiency",
     title: "CS efficace, y compris sous tourelle",
     tagline: "Last hit propre, minions sous tour, et pourquoi le CS/min compte plus que le nombre de kills.",
+    category: "lane",
     cover: { icon: "Crosshair", color: "#F4845F" },
     sections: [
       {
@@ -152,6 +167,7 @@ export const LEARN_ARTICLES = [
     id: "map-awareness",
     title: "Map awareness et minimap",
     tagline: "Regarder la minimap régulièrement pour anticiper un gank, un roam adverse ou une ouverture à exploiter.",
+    category: "macro",
     cover: { icon: "Map", color: "#5AC8FA" },
     sections: [
       {
@@ -172,6 +188,7 @@ export const LEARN_ARTICLES = [
     id: "teamfight-positioning",
     title: "Positionnement en teamfight",
     tagline: "Où se placer selon son rôle dans le fight, et pourquoi la plupart des morts en teamfight sont évitables.",
+    category: "macro",
     cover: { icon: "Users", color: "#A970FF" },
     sections: [
       {
@@ -192,6 +209,7 @@ export const LEARN_ARTICLES = [
     id: "shotcalling",
     title: "Shotcalling et priorité d'objectifs",
     tagline: "Décider quoi faire à l'échelle de l'équipe — pas juste de sa propre lane — et communiquer la décision.",
+    category: "macro",
     cover: { icon: "Flag", color: "#0FD68A" },
     sections: [
       {
@@ -212,6 +230,7 @@ export const LEARN_ARTICLES = [
     id: "itemization-adapt",
     title: "Adapter son build en cours de partie",
     tagline: "Lire la comp adverse et son propre état de game pour dévier de la build \"standard\" au bon moment.",
+    category: "prep",
     cover: { icon: "Package", color: "#FFD166" },
     sections: [
       {
@@ -232,6 +251,7 @@ export const LEARN_ARTICLES = [
     id: "tilt-management",
     title: "Gérer le tilt et le mental",
     tagline: "Reconnaître le tilt avant qu'il coûte plusieurs games, et savoir quand s'arrêter.",
+    category: "prep",
     cover: { icon: "Brain", color: "#F72585" },
     sections: [
       {
@@ -252,6 +272,7 @@ export const LEARN_ARTICLES = [
     id: "champion-pool",
     title: "Construire sa pool de champions",
     tagline: "Spécialisation vs polyvalence — combien de champions maîtriser, et pourquoi une pool trop large ralentit la progression.",
+    category: "prep",
     cover: { icon: "Layers", color: "#2EC4B6" },
     sections: [
       {
@@ -272,6 +293,7 @@ export const LEARN_ARTICLES = [
     id: "vod-review",
     title: "Revoir ses games (VOD review)",
     tagline: "La méthode la plus efficace pour progresser — comment s'y prendre sans y passer des heures.",
+    category: "prep",
     cover: { icon: "Video", color: "#FF6B6B" },
     sections: [
       {
@@ -292,6 +314,7 @@ export const LEARN_ARTICLES = [
     id: "tracking-summoners",
     title: "Tracker les sorts d'invocateur adverses",
     tagline: "Savoir quand l'adversaire a utilisé Flash/Ignite/Exhaust change directement ce qui est risqué ou sûr.",
+    category: "lane",
     cover: { icon: "Timer", color: "#4CC9F0" },
     sections: [
       {
@@ -312,6 +335,7 @@ export const LEARN_ARTICLES = [
     id: "splitpush",
     title: "Split push : quand et comment",
     tagline: "Pousser seul une side lane peut forcer une décision adverse — mais seulement dans les bonnes conditions.",
+    category: "macro",
     cover: { icon: "ArrowRightLeft", color: "#FFB347" },
     sections: [
       {
@@ -332,6 +356,7 @@ export const LEARN_ARTICLES = [
     id: "jungle-pathing",
     title: "Pathing jungle : les bases",
     tagline: "Prioriser ses camps early, lire où ganker, et pourquoi le premier clear décide souvent du reste de la game.",
+    category: "macro",
     cover: { icon: "Compass", color: "#06D6A0" },
     sections: [
       {
@@ -352,6 +377,7 @@ export const LEARN_ARTICLES = [
     id: "comms-pinging",
     title: "Pings et communication efficace",
     tagline: "Communiquer vite et utile sans spam — ce qui aide vraiment une équipe à décider ensemble.",
+    category: "macro",
     cover: { icon: "MessageSquare", color: "#7BDFF2" },
     sections: [
       {
