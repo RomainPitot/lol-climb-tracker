@@ -6,6 +6,7 @@ import RunesDiagram from "../components/learn/RunesDiagram.jsx";
 import VisionDiagram from "../components/learn/VisionDiagram.jsx";
 import TradesDiagram from "../components/learn/TradesDiagram.jsx";
 import MacroDiagram from "../components/learn/MacroDiagram.jsx";
+import { LEARN_COVERS } from "../components/learn/LearnCover.jsx";
 import { LEARN_ARTICLES } from "../constants/learnContent.js";
 
 const DIAGRAMS = { wave: WaveDiagram, runes: RunesDiagram, vision: VisionDiagram, trades: TradesDiagram, macro: MacroDiagram };
@@ -23,26 +24,39 @@ export default function LearnPage() {
       </SectionTitle>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
-        {LEARN_ARTICLES.map((a) => (
-          <button
-            key={a.id}
-            onClick={() => setActiveId(a.id)}
-            className="hoverable"
-            style={{
-              textAlign: "left",
-              padding: 16,
-              borderRadius: "var(--radius-lg)",
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 16, color: "var(--text)", marginBottom: 6 }}>
-              {a.title}
-            </div>
-            <div style={{ fontSize: 12, color: "var(--dim)", lineHeight: 1.4 }}>{a.tagline}</div>
-          </button>
-        ))}
+        {LEARN_ARTICLES.map((a) => {
+          const Cover = LEARN_COVERS[a.diagram];
+          return (
+            <button
+              key={a.id}
+              onClick={() => setActiveId(a.id)}
+              className="hoverable"
+              style={{
+                textAlign: "left",
+                padding: 0,
+                borderRadius: "var(--radius-lg)",
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                cursor: "pointer",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {Cover && (
+                <div style={{ height: 72, background: "var(--bg-elevated)" }}>
+                  <Cover />
+                </div>
+              )}
+              <div style={{ padding: 16 }}>
+                <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 16, color: "var(--text)", marginBottom: 6 }}>
+                  {a.title}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--dim)", lineHeight: 1.4 }}>{a.tagline}</div>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
