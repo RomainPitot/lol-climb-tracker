@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { X, Skull, Eye, Swords, ShoppingBag } from "lucide-react";
-import { Btn, IconBtn, Select, Input, Eyebrow, Pill } from "../ui/primitives.jsx";
+import { Btn, IconBtn, Select, Input, Eyebrow, Pill, Spinner } from "../ui/primitives.jsx";
 import { DEATH_TYPES, DEATH_CAUSES } from "../../constants/coaching.js";
 import { REVERSE_CHAMP } from "../../constants/roster.js";
+import { fetchItemNames, fetchRuneTree } from "../../lib/ddragon.js";
 
 const champName = (raw) => (raw ? REVERSE_CHAMP[raw] || raw : "?");
 
@@ -61,11 +62,13 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
     });
   };
 
-  if (!t) return null; // ne devrait pas être ouvert sans timelineSummary — voir GamesHistory
+  if (!t && !game.build) return null; // ne devrait pas être ouvert sans l'un des deux — voir GamesHistory
 
-  const intervals = Object.keys(t.diffs)
-    .map(Number)
-    .sort((a, b) => a - b);
+  const intervals = t
+    ? Object.keys(t.diffs)
+        .map(Number)
+        .sort((a, b) => a - b)
+    : [];
 
   return (
     <div
@@ -90,7 +93,7 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
       <div style={{ width: "100%", maxWidth: 880, background: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <div style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 700, color: "var(--text)" }}>
-            Analyse détaillée — {game.champion} ({t.role})
+            Analyse détaillée — {game.champion}{t ? ` (${t.role})` : ""}
           </div>
           <IconBtn
             onClick={onClose}
@@ -101,11 +104,11 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
           </IconBtn>
         </div>
         <p style={{ fontSize: 11.5, color: "var(--dim)", marginBottom: 18 }}>
-          {game.date} — vs {champName(t.opponentChampion)}. Généré automatiquement depuis la Timeline Riot — les morts
-          restent à classer toi-même (la Timeline ne dit jamais "pourquoi").
+          {game.date}
+          {t && <> — vs {champName(t.opponentChampion)}. Généré automatiquement depuis la Timeline Riot — les morts restent à classer toi-même (la Timeline ne dit jamais "pourquoi").</>}
         </p>
 
-        {intervals.length > 0 && (
+        {t && intervals.length > 0 && (
           <>
             <Eyebrow style={{ marginBottom: 8 }}>Diffs vs adversaire de rôle</Eyebrow>
             <div style={{ overflowX: "auto", marginBottom: 20 }}>
@@ -151,6 +154,8 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
           </>
         )}
 
+        {t && (
+        <>
         <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
           <Skull size={12} /> Morts ({t.deaths.length})
         </Eyebrow>
@@ -226,21 +231,108 @@ export default function GameAnalysisModal({ game, onSave, onClose }) {
         <p style={{ fontSize: 12.5, color: "var(--text)", marginBottom: 18 }}>
           {t.wards.placed} wards posées · {t.wards.destroyed} détruites · {t.wards.controlWardsBought} control ward(s) achetée(s)
         </p>
+        </>
+        )}
 
-        <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-          <ShoppingBag size={12} /> Achats ({t.items.length})
-        </Eyebrow>
-        <p style={{ fontSize: 11.5, color: "var(--dim)", marginBottom: 20 }}>
-          {t.items.length} achat(s) horodaté(s) — utilisés pour le bilan Coach IA, pas détaillés item par item ici.
-        </p>
+        {game.build && (
+          <>
+            <Eyebrow style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <ShoppingBag size={12} /> Build & runes
+            </Eyebrow>
+            <BuildSection build={game.build} />
+          </>
+        )}
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
           <Btn variant="primary" onClick={() => onSave(deathTags)}>
             Enregistrer les tags
           </Btn>
           <Btn onClick={onClose}>Fermer</Btn>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Build final (items0-6) + runes (perks.styles) — déjà dans la réponse Match-V5 (voir
+ * lib/importers.js), juste jamais affiché avant. Icônes chargées à l'ouverture seulement
+ * (pas de fetch tant que cette section n'est pas montée). */
+function BuildSection({ build }) {
+  const [itemNames, setItemNames] = useState(null);
+  const [runeIcons, setRuneIcons] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [items, tree] = await Promise.all([fetchItemNames(), fetchRuneTree()]);
+        if (cancelled) return;
+        setItemNames(items);
+        const icons = new Map();
+        for (const style of tree) {
+          icons.set(style.id, { name: style.name, icon: style.icon });
+          for (const slot of style.slots) {
+            for (const rune of slot.runes) icons.set(rune.id, { name: rune.name, icon: rune.icon });
+          }
+        }
+        setRuneIcons(icons);
+      } catch (e) {
+        if (!cancelled) setError(e.message || "Impossible de charger les icônes.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (error) return <p style={{ fontSize: 12, color: "var(--loss)", marginBottom: 18 }}>{error}</p>;
+  if (!itemNames || !runeIcons) {
+    return (
+      <div style={{ fontSize: 12.5, color: "var(--dim)", display: "flex", gap: 6, alignItems: "center", marginBottom: 18 }}>
+        <Spinner /> Chargement…
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      {build.items.length > 0 && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+          {build.items.map((id, i) => {
+            const item = itemNames.get(id);
+            return (
+              <img
+                key={i}
+                src={item?.icon}
+                alt={item?.name || `Item ${id}`}
+                title={item?.name || `Item ${id}`}
+                width={32}
+                height={32}
+                style={{ borderRadius: 6, border: "1px solid var(--border)" }}
+              />
+            );
+          })}
+        </div>
+      )}
+      {build.perkIds.length > 0 && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {build.perkIds.map((id, i) => {
+            const rune = runeIcons.get(id);
+            return (
+              <img
+                key={i}
+                src={rune?.icon}
+                alt={rune?.name || `Rune ${id}`}
+                title={rune?.name || `Rune ${id}`}
+                width={i === 0 ? 32 : 24}
+                height={i === 0 ? 32 : 24}
+                style={{ borderRadius: "50%" }}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

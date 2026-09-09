@@ -3,6 +3,7 @@ import { DDRAGON_VERSION } from "../constants/roster.js";
 let cached = null;
 let cachedRuneTree = null;
 let cachedSpells = null;
+let cachedItemNames = null;
 
 /**
  * Liste complète des champions LoL (id Data Dragon + nom affiché), récupérée en direct
@@ -73,4 +74,23 @@ export async function fetchSummonerSpells() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
   return cachedSpells;
+}
+
+/**
+ * Nom + icône de chaque item, par id — sert uniquement à afficher/décrire le build stocké
+ * sur une game (voir lib/importers.js, riotMatchToGame) : les ids seuls (item0-6 du match
+ * Riot) ne disent rien à l'affichage ou dans un prompt Coach IA.
+ */
+export async function fetchItemNames() {
+  if (cachedItemNames) return cachedItemNames;
+  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/fr_FR/item.json`);
+  if (!res.ok) throw new Error(`Data Dragon a répondu ${res.status}`);
+  const body = await res.json();
+  cachedItemNames = new Map(
+    Object.entries(body.data).map(([id, item]) => [
+      Number(id),
+      { name: item.name, icon: `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/item/${item.image.full}` },
+    ])
+  );
+  return cachedItemNames;
 }

@@ -71,6 +71,24 @@ export function riotMatchToGame(match, puuid) {
 
   const start = new Date(info.gameStartTimestamp || info.gameCreation);
 
+  // Build final (items0-6) + runes (perks.styles) — déjà dans la réponse Match-V5, aucun
+  // appel Riot en plus. Sert à écarter les faux diagnostics macro (des dégâts bas peuvent
+  // venir d'une mauvaise itemisation plutôt que d'un mauvais positioning) — voir
+  // GameAnalysisModal et le prompt Coach IA (sur demande, pas par défaut).
+  const items = [me.item0, me.item1, me.item2, me.item3, me.item4, me.item5, me.item6].filter((id) => id);
+  const perkStyles = me.perks?.styles || [];
+  const primaryStyle = perkStyles.find((s) => s.description === "primaryStyle");
+  const subStyle = perkStyles.find((s) => s.description === "subStyle");
+  const build =
+    items.length || primaryStyle
+      ? {
+          items,
+          primaryStyleId: primaryStyle?.style ?? null,
+          subStyleId: subStyle?.style ?? null,
+          perkIds: [...(primaryStyle?.selections || []), ...(subStyle?.selections || [])].map((s) => s.perk),
+        }
+      : null;
+
   return {
     id: uid(),
     matchId: match.metadata?.matchId,
@@ -108,5 +126,6 @@ export function riotMatchToGame(match, puuid) {
     tilt: 1,
     excluded: false,
     excludedReason: "",
+    build,
   };
 }

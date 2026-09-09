@@ -157,7 +157,7 @@ export default function GamesHistory({ sorted, deleteGame, deleteGames, updateGa
                     <IconBtn onClick={() => setEditingGame(g)} aria-label="Modifier">
                       <Pencil size={14} />
                     </IconBtn>
-                    {g.timelineSummary && (
+                    {(g.timelineSummary || g.build) && (
                       <IconBtn onClick={() => setAnalyzingGame(g)} aria-label="Analyse détaillée (Coach IA)">
                         <Microscope size={14} />
                       </IconBtn>

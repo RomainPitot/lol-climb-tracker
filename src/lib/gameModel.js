@@ -38,6 +38,9 @@ export function emptyGame() {
     // cause) est un tableau parallèle à `timelineSummary.deaths`, une entrée par mort.
     timelineSummary: null,
     deathTags: [],
+    // Build final (items + runes) — voir lib/importers.js riotMatchToGame. Toujours vide
+    // pour une game ajoutée à la main.
+    build: null,
   };
 }
 
