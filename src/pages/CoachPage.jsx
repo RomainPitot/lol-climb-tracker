@@ -11,6 +11,8 @@ import { representativeGames } from "../lib/gameModel.js";
 import { computeFocus } from "../lib/focus.js";
 import { evaluateCorrection, CORRECTION_STATUS_LABEL } from "../lib/corrections.js";
 import { summarizeDeathPatterns } from "../lib/deathPatterns.js";
+import { buildWeeklyReportPrompt } from "../lib/weeklyReport.js";
+import { gameDate } from "../lib/format.js";
 import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
 
@@ -79,6 +81,19 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
     return `${base}${focusBlock}${correctionsBlock}${deathPatternBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
   };
 
+  // Gate simple sur le bouton du rapport hebdo — la vraie condition (au moins une game
+  // représentative des 7 derniers jours) est recalculée par buildWeeklyReportPrompt lui-
+  // même à chaque clic ; ceci ne sert qu'à désactiver le bouton avant.
+  const hasWeekGames = useMemo(() => {
+    const now = Date.now();
+    return sorted.some((g) => !g.excluded && now - gameDate(g).getTime() <= 7 * 86400000);
+  }, [sorted]);
+  const buildWeeklyPrompt = () => {
+    const prompt = buildWeeklyReportPrompt(data, sorted, currentRank);
+    if (!prompt) throw new Error("Aucune game cette semaine — rien à rapporter.");
+    return prompt;
+  };
+
   const selectedGames = useMemo(() => sorted.filter((g) => selected.has(g.id)), [sorted, selected]);
   const restGames = useMemo(() => sorted.filter((g) => !selected.has(g.id)), [sorted, selected]);
 
@@ -144,6 +159,21 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
           resultTitle="Prompt du bilan de compte"
           disabled={sorted.length < 3}
           disabledReason="Ajoute au moins 3 games trackées pour un bilan qui a du sens."
+        />
+      </Card>
+
+      <Card className="p-5 mb-5">
+        <Eyebrow style={{ marginBottom: 6 }}>Rapport hebdomadaire</Eyebrow>
+        <p style={{ fontSize: 12.5, color: "var(--dim)", marginBottom: 14 }}>
+          Assemble ce que le Dashboard sait déjà (alertes, priorités, correctifs, chiffres clés de la semaine vs la
+          précédente) en un résumé 30 secondes + un plan de travail limité à 1-2 priorités pour la semaine prochaine.
+        </p>
+        <AiCoachPanel
+          buildPrompt={buildWeeklyPrompt}
+          buttonLabel="Générer le rapport de la semaine"
+          resultTitle="Rapport hebdomadaire"
+          disabled={!hasWeekGames}
+          disabledReason="Aucune game trackée cette semaine — rien à rapporter."
         />
       </Card>
 
