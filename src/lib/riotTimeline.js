@@ -226,9 +226,10 @@ export function buildTimelineSummary(timeline, match, puuid) {
     objectives,
     items,
     wards: { placed: wardsPlaced, destroyed: wardsDestroyed, controlWardsBought },
-    // Positions des wards posées (pour la heatmap — voir lib/heatmap.js) ; pas conservées
-    // avant cet ajout, donc absentes sur les games importées plus tôt (pas d'estimation
-    // de remplacement, la heatmap ignore simplement ce qu'elle n'a pas).
-    wardPositions: myWards.map((w) => ({ x: w.x, y: w.y })),
+    // Positions (+ timestamp) des wards posées — pour la heatmap (voir lib/heatmap.js, qui
+    // ignore `ts`) et pour approximer "avait-on de la vision proche avant cette mort"
+    // (voir lib/deathGuess.js). Pas conservées avant cet ajout, donc absentes sur les games
+    // importées plus tôt (pas d'estimation de remplacement).
+    wardPositions: myWards.map((w) => ({ x: w.x, y: w.y, ts: w.ts })),
   };
 }

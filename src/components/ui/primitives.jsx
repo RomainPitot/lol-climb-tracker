@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowUp, ArrowDown, Minus, ChevronDown, Inbox } from "lucide-react";
 
 export const Card = ({ children, className = "", style = {} }) => (
@@ -257,8 +257,16 @@ export function Trend({ value, suffix = "", invert = false, decimals = 1 }) {
   );
 }
 
-export function Collapsible({ title, sub, defaultOpen = false, children }) {
+export function Collapsible({ title, sub, defaultOpen = false, forceOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
+
+  // Ouverture à sens unique déclenchée depuis l'extérieur (ex: clic sur un rappel du
+  // Dashboard qui doit ouvrir l'Historique, forcément replié par défaut, pour révéler la
+  // modale qu'il contient) — ne revient jamais en arrière tout seul, l'utilisateur garde
+  // le contrôle du repli une fois ouvert.
+  useEffect(() => {
+    if (forceOpen) setOpen(true);
+  }, [forceOpen]);
   return (
     <Card className="mb-4" style={{ padding: 0, overflow: "hidden" }}>
       <button

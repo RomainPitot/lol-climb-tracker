@@ -36,6 +36,9 @@ const TOOLTIP_STYLE = {
 export default function Dashboard({ data, sorted, currentRank, deleteGame, deleteGames, updateGame, setSettings }) {
   const [period, setPeriod] = useState("30d");
   const [showProgression, setShowProgression] = useState(false);
+  // Pont entre le rappel "morts non classées" (tout en haut) et la modale d'analyse, qui
+  // vit dans GamesHistory (tout en bas) — voir UntaggedReminder/GamesHistory.
+  const [pendingAnalysisId, setPendingAnalysisId] = useState(null);
   const th = data.thresholds;
   // Stats de tendance (winrate, KDA, CS/min...) : games marquées non représentatives
   // (remake, int, smurf adverse) écartées par défaut — voir Paramètres > Statistiques.
@@ -126,7 +129,7 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
       <NegativeStreakBanner data={data} sorted={sorted} />
       <AlertsPanel data={data} sorted={sorted} />
       <PrioritiesPanel data={data} sorted={sorted} currentRank={currentRank} />
-      <UntaggedReminder data={data} sorted={sorted} />
+      <UntaggedReminder data={data} sorted={sorted} onSelectGame={setPendingAnalysisId} />
 
       <Card className="hero-card p-6 mb-6" style={{ "--hero-color": heroColor }}>
         <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
@@ -451,6 +454,8 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
         deleteGame={deleteGame}
         deleteGames={deleteGames}
         updateGame={updateGame}
+        pendingAnalysisId={pendingAnalysisId}
+        onPendingAnalysisHandled={() => setPendingAnalysisId(null)}
       />
     </div>
   );

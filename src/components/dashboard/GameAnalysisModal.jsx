@@ -16,6 +16,7 @@ import { REVERSE_CHAMP } from "../../constants/roster.js";
 import { fetchItemNames, fetchRuneTree } from "../../lib/ddragon.js";
 import { getMatchupNote } from "../../lib/matchupNotes.js";
 import { isBotLaneRole } from "../../lib/gameModel.js";
+import { guessDeathTag } from "../../lib/deathGuess.js";
 
 const champName = (raw) => (raw ? REVERSE_CHAMP[raw] || raw : "?");
 
@@ -59,7 +60,28 @@ function DiffCell({ value, suffix = "" }) {
  */
 export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose }) {
   const t = game.timelineSummary;
-  const [deathTags, setDeathTags] = useState(game.deathTags?.length ? game.deathTags : (t?.deaths || []).map(() => null));
+
+  // Pré-remplissage : pour toute mort pas déjà classée pour de vrai, une suggestion
+  // automatique (voir lib/deathGuess.js) plutôt qu'un select vide — jamais présentée comme
+  // définitive (badge "≈ suggestion" tant que l'utilisateur n'a pas touché la ligne, voir
+  // guessedIndices ci-dessous). Enregistrer sans rien changer revient à confirmer la
+  // suggestion, ce qui est le comportement demandé.
+  const [deathTags, setDeathTags] = useState(() =>
+    (t?.deaths || []).map((d, i) => {
+      const saved = game.deathTags?.[i];
+      if (saved?.type) return saved;
+      const guess = guessDeathTag(d, t?.wardPositions);
+      if (!guess) return saved || null;
+      return { type: guess.type, cause: guess.cause || "", note: saved?.note || "", flashAvailable: saved?.flashAvailable || "" };
+    })
+  );
+  const [guessedIndices, setGuessedIndices] = useState(() => {
+    const set = new Set();
+    (t?.deaths || []).forEach((d, i) => {
+      if (!game.deathTags?.[i]?.type && guessDeathTag(d, t?.wardPositions)) set.add(i);
+    });
+    return set;
+  });
   const [tacticalNotes, setTacticalNotes] = useState(game.tacticalNotes || []);
   const [vodUrl, setVodUrl] = useState(game.vodUrl || "");
   const [buildTag, setBuildTag] = useState(game.buildTag || "");
@@ -92,6 +114,12 @@ export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose 
     setDeathTags((prev) => {
       const next = [...prev];
       next[i] = { ...(next[i] || { type: "", cause: "", note: "", flashAvailable: "" }), ...patch };
+      return next;
+    });
+    setGuessedIndices((prev) => {
+      if (!prev.has(i)) return prev;
+      const next = new Set(prev);
+      next.delete(i);
       return next;
     });
   };
@@ -225,6 +253,16 @@ export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose 
                         title="Zone approximative — déduite de la position, pas une donnée Riot brute"
                       >
                         {ZONE_LABEL[d.zone] || d.zone} · {d.context === "teamfight" ? "teamfight ≈" : "solo ≈"}
+                      </span>
+                    )}
+                    {guessedIndices.has(i) && (
+                      <span style={{ marginLeft: 8, display: "inline-block" }}>
+                        <Pill
+                          tone="gold"
+                          title="Type/cause pré-remplis à partir de la zone/du contexte — une supposition, pas un fait : confirme (n'y touche pas) ou modifie"
+                        >
+                          ≈ suggestion auto
+                        </Pill>
                       </span>
                     )}
                   </div>
