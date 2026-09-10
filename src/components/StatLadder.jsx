@@ -8,7 +8,7 @@ export default function StatLadder({ label, value, benchmark, invert, unit = "" 
 
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-sm)", marginBottom: 6 }}>
         <span style={{ color: "var(--dim)", fontWeight: 600 }}>{label}</span>
         <span className="tnum" style={{ color: "var(--text)", fontWeight: 700 }}>
           {round1(value)}

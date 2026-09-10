@@ -106,7 +106,7 @@ export default function LadderTrack({ tier, div, objectiveTiers }) {
               </div>
               <div
                 style={{
-                  fontSize: 9,
+                  fontSize: "var(--fs-xs)",
                   color: isCurrent ? "var(--gold)" : isObjective ? "var(--gold)" : "var(--dim)",
                   fontWeight: isCurrent || isObjective ? 700 : 500,
                   whiteSpace: "nowrap",

@@ -136,7 +136,7 @@ export const Pill = ({ children, tone = "neutral", className, ...rest }) => {
         alignItems: "center",
         background: t.bg,
         color: t.fg,
-        fontSize: 11,
+        fontSize: "var(--fs-xs)",
         fontWeight: 600,
         padding: "3px 9px",
         borderRadius: 999,
@@ -173,7 +173,7 @@ export const StatCard = ({ label, value, sub, tone, icon: Icon }) => (
       className="tnum"
       style={{
         fontFamily: "var(--display)",
-        fontSize: 28,
+        fontSize: "var(--fs-2xl)",
         fontWeight: 700,
         color: tone || "var(--text)",
         lineHeight: "var(--lh-tight)",
@@ -191,7 +191,7 @@ export const Field = ({ label, children, required }) => (
       display: "flex",
       flexDirection: "column",
       gap: 6,
-      fontSize: 12,
+      fontSize: "var(--fs-sm)",
       color: "var(--dim)",
       fontWeight: 500,
     }}
@@ -213,7 +213,7 @@ const inputStyle = {
   paddingLeft: 10,
   paddingRight: 10,
   color: "var(--text)",
-  fontSize: 13,
+  fontSize: "var(--fs-sm)",
   outline: "none",
   width: "100%",
 };
@@ -463,7 +463,7 @@ export function EmptyChart({ label, icon: Icon = Inbox, height = 160 }) {
         justifyContent: "center",
         gap: 8,
         color: "var(--dim)",
-        fontSize: 13,
+        fontSize: "var(--fs-sm)",
         textAlign: "center",
         padding: "0 16px",
       }}

@@ -8,7 +8,7 @@ const TOOLTIP_STYLE = {
   background: "var(--bg-elevated)",
   border: "1px solid var(--border)",
   borderRadius: 8,
-  fontSize: 12,
+  fontSize: "var(--fs-sm)",
   color: "var(--text)",
 };
 
@@ -63,7 +63,7 @@ export default function FocusTracker({ data, sorted, setSettings }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
         <div>
           <Eyebrow color="var(--gold)" style={{ marginBottom: 4 }}>Point de focus — {focus.label}</Eyebrow>
-          {focus.note && <p style={{ fontSize: 12, color: "var(--dim)" }}>{focus.note}</p>}
+          {focus.note && <p style={{ fontSize: "var(--fs-sm)", color: "var(--dim)" }}>{focus.note}</p>}
         </div>
         <IconBtn onClick={() => setSettings(clearFocus())} aria-label="Terminer ce focus" title="Terminer ce focus">
           <X size={14} />
@@ -103,7 +103,7 @@ export default function FocusTracker({ data, sorted, setSettings }) {
           </LineChart>
         </ResponsiveContainer>
       ) : (
-        <p style={{ fontSize: 12, color: "var(--dim)" }}>Le graphe d'évolution apparaît après quelques games sur ce focus.</p>
+        <p style={{ fontSize: "var(--fs-sm)", color: "var(--dim)" }}>Le graphe d'évolution apparaît après quelques games sur ce focus.</p>
       )}
     </Card>
   );

@@ -118,19 +118,19 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <ChampAvatar name={c.name} size={38} />
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text)" }}>{c.name}</div>
-                  <div style={{ fontSize: 10.5, color: "var(--dim)" }}>{c.role}</div>
+                  <div style={{ fontWeight: 700, fontSize: "var(--fs-base)", color: "var(--text)" }}>{c.name}</div>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--dim)" }}>{c.role}</div>
                 </div>
               </div>
               {stats ? (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-sm)" }}>
                   <span className="tnum" style={{ color: "var(--dim)" }}>{stats.games}g</span>
                   <span className="tnum" style={{ color: getColor("wr", stats.wr, currentRank.tier), fontWeight: 700 }}>
                     {round1(stats.wr)}%
                   </span>
                 </div>
               ) : (
-                <div style={{ fontSize: 11, color: "var(--dim)" }}>Pas de données</div>
+                <div style={{ fontSize: "var(--fs-xs)", color: "var(--dim)" }}>Pas de données</div>
               )}
             </button>
           );
@@ -141,10 +141,10 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 22 }}>
           <ChampAvatar name={active} size={64} />
           <div>
-            <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 30, color: accent, lineHeight: 1.1 }}>
+            <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: "var(--fs-2xl)", color: accent, lineHeight: 1.1 }}>
               {active}
             </div>
-            <div style={{ fontSize: 13, color: "var(--dim)", marginTop: 2 }}>
+            <div style={{ fontSize: "var(--fs-sm)", color: "var(--dim)", marginTop: 2 }}>
               {CHAMP_ROLE[active]}
               {sharePct !== null && ` — ~${sharePct}% des games trackées`}
             </div>
@@ -269,8 +269,8 @@ function MatchupsBlock({ matchups, accent, tier }) {
             }}
             title={m.lowSample ? "Échantillon trop petit pour être fiable" : undefined}
           >
-            <div style={{ fontWeight: 700, fontSize: 12.5, color: "var(--text)" }}>{m.opponent}</div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, marginTop: 3 }}>
+            <div style={{ fontWeight: 700, fontSize: "var(--fs-sm)", color: "var(--text)" }}>{m.opponent}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-xs)", marginTop: 3 }}>
               <span style={{ color: "var(--dim)" }}>{m.games}g{m.lowSample ? " (≈)" : ""}</span>
               <span className="tnum" style={{ color: getColor("wr", m.wr, tier), fontWeight: 700 }}>
                 {round1(m.wr)}%
@@ -279,7 +279,7 @@ function MatchupsBlock({ matchups, accent, tier }) {
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 10.5, color: "var(--dim)", marginTop: 8 }}>
+      <div style={{ fontSize: "var(--fs-xs)", color: "var(--dim)", marginTop: "var(--sp-2)" }}>
         (≈) = moins de {MIN_MATCHUP_GAMES} games, winrate peu fiable.
       </div>
     </Card>
@@ -308,7 +308,7 @@ function HistoricalBlock({ hist, accent }) {
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
           gap: 10,
-          fontSize: 12.5,
+          fontSize: "var(--fs-sm)",
         }}
       >
         {cells.map(([label, value]) => (
