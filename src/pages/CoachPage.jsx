@@ -5,13 +5,15 @@ import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import GameRecapCard from "../components/GameRecapCard.jsx";
 import CorrectionsPanel from "../components/coach/CorrectionsPanel.jsx";
 import MapHeatmap from "../components/coach/MapHeatmap.jsx";
-import { computeAgg } from "../lib/stats.js";
+import { computeAgg, mostFrequentRole } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { computeFocus } from "../lib/focus.js";
 import { evaluateCorrection, CORRECTION_STATUS_LABEL } from "../lib/corrections.js";
 import { summarizeDeathPatterns } from "../lib/deathPatterns.js";
 import { buildWeeklyReportPrompt } from "../lib/weeklyReport.js";
+import { matchupsFor, MIN_MATCHUP_GAMES } from "../lib/matchups.js";
+import { roleBenchmark } from "../constants/ranks.js";
 import { gameDate } from "../lib/format.js";
 import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
@@ -71,6 +73,35 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
           .join("\n")}\n`
       : "";
 
+    // Mêmes trois fenêtres que le Dashboard (Toi maintenant vs toi avant) — donne à l'IA
+    // les chiffres exacts plutôt que de lui faire deviner une tendance depuis le texte.
+    const recentWindow = repSorted.slice(-ACCOUNT_ANALYSIS_WINDOW);
+    const role = mostFrequentRole(recentWindow) || "Mid";
+    const bench = roleBenchmark(currentRank.tier, role);
+    const a5 = computeAgg(repSorted.slice(-5));
+    const a20 = computeAgg(recentWindow);
+    const aSeason = computeAgg(repSorted);
+    const fmt = (n, d = 1) => (Number.isFinite(n) ? n.toFixed(d) : "?");
+    const comparisonBlock = recentWindow.length
+      ? `\n=== COMPARAISON À TOI-MÊME (rôle dominant : ${role}, repère ${rankLabel(currentRank.tier, currentRank.div)}) ===\n` +
+        `CS/min — 5 dernières ${fmt(a5.csmin)}, 20 dernières ${fmt(a20.csmin)}, saison ${fmt(aSeason.csmin)}, repère ${fmt(bench.csmin)}.\n` +
+        `Vision/min — 5 dernières ${fmt(a5.visionMin, 2)}, 20 dernières ${fmt(a20.visionMin, 2)}, saison ${fmt(aSeason.visionMin, 2)}, repère ${fmt(bench.visionmin, 2)}.\n` +
+        `KDA — 5 dernières ${fmt(a5.kda, 2)}, 20 dernières ${fmt(a20.kda, 2)}, saison ${fmt(aSeason.kda, 2)}, repère ${fmt(bench.kda, 2)}.\n` +
+        `Deaths/game — 5 dernières ${fmt(a5.deaths)}, 20 dernières ${fmt(a20.deaths)}, saison ${fmt(aSeason.deaths)}, repère ${fmt(bench.deaths)}.\n`
+      : "";
+
+    // Matchups déjà rencontrés sur le champion le plus joué récemment — seulement ceux avec
+    // un échantillon suffisant (voir lib/matchups.js), jamais un winrate cité sur 1-2 games.
+    const topChampion = recentWindow.length
+      ? Object.entries(recentWindow.reduce((acc, g) => ((acc[g.champion] = (acc[g.champion] || 0) + 1), acc), {})).sort((a, b) => b[1] - a[1])[0]?.[0]
+      : null;
+    const reliableMatchups = topChampion ? matchupsFor(repSorted, topChampion).filter((m) => !m.lowSample) : [];
+    const matchupsBlock = reliableMatchups.length
+      ? `\n=== MATCHUPS RÉCURRENTS SUR ${topChampion?.toUpperCase()} (min. ${MIN_MATCHUP_GAMES} games) ===\n${reliableMatchups
+          .map((m) => `- vs ${m.opponent} : ${m.games} game(s), ${Math.round(m.wr)}% WR, KDA ${m.kda.toFixed(2)}.`)
+          .join("\n")}\n`
+      : "";
+
     const demande = focus
       ? `Commente en priorité ma progression sur ce focus précis (${focus.label}) — est-ce que ça s'améliore vraiment, qu'est-ce qui coince encore, faut-il continuer dessus ou en changer. Complète avec 2 points forts et 1 autre point faible si pertinent, mais le focus passe avant.`
       : `Fais un bilan complet de mon compte, pas juste de la sélection ci-dessus : 3 points forts, les 3 points faibles qui me coûtent le plus de LP en ce moment (par ordre de priorité), et une seule action concrète à appliquer dès ma prochaine game.`;
@@ -78,7 +109,7 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
       ? " Signale en premier toute régression listée ci-dessus — c'est plus urgent qu'un nouveau point faible."
       : "";
 
-    return `${base}${focusBlock}${correctionsBlock}${deathPatternBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
+    return `${base}${focusBlock}${correctionsBlock}${deathPatternBlock}${comparisonBlock}${matchupsBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
   };
 
   // Gate simple sur le bouton du rapport hebdo — la vraie condition (au moins une game

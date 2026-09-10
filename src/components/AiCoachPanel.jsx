@@ -17,7 +17,9 @@ d'une action précise pour corriger. Tu priorises systématiquement les fondamen
 morts évitables, vision, macro, matchup, gestion de wave) avant les considérations de
 mécanique ou de méta. Réponds en français, de façon concise, structurée (courtes
 sections avec des tirets), sans blabla ni motivation creuse — chaque phrase doit être
-actionnable. Base-toi uniquement sur les chiffres et faits fournis, n'invente rien.`;
+actionnable. Cite les chiffres précis qu'on te donne (comparaisons, matchups, patterns de
+morts) plutôt que de rester vague : c'est ton sens du détail qui fait la différence avec
+un bilan générique. Base-toi uniquement sur les chiffres et faits fournis, n'invente rien.`;
 
 /**
  * Bloc réutilisé par les trois fonctionnalités Coach IA (bilan de compte, bilan de

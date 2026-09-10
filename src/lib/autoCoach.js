@@ -4,6 +4,7 @@ import { computeAlerts } from "./alerts.js";
 import { computePriorities } from "./priorities.js";
 import { computeFocus } from "./focus.js";
 import { representativeGames } from "./gameModel.js";
+import { summarizeDeathPatterns } from "./deathPatterns.js";
 import { DEATH_TYPES, DEATH_CAUSES } from "../constants/coaching.js";
 import { rankLabel } from "./rank.js";
 
@@ -14,27 +15,33 @@ const RECENT_WINDOW = 20;
 /** Écart minimum (en % du repère) pour compter comme point fort/faible — sous ce seuil,
  * l'écart est dans le bruit normal, pas un vrai signal (même logique que priorities.js). */
 const MIN_GAP_PCT = 0.08;
+/** Écart à partir duquel le ton monte d'un cran (verdict plus sévère) — un léger retard
+ * n'appelle pas le même degré de fermeté qu'un très gros retard. */
+const SEVERE_GAP_PCT = 0.2;
 
 /**
  * "Coach automatique" — PAS une vraie IA : une synthèse en français, entièrement calculée
  * à partir des signaux déjà en place ailleurs dans l'app (alertes, priorités, correctifs,
- * repères de rôle, timeline de la dernière game). Se recalcule à chaque nouvelle game
- * importée, sans bouton — mais reste explicitement présenté comme automatique/mécanique,
- * jamais comme un vrai jugement d'IA, pour ne jamais faire croire à une analyse plus
- * intelligente que ce qu'elle est réellement (même principe que tout le reste du GDD :
- * jamais de valeur/jugement inventé au-delà de ce que les chiffres soutiennent).
+ * repères de rôle, patterns de morts, timeline de la dernière game). Se recalcule à chaque
+ * nouvelle game importée, sans bouton. Le ton imite volontairement un coach exigeant
+ * (direct, jamais de flatterie gratuite, toujours une raison + une action) — mais reste
+ * explicitement annoncé comme mécanique dans l'UI (voir AutoCoachCard), jamais comme un
+ * vrai jugement d'IA : le texte est plus sec, pas plus intelligent que les chiffres qui le
+ * soutiennent (même principe que tout le reste du GDD).
  */
 export function buildAutoCoachReport(data, sorted, currentRank) {
   const repSorted = representativeGames(sorted, !!data.settings.includeExcludedGames);
   if (!repSorted.length) return null;
 
   const lastGame = repSorted[repSorted.length - 1];
+  const recent = repSorted.slice(-RECENT_WINDOW);
+  const deathPattern = summarizeDeathPatterns(recent);
+
   const gameReport = buildGameSection(lastGame, currentRank);
 
-  const recent = repSorted.slice(-RECENT_WINDOW);
   const agg = computeAgg(recent);
   const bench = roleBenchmark(currentRank.tier, lastGame.role);
-  const { strengths, weaknesses } = compareToRole(agg, bench);
+  const { strengths, weaknesses } = compareToRole(agg, bench, deathPattern);
 
   const alerts = computeAlerts(data, sorted);
   const priorities = computePriorities(data, sorted, currentRank);
@@ -42,10 +49,30 @@ export function buildAutoCoachReport(data, sorted, currentRank) {
 
   const focus = computeFocus(sorted, data.settings);
 
-  return { game: gameReport, strengths, weaknesses, toFocus, focus, sampleSize: recent.length };
+  return { game: gameReport, strengths, weaknesses, toFocus, focus, sampleSize: recent.length, deathPattern };
 }
 
-function compareToRole(agg, bench) {
+/** Action concrète par métrique — générique (on n'a pas de cause plus fine que le chiffre
+ * lui-même sauf pour les morts, où le pattern détecté sert de raison réelle). */
+const METRIC_ADVICE = {
+  csmin: "Reprends la gestion de wave (freeze/slow push, voir Learn) et compte les vagues ratées, pas juste le total en fin de game.",
+  visionMin: "Achète plus de control wards et pose-les avant les combats d'objectif, pas après.",
+  kda: "Chaque mort doit rapporter plus à l'équipe qu'elle ne coûte — sinon c'est un pari, pas un plan.",
+  deaths: "Classe tes morts dans l'analyse détaillée : tant que tu ne sais pas pourquoi tu meurs, tu ne corriges rien.",
+};
+
+function deathPatternPhrase(deathPattern) {
+  if (!deathPattern) return null;
+  const parts = [];
+  if (deathPattern.zone) parts.push(deathPattern.zone.label);
+  if (deathPattern.phase) parts.push(`en ${deathPattern.phase.label}`);
+  if (deathPattern.context) parts.push(deathPattern.context.label);
+  if (!parts.length) return null;
+  const lead = deathPattern.zone || deathPattern.phase || deathPattern.context;
+  return `${lead.sharePct}% de tes morts récentes arrivent ${parts.join(", ")} — ce n'est pas la malchance, c'est un pattern.`;
+}
+
+function compareToRole(agg, bench, deathPattern) {
   const metrics = [
     { key: "csmin", label: "CS/min", current: agg.csmin, target: bench.csmin, invert: false, decimals: 1 },
     { key: "visionMin", label: "Vision/min", current: agg.visionMin, target: bench.visionmin, invert: false, decimals: 2 },
@@ -58,10 +85,24 @@ function compareToRole(agg, bench) {
   for (const m of metrics) {
     if (!m.target) continue;
     const gapPct = m.invert ? (m.target - m.current) / m.target : (m.current - m.target) / m.target;
+    const cur = m.current.toFixed(m.decimals);
+    const tgt = m.target.toFixed(m.decimals);
+
     if (gapPct >= MIN_GAP_PCT) {
-      strengths.push(`${m.label} au-dessus du repère de ton rôle (${m.current.toFixed(m.decimals)} vs ${m.target.toFixed(m.decimals)}).`);
+      // Le coach ne flatte jamais gratuitement : un point fort est noté, pas célébré —
+      // et sert surtout à dire que ce n'est pas là qu'il faut chercher le problème.
+      strengths.push(`${m.label} correct pour ton rang (${cur} vs ${tgt} attendu) — ce n'est pas ton problème actuel.`);
     } else if (gapPct <= -MIN_GAP_PCT) {
-      weaknesses.push(`${m.label} en retrait vs le repère de ton rôle (${m.current.toFixed(m.decimals)} vs ${m.target.toFixed(m.decimals)}).`);
+      const severe = gapPct <= -SEVERE_GAP_PCT;
+      // Pour une métrique inversée (deaths : moins = mieux), être "en retard" veut dire
+      // être AU-DESSUS du repère, pas en dessous — l'inverse de csmin/vision/kda.
+      const direction = m.invert ? "au-dessus des" : "sous les";
+      const verdict = severe
+        ? `${m.label} à ${cur}, largement ${direction} ${tgt} attendus à ton rang.`
+        : `${m.label} à ${cur}, ${direction} ${tgt} attendus à ton rang.`;
+      const reason = (m.key === "deaths" && deathPatternPhrase(deathPattern)) || null;
+      const action = METRIC_ADVICE[m.key];
+      weaknesses.push([verdict, reason, action].filter(Boolean).join(" "));
     }
   }
   return { strengths, weaknesses };
@@ -77,10 +118,13 @@ function buildGameSection(g, currentRank) {
   if (t) {
     const d10 = t.diffs?.[10];
     const d15 = t.diffs?.[15];
-    if (d15?.csDiff != null) {
-      lines.push(`Lane @15 : CS ${d15.csDiff >= 0 ? "+" : ""}${d15.csDiff}, or ${d15.goldDiff >= 0 ? "+" : ""}${d15.goldDiff}.`);
-    } else if (d10?.csDiff != null) {
-      lines.push(`Lane @10 : CS ${d10.csDiff >= 0 ? "+" : ""}${d10.csDiff}, or ${d10.goldDiff >= 0 ? "+" : ""}${d10.goldDiff}.`);
+    const d = d15?.csDiff != null ? { min: 15, ...d15 } : d10?.csDiff != null ? { min: 10, ...d10 } : null;
+    if (d) {
+      if (d.csDiff < 0 || d.goldDiff < 0) {
+        lines.push(`Lane @${d.min} : CS ${d.csDiff}, or ${d.goldDiff}. Tu as perdu ta lane avant même le premier gros combat — c'est souvent là que la game a basculé.`);
+      } else {
+        lines.push(`Lane @${d.min} : CS +${d.csDiff}, or +${d.goldDiff}. Lane gagnée — si la game s'est perdue, ce n'est pas là qu'il faut chercher.`);
+      }
     }
 
     if (t.deaths?.length) {
@@ -90,13 +134,13 @@ function buildGameSection(g, currentRank) {
         const cause = tagged.cause ? ` — ${deathCauseLabel(tagged.cause) || tagged.cause}` : "";
         lines.push(`Mort classée : ${deathTypeLabel(tagged.type) || tagged.type}${cause}.`);
       } else {
-        lines.push(`${t.deaths.length} mort(s) — encore aucune classée (type/cause) dans l'analyse détaillée.`);
+        lines.push(`${t.deaths.length} mort(s), aucune classée encore. Tu ne peux pas corriger ce que tu n'as pas identifié — va les classer.`);
       }
     }
 
     const lostObjNoVision = t.objectives?.filter((o) => o.takenByMyTeam && o.myTeamHadVisionApprox === false) || [];
     if (lostObjNoVision.length) {
-      lines.push(`${lostObjNoVision.length} objectif(s) pris sans vision ≈ posée avant (approximation).`);
+      lines.push(`${lostObjNoVision.length} objectif(s) pris sans vision ≈ posée avant (approximation). Ça passe une fois, pas trois.`);
     }
   }
 

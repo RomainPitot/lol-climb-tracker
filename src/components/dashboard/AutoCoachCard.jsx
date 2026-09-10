@@ -20,6 +20,9 @@ export default function AutoCoachCard({ data, sorted, currentRank }) {
       <Eyebrow style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
         <Bot size={13} /> Coach automatique
       </Eyebrow>
+      <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: -8, marginBottom: 14 }}>
+        Direct, sans complaisance — un chiffre mauvais est dit comme tel, avec une raison et une action.
+      </p>
 
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 11, color: "var(--dim)", marginBottom: 6 }}>Dernière game</div>
@@ -32,28 +35,34 @@ export default function AutoCoachCard({ data, sorted, currentRank }) {
         </div>
       </div>
 
-      {(strengths.length > 0 || weaknesses.length > 0) && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 14 }}>
-          {strengths.length > 0 && (
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--win)", marginBottom: 6, fontWeight: 700 }}>
-                <ThumbsUp size={12} /> Points forts ({sampleSize} dernières games)
+      {weaknesses.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--loss)", marginBottom: 8, fontWeight: 700 }}>
+            <ThumbsDown size={12} /> Ce qui te coûte des games ({sampleSize} dernières games)
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {weaknesses.map((s, i) => (
+              <div
+                key={i}
+                style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.5, padding: "8px 10px", borderLeft: "2px solid var(--loss)", background: "var(--bg-elevated)", borderRadius: "0 var(--radius-sm) var(--radius-sm) 0" }}
+              >
+                {s}
               </div>
-              {strengths.map((s, i) => (
-                <div key={i} style={{ fontSize: 12.5, color: "var(--text)", marginBottom: 3 }}>{s}</div>
-              ))}
-            </div>
-          )}
-          {weaknesses.length > 0 && (
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--loss)", marginBottom: 6, fontWeight: 700 }}>
-                <ThumbsDown size={12} /> Points faibles ({sampleSize} dernières games)
-              </div>
-              {weaknesses.map((s, i) => (
-                <div key={i} style={{ fontSize: 12.5, color: "var(--text)", marginBottom: 3 }}>{s}</div>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {strengths.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--win)", marginBottom: 6, fontWeight: 700 }}>
+            <ThumbsUp size={12} /> Pas le problème actuel
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {strengths.map((s, i) => (
+              <div key={i} style={{ fontSize: 12, color: "var(--dim)" }}>{s}</div>
+            ))}
+          </div>
         </div>
       )}
 
