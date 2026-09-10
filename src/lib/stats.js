@@ -1,6 +1,6 @@
 import { sortByDate } from "./rank.js";
 import { gameDate, gameTime } from "./format.js";
-import { ROLE_CSMIN_FACTOR, ROLE_VISIONMIN_FACTOR } from "../constants/ranks.js";
+import { roleBenchmark } from "../constants/ranks.js";
 
 export function withinPeriod(game, period, allSorted) {
   if (period === "all" || period === "season") return true;
@@ -142,29 +142,39 @@ export function lpSince(sorted, sinceMs) {
     .reduce((a, g) => a + Number(g.lpChange || 0), 0);
 }
 
-// CS/min et vision/min n'ont pas la même signification selon le rôle (un support à
-// 1 CS/min ou un jungler à 5 vision/min ne sont pas "mauvais", ils jouent juste un rôle
-// aux exigences structurellement différentes) — leur seuil est mis à l'échelle par rôle
-// avant comparaison.
-const ROLE_SCALED_KEYS = { csmin: ROLE_CSMIN_FACTOR, visionmin: ROLE_VISIONMIN_FACTOR };
+/** Marge (en % du repère) pour les bandes vert/orange/rouge — plus de réglage manuel
+ * (retiré des Paramètres) : la couleur suit automatiquement le même repère de rôle/rang
+ * que le Coach automatique et les benchmarks affichés partout ailleurs dans l'app. */
+const BAND_PCT = 0.12;
+const INVERT_KEYS = new Set(["deaths"]);
 
-/** Couleur d'une stat selon les seuils configurés (vert / orange / rouge). `role`,
- * quand fourni, ajuste le seuil pour csmin/visionmin (voir ROLE_SCALED_KEYS). */
-export function getColor(key, value, thresholds, role) {
-  const raw = thresholds[key];
-  if (!raw || value === undefined || value === null || !isFinite(value)) return "var(--text)";
+/** Couleur d'une stat (vert/orange/rouge) dérivée du repère de rôle/rang — `tier` le rang
+ * (actuel ou objectif selon l'appelant) et `role` (optionnel, ajuste csmin/visionmin, voir
+ * roleBenchmark) plutôt qu'un seuil réglé à la main. */
+export function getColor(key, value, tier, role) {
+  if (value === undefined || value === null || !isFinite(value)) return "var(--text)";
+  const bench = roleBenchmark(tier, role);
+  const target = bench[key];
+  if (target == null) return "var(--text)";
 
-  const factorMap = ROLE_SCALED_KEYS[key];
-  const factor = role && factorMap ? factorMap[role] ?? 1 : 1;
-  const t = factor === 1 ? raw : { ...raw, good: raw.good * factor, bad: raw.bad * factor };
-
-  if (t.invert) {
-    if (value <= t.good) return "var(--win)";
-    if (value >= t.bad) return "var(--loss)";
+  if (key === "wr") {
+    // Le winrate ne dépend pas du rôle et une bande en % de 50 serait dérisoire — marge
+    // absolue plutôt que relative.
+    if (value >= target + 5) return "var(--win)";
+    if (value <= target - 5) return "var(--loss)";
     return "var(--gold)";
   }
-  if (value >= t.good) return "var(--win)";
-  if (value <= t.bad) return "var(--loss)";
+
+  const invert = INVERT_KEYS.has(key);
+  const good = invert ? target * (1 - BAND_PCT) : target * (1 + BAND_PCT);
+  const bad = invert ? target * (1 + BAND_PCT) : target * (1 - BAND_PCT);
+  if (invert) {
+    if (value <= good) return "var(--win)";
+    if (value >= bad) return "var(--loss)";
+    return "var(--gold)";
+  }
+  if (value >= good) return "var(--win)";
+  if (value <= bad) return "var(--loss)";
   return "var(--gold)";
 }
 

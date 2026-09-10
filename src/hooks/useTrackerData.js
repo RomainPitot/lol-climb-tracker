@@ -150,10 +150,6 @@ export function useTrackerData() {
         });
       },
 
-      setThresholds(thresholds) {
-        save({ ...dataRef.current, thresholds });
-      },
-
       setCurrentRank(rank) {
         save({ ...dataRef.current, currentRank: rank });
       },

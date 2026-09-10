@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, RotateCcw, Download, AlertTriangle } from "lucide-react";
+import { Check, RotateCcw, AlertTriangle } from "lucide-react";
 import { SectionTitle, Field, Input, Select, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GoalsSection from "../components/settings/GoalsSection.jsx";
 import GameDetectorSection from "../components/settings/GameDetectorSection.jsx";
@@ -9,9 +9,8 @@ import { rankLabel } from "../lib/rank.js";
 
 export default function SettingsPage({
   data, sorted, currentRank, addGoal, deleteGoal,
-  setThresholds, setCurrentRank, setSettings, importRiotResult, resetAll, resetStats,
+  setCurrentRank, setSettings, importRiotResult, resetAll, resetStats,
 }) {
-  const [th, setTh] = useState(data.thresholds);
   const [rankForm, setRankForm] = useState({
     tier: currentRank.tier,
     div: currentRank.div || "IV",
@@ -36,20 +35,6 @@ export default function SettingsPage({
     });
     notify("Rang actuel mis à jour.");
   };
-
-  /** Sauvegarde complète : tout l'état vit dans le navigateur, un export est la seule copie. */
-  const exportBackup = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `climb-euw-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const updateTh = (key, field, val) =>
-    setTh((p) => ({ ...p, [key]: { ...p[key], [field]: Number(val) } }));
 
   return (
     <div style={{ maxWidth: 820 }}>
@@ -154,45 +139,6 @@ export default function SettingsPage({
         </label>
       </Collapsible>
 
-      <Collapsible
-        title="Seuils de couleur"
-        sub="Règle à partir de quelle valeur une stat s'affiche en vert / orange / rouge."
-      >
-        {Object.entries(th).map(([key, t]) => (
-          <div
-            key={key}
-            style={{ display: "grid", gridTemplateColumns: "1fr repeat(2, 120px)", gap: 10, alignItems: "end", marginBottom: 10 }}
-          >
-            <div style={{ fontSize: 12.5, color: "var(--text)", fontWeight: 600 }}>
-              {t.label}
-              {t.invert ? " (plus bas = mieux)" : " (plus haut = mieux)"}
-            </div>
-            <Field label="Seuil bon (vert)">
-              <Input type="number" value={t.good} onChange={(e) => updateTh(key, "good", e.target.value)} />
-            </Field>
-            <Field label="Seuil mauvais (rouge)">
-              <Input type="number" value={t.bad} onChange={(e) => updateTh(key, "bad", e.target.value)} />
-            </Field>
-          </div>
-        ))}
-        <Btn
-          variant="primary"
-          onClick={() => {
-            setThresholds(th);
-            notify("Seuils de couleur enregistrés.");
-          }}
-          style={{ marginTop: 6 }}
-        >
-          <Check size={14} /> Enregistrer les seuils
-        </Btn>
-      </Collapsible>
-
-      <Collapsible title="Export JSON" sub="Sauvegarde tes données — elles ne vivent que dans ce navigateur.">
-        <Btn onClick={exportBackup}>
-          <Download size={14} /> Exporter une sauvegarde complète
-        </Btn>
-      </Collapsible>
-
       <Collapsible title="Zone sensible">
         <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid var(--border)" }}>
           {!confirmResetStats ? (
@@ -217,7 +163,7 @@ export default function SettingsPage({
             </div>
           )}
           <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 8 }}>
-            Efface les games, objectifs, historique, seuils et rang courant — garde la
+            Efface les games, objectifs, historique et rang courant — garde la
             config de connexion (URL/token du Worker, clé API, GameDetectorLol) pour ne pas
             avoir à tout ressaisir.
           </p>

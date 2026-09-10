@@ -16,8 +16,7 @@ const MA_WINDOW = 10;
 /** Stats historiques importées, disponibles seulement pour les deux mains champions. */
 const HISTORICAL_KEY = { Yone: "yone", "Tahm Kench": "tahm" };
 
-export default function ChampionsPage({ data, sorted, saveMatchupNote, deleteMatchupNote }) {
-  const th = data.thresholds;
+export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNote, deleteMatchupNote }) {
   const [active, setActive] = useState("Yone");
 
   // Games marquées non représentatives (remake, int, smurf adverse) écartées par défaut
@@ -121,7 +120,7 @@ export default function ChampionsPage({ data, sorted, saveMatchupNote, deleteMat
               {stats ? (
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                   <span className="tnum" style={{ color: "var(--dim)" }}>{stats.games}g</span>
-                  <span className="tnum" style={{ color: getColor("wr", stats.wr, th), fontWeight: 700 }}>
+                  <span className="tnum" style={{ color: getColor("wr", stats.wr, currentRank.tier), fontWeight: 700 }}>
                     {round1(stats.wr)}%
                   </span>
                 </div>
@@ -156,24 +155,24 @@ export default function ChampionsPage({ data, sorted, saveMatchupNote, deleteMat
           }}
         >
           <StatCard label="Games (tracking)" value={activeAgg.games} />
-          <StatCard label="Winrate" value={`${round1(activeAgg.wr)}%`} tone={getColor("wr", activeAgg.wr, th)} />
+          <StatCard label="Winrate" value={`${round1(activeAgg.wr)}%`} tone={getColor("wr", activeAgg.wr, currentRank.tier)} />
           <StatCard
             label="KDA"
             value={round2(activeAgg.kda)}
             sub={`${round1(activeAgg.kills)}/${round1(activeAgg.deaths)}/${round1(activeAgg.assists)}`}
-            tone={getColor("kda", activeAgg.kda, th)}
+            tone={getColor("kda", activeAgg.kda, currentRank.tier)}
           />
           <StatCard
             label="CS/min"
             value={round1(activeAgg.csmin)}
-            tone={getColor("csmin", activeAgg.csmin, th, activeRole)}
+            tone={getColor("csmin", activeAgg.csmin, currentRank.tier, activeRole)}
           />
           <StatCard label="Gold/min" value={round1(activeAgg.goldmin)} />
           <StatCard label="Dégâts/game" value={Math.round(activeAgg.damageGame)} />
           <StatCard
             label="Vision/min"
             value={round1(activeAgg.visionMin)}
-            tone={getColor("visionmin", activeAgg.visionMin, th, activeRole)}
+            tone={getColor("visionmin", activeAgg.visionMin, currentRank.tier, activeRole)}
           />
           <StatCard
             label="LP gagnés"
@@ -187,7 +186,7 @@ export default function ChampionsPage({ data, sorted, saveMatchupNote, deleteMat
 
         {hist && <HistoricalBlock hist={hist} accent={accent} />}
 
-        {matchups.length > 0 && <MatchupsBlock matchups={matchups} accent={accent} th={th} />}
+        {matchups.length > 0 && <MatchupsBlock matchups={matchups} accent={accent} tier={currentRank.tier} />}
 
         <MatchupAdviceCard champion={active} sorted={repSorted} data={data} />
 
@@ -248,7 +247,7 @@ export default function ChampionsPage({ data, sorted, saveMatchupNote, deleteMat
 
 /** Tendances par adversaire de lane rencontré — nécessite le champ matchup renseigné à la
  * main sur les games (voir GameFormFields), aucune correspondance automatique côté Riot. */
-function MatchupsBlock({ matchups, accent, th }) {
+function MatchupsBlock({ matchups, accent, tier }) {
   return (
     <Card className="p-4 my-5" style={{ borderColor: `${accent}44` }}>
       <Eyebrow color={accent} style={{ marginBottom: 10 }}>
@@ -269,7 +268,7 @@ function MatchupsBlock({ matchups, accent, th }) {
             <div style={{ fontWeight: 700, fontSize: 12.5, color: "var(--text)" }}>{m.opponent}</div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, marginTop: 3 }}>
               <span style={{ color: "var(--dim)" }}>{m.games}g{m.lowSample ? " (≈)" : ""}</span>
-              <span className="tnum" style={{ color: getColor("wr", m.wr, th), fontWeight: 700 }}>
+              <span className="tnum" style={{ color: getColor("wr", m.wr, tier), fontWeight: 700 }}>
                 {round1(m.wr)}%
               </span>
             </div>

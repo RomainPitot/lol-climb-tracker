@@ -1,4 +1,4 @@
-import { DEFAULT_HISTORICAL, DEFAULT_THRESHOLDS, ROLES } from "../constants/game.js";
+import { DEFAULT_HISTORICAL, ROLES } from "../constants/game.js";
 import { recomputeCurrentRank } from "./rank.js";
 
 export const STORAGE_KEY = "lol-climb-tracker-v2";
@@ -21,7 +21,6 @@ export function emptyState() {
     games: [],
     goals: [],
     historical: DEFAULT_HISTORICAL,
-    thresholds: DEFAULT_THRESHOLDS,
     settings: { seasonStart: new Date().toISOString().slice(0, 10) },
     currentRank: recomputeCurrentRank([], DEFAULT_HISTORICAL),
     championPool: emptyChampionPool(),
@@ -52,7 +51,6 @@ function normalize(state) {
   if (!Array.isArray(d.games)) d.games = [];
   if (!Array.isArray(d.goals)) d.goals = [];
   if (!d.historical) d.historical = DEFAULT_HISTORICAL;
-  if (!d.thresholds) d.thresholds = DEFAULT_THRESHOLDS;
   if (!d.settings) d.settings = { seasonStart: new Date().toISOString().slice(0, 10) };
   if (!d.currentRank) d.currentRank = recomputeCurrentRank(d.games, d.historical);
   if (!d.championPool) d.championPool = emptyChampionPool();

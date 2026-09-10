@@ -39,7 +39,6 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   // Pont entre le rappel "morts non classées" (tout en haut) et la modale d'analyse, qui
   // vit dans GamesHistory (tout en bas) — voir UntaggedReminder/GamesHistory.
   const [pendingAnalysisId, setPendingAnalysisId] = useState(null);
-  const th = data.thresholds;
   // Stats de tendance (winrate, KDA, CS/min...) : games marquées non représentatives
   // (remake, int, smurf adverse) écartées par défaut — voir Paramètres > Statistiques.
   // Le rang/LP réel (badge, courbe, meilleur rang) n'utilise jamais ce filtre : ces
@@ -331,7 +330,7 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           label="Winrate (période)"
           value={`${round1(agg.wr)}%`}
           sub={`${agg.wins}W / ${agg.losses}L — ${agg.games} games`}
-          tone={getColor("wr", agg.wr, th)}
+          tone={getColor("wr", agg.wr, currentRank.tier)}
           icon={Percent}
         />
         <StatCard
@@ -344,7 +343,7 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           label="KDA moyen"
           value={round2(agg.kda)}
           sub={`${round1(agg.kills)} / ${round1(agg.deaths)} / ${round1(agg.assists)}`}
-          tone={getColor("kda", agg.kda, th)}
+          tone={getColor("kda", agg.kda, currentRank.tier)}
           icon={Swords}
         />
         <StatCard label="LP moyen / victoire" value={`+${round1(lpPerWin)}`} tone="var(--win)" />
