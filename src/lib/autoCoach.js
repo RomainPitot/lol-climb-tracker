@@ -108,7 +108,7 @@ function compareToRole(agg, bench, deathPattern) {
   return { strengths, weaknesses };
 }
 
-function buildGameSection(g, currentRank) {
+export function buildGameSection(g, currentRank) {
   const lines = [];
   lines.push(
     `${g.champion} (${g.role}) — ${g.win ? "Victoire" : "Défaite"}, ${g.kills}/${g.deaths}/${g.assists}, ${g.lpChange >= 0 ? "+" : ""}${g.lpChange} LP.`

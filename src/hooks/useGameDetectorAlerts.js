@@ -38,6 +38,13 @@ export function useGameDetectorAlerts(settings, navigate, onAlert) {
           onAlert("Chargement de la partie…");
         } else if (phase === "InProgress" && loaded && !prev.prevLoaded) {
           onAlert("En jeu — GL HF !");
+        } else if (
+          (phase === "WaitingForStats" || phase === "PreEndOfGame" || phase === "EndOfGame") &&
+          prev.prevPhase === "InProgress"
+        ) {
+          // Fin de partie détectée côté client — le récap (voir NewGameRecapModal) n'arrive
+          // qu'une fois la game publiée par Riot, généralement 1-2 min plus tard.
+          onAlert("Partie terminée — le récap arrivera automatiquement dès que Riot la publie (1-2 min).");
         }
 
         ref.current = { prevPhase: phase, prevLoaded: loaded };

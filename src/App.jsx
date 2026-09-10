@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
 import RankUpCelebration from "./components/RankUpCelebration.jsx";
+import NewGameRecapModal from "./components/NewGameRecapModal.jsx";
 import AlertBanner from "./components/AlertBanner.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import ChampionsPage from "./pages/ChampionsPage.jsx";
@@ -98,6 +99,12 @@ export default function App() {
       <RankUpCelebration
         currentRank={data.currentRank}
         settings={data.settings}
+        setSettings={actions.setSettings}
+      />
+      <NewGameRecapModal
+        data={data}
+        sorted={sorted}
+        currentRank={data.currentRank}
         setSettings={actions.setSettings}
       />
     </div>
