@@ -93,21 +93,26 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
           const isActive = active === c.name;
           const cc = champColor(c.name);
           return (
+            // Seul le champion sélectionné porte une bordure colorée : les autres
+            // restent des tuiles plates. Avant, 14 cartes bordées se disputaient
+            // l'attention et on ne repérait plus la sélection courante d'un coup d'œil.
             <button
               key={c.name}
               onClick={() => setActive(c.name)}
               className="hoverable"
+              aria-pressed={isActive}
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 10,
-                padding: 14,
-                borderRadius: "var(--radius-lg)",
+                gap: "var(--sp-2)",
+                padding: "var(--sp-3)",
+                borderRadius: "var(--radius-md)",
                 textAlign: "left",
                 cursor: "pointer",
-                background: isActive ? `${cc}1c` : "var(--card)",
-                border: `1.5px solid ${isActive ? cc : "var(--border)"}`,
-                boxShadow: isActive ? `0 6px 20px ${cc}30` : "var(--shadow-sm)",
+                background: isActive ? `${cc}1c` : "var(--bg-elevated)",
+                border: `1px solid ${isActive ? cc : "transparent"}`,
+                boxShadow: isActive ? `0 6px 20px ${cc}30` : "none",
+                transition: "background-color var(--fast) var(--ease), border-color var(--fast) var(--ease)",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -249,7 +254,7 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
  * main sur les games (voir GameFormFields), aucune correspondance automatique côté Riot. */
 function MatchupsBlock({ matchups, accent, tier }) {
   return (
-    <Card className="p-4 my-5" style={{ borderColor: `${accent}44` }}>
+    <Card variant="flat" className="p-4 my-5">
       <Eyebrow color={accent} style={{ marginBottom: 10 }}>
         Performance par matchup (adversaire de lane)
       </Eyebrow>
@@ -258,10 +263,9 @@ function MatchupsBlock({ matchups, accent, tier }) {
           <div
             key={m.opponent}
             style={{
-              padding: "8px 10px",
-              borderRadius: 8,
+              padding: "var(--sp-2) var(--sp-3)",
+              borderRadius: "var(--radius-sm)",
               background: "var(--bg-elevated)",
-              border: "1px solid var(--border)",
             }}
             title={m.lowSample ? "Échantillon trop petit pour être fiable" : undefined}
           >
@@ -295,7 +299,7 @@ function HistoricalBlock({ hist, accent }) {
   ];
 
   return (
-    <Card className="p-4 my-5" style={{ borderColor: `${accent}44` }}>
+    <Card variant="flat" className="p-4 my-5">
       <Eyebrow color={accent} style={{ marginBottom: 10 }}>
         Historique importé (avant le début du tracking — non mélangé)
       </Eyebrow>

@@ -96,13 +96,25 @@ function RolePoolEditor({ role, poolIds, weights, champions, byId, loading, erro
     [poolIds, byId]
   );
 
+  // Un rôle vide ne pèse pas autant qu'un rôle rempli : surface plate et titre en
+  // retrait tant qu'il n'y a rien dedans. Avant, les cinq rôles s'affichaient en
+  // cartes identiques, dont trois ne contenaient qu'un message "aucun champion".
+  const filled = poolIds.length > 0;
+
   return (
-    <Card className="p-5" style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 17, color: "var(--text)" }}>
+    <Card variant={filled ? "raised" : "flat"} className="p-4" style={{ marginBottom: "var(--sp-3)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--sp-3)" }}>
+        <div
+          style={{
+            fontFamily: "var(--display)",
+            fontWeight: 700,
+            fontSize: "var(--fs-lg)",
+            color: filled ? "var(--text)" : "var(--dim)",
+          }}
+        >
           {role}
         </div>
-        <Pill tone={poolIds.length ? "gold" : "neutral"}>{poolIds.length} champion(s)</Pill>
+        <Pill tone={filled ? "gold" : "neutral"}>{poolIds.length} champion(s)</Pill>
       </div>
 
       <div style={{ position: "relative", marginBottom: 10 }}>

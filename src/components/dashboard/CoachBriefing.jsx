@@ -32,34 +32,38 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
       </div>
 
       {/* Dernière game : le titre porte l'essentiel, le détail reste en gris dessous. */}
-      <div style={{ marginBottom: toFix.length ? 18 : 0 }}>
-        <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+      <div style={{ marginBottom: toFix.length ? "var(--sp-5)" : 0 }}>
+        <div style={{ fontSize: "var(--fs-lg)", fontWeight: 700, color: "var(--text)", marginBottom: "var(--sp-1)", lineHeight: "var(--lh-tight)" }}>
           {lastGame.lines[0]}
         </div>
-        {lastGame.lines.slice(1).map((line, i) => (
-          <div key={i} style={{ fontSize: 12.5, color: "var(--dim)", lineHeight: 1.5 }}>
-            {line}
-          </div>
-        ))}
+        <div className="prose" style={{ fontSize: "var(--fs-sm)", color: "var(--dim)" }}>
+          {lastGame.lines.slice(1).map((line, i) => (
+            <div key={i}>{line}</div>
+          ))}
+        </div>
       </div>
 
       {toFix.length > 0 && (
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--loss)", fontWeight: 700, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--loss)", marginBottom: "var(--sp-3)" }}>
             <Target size={12} /> À corriger — {sampleSize} dernières games
           </div>
-          <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Chaque item est un vrai paragraphe (jusqu'à ~260 caractères) : sans
+              plafond de longueur de ligne, il courait sur 1100px et l'œil ratait
+              la ligne suivante. Le numéro sert d'ancre de lecture à gauche. */}
+          <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
             {toFix.map((item, i) => (
-              <li key={item.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <li key={item.id} style={{ display: "flex", gap: "var(--sp-3)", alignItems: "flex-start" }}>
                 <span
+                  className="tnum"
                   style={{
                     flexShrink: 0,
-                    width: 20,
-                    height: 20,
+                    width: 22,
+                    height: 22,
                     borderRadius: "50%",
                     background: item.tone === "loss" ? "rgba(255,92,92,0.14)" : "rgba(212,175,55,0.14)",
                     color: item.tone === "loss" ? "var(--loss)" : "var(--gold)",
-                    fontSize: 11,
+                    fontSize: "var(--fs-xs)",
                     fontWeight: 700,
                     display: "flex",
                     alignItems: "center",
@@ -69,7 +73,9 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
                 >
                   {i + 1}
                 </span>
-                <span style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.55 }}>{item.text}</span>
+                <span className="prose" style={{ fontSize: "var(--fs-base)", color: "var(--text)" }}>
+                  {item.text}
+                </span>
               </li>
             ))}
           </ol>
@@ -91,7 +97,7 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
               marginTop: 16,
               cursor: "pointer",
               color: "var(--dim)",
-              fontSize: 12,
+              fontSize: "var(--fs-sm)",
             }}
           >
             {openDetail ? "Masquer le reste" : "Voir le reste"}
@@ -101,14 +107,14 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
           {openDetail && (
             <div className="fade-in" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
               {streak && (
-                <div style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, color: "var(--text)" }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: "var(--fs-sm)", color: "var(--text)" }}>
                   <Coffee size={13} color="var(--gold)" style={{ marginTop: 2, flexShrink: 0 }} />
                   {streak.message}
                 </div>
               )}
 
               {untaggedGames.length > 0 && (
-                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 12.5, color: "var(--text)" }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: "var(--fs-sm)", color: "var(--text)" }}>
                   <Microscope size={13} color="var(--gold)" style={{ flexShrink: 0 }} />
                   {untaggedGames.length} game{untaggedGames.length > 1 ? "s" : ""} avec des morts non classées :
                   {untaggedGames.map((g) => (
@@ -125,7 +131,7 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
               )}
 
               {strengths.length > 0 && (
-                <div style={{ fontSize: 12, color: "var(--dim)", lineHeight: 1.6 }}>
+                <div style={{ fontSize: "var(--fs-sm)", color: "var(--dim)", lineHeight: 1.6 }}>
                   Pas ton problème actuel : {strengths.map((s) => s.text).join(" ")}
                 </div>
               )}
@@ -134,7 +140,7 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
         </>
       )}
 
-      <p style={{ fontSize: 10.5, color: "var(--dim)", marginTop: 16, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
+      <p style={{ fontSize: "var(--fs-xs)", color: "var(--dim)", marginTop: 16, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
         Synthèse automatique à partir de tes stats et des repères de ton rang — pas une vraie IA. Pour un avis
         rédigé, utilise "Bilan de compte" dans Coach IA.
       </p>

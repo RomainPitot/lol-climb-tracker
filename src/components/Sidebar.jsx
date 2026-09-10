@@ -25,6 +25,7 @@ export default function Sidebar({ page, setPage, currentRank }) {
           <Swords size={19} color="#0A0D13" strokeWidth={2.25} />
         </div>
         <div
+          className="app-sidebar-brand-word"
           style={{
             fontFamily: "var(--display)",
             fontWeight: 700,
@@ -73,18 +74,11 @@ export default function Sidebar({ page, setPage, currentRank }) {
 
       {/* Rang + accès aux Paramètres : la roue crantée reste discrète à côté du rang plutôt
           que de peser comme un onglet à part entière dans la navigation. */}
-      <div
-        className="app-sidebar-rank"
-        style={{
-          marginTop: "auto",
-          paddingTop: 20,
-          borderTop: "1px solid var(--border)",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <div style={{ minWidth: 0, flex: 1 }}>
+      {/* La mise en page vit dans le CSS (et non en style inline) : sur mobile, la
+          media query doit pouvoir masquer le rang tout en gardant la roue crantée,
+          seul accès aux Paramètres depuis qu'ils ne sont plus un onglet. */}
+      <div className="app-sidebar-rank">
+        <div className="app-sidebar-rank-badge">
           <RankBadge tier={currentRank.tier} div={currentRank.div} lp={currentRank.lp} size="sm" />
         </div>
         <button

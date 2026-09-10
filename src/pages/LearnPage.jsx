@@ -73,36 +73,59 @@ function ArticleCover({ article, read }) {
   );
 }
 
+/** La vignette porte déjà la séparation visuelle entre deux tutos : la bordure
+ * n'apparaît qu'au survol, pour marquer la cible cliquable sans transformer la
+ * grille en 17 encadrés de même poids. */
 function ArticleCard({ article, read, onOpen }) {
   return (
     <button
       onClick={onOpen}
-      className="hoverable"
+      className="hoverable learn-card"
       style={{
         textAlign: "left",
         padding: 0,
         borderRadius: "var(--radius-lg)",
-        background: "var(--card)",
-        border: "1px solid var(--border)",
+        background: "var(--bg-elevated)",
+        border: "1px solid transparent",
         cursor: "pointer",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        opacity: read ? 0.85 : 1,
+        opacity: read ? 0.72 : 1,
+        transition: "opacity var(--fast) var(--ease), border-color var(--fast) var(--ease), background-color var(--fast) var(--ease)",
       }}
     >
       <ArticleCover article={article} read={read} />
-      <div style={{ padding: 18 }}>
-        <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 17, color: "var(--text)", marginBottom: 8 }}>
+      <div style={{ padding: "var(--sp-4)" }}>
+        <div
+          style={{
+            fontFamily: "var(--display)",
+            fontSize: "var(--fs-lg)",
+            fontWeight: 700,
+            color: "var(--text)",
+            marginBottom: "var(--sp-2)",
+            lineHeight: "var(--lh-tight)",
+          }}
+        >
           {article.title}
         </div>
-        <div style={{ fontSize: 12.5, color: "var(--dim)", lineHeight: 1.5 }}>{article.tagline}</div>
+        <div style={{ fontSize: "var(--fs-sm)", color: "var(--dim)", lineHeight: "var(--lh-snug)" }}>
+          {article.tagline}
+        </div>
       </div>
     </button>
   );
 }
 
-const GRID_STYLE = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, maxWidth: 1120 };
+/* auto-FILL (et non auto-fit) : une catégorie qui ne contient qu'un seul tuto garde
+   une carte de largeur normale au lieu de l'étirer sur toute la ligne — auto-fit
+   effondre les colonnes vides et déformait la grille. */
+const GRID_STYLE = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+  gap: "var(--sp-4)",
+  maxWidth: 1120,
+};
 
 export default function LearnPage({ data, markLearnRead }) {
   const [activeId, setActiveId] = useState(null);
@@ -225,27 +248,33 @@ function ArticleView({ article, read, onBack, onOpen }) {
           </Pill>
         )}
       </div>
-      <p style={{ fontSize: 13, color: "var(--dim)", marginBottom: 20 }}>{article.tagline}</p>
+      <p className="prose" style={{ fontSize: "var(--fs-base)", color: "var(--dim)", marginBottom: "var(--sp-5)" }}>
+        {article.tagline}
+      </p>
 
       {Diagram && (
-        <Card className="p-4 mb-5" style={{ display: "flex", justifyContent: "center" }}>
+        <Card variant="flat" className="p-5 mb-6" style={{ display: "flex", justifyContent: "center" }}>
           <Diagram />
         </Card>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* Un article se lit : une carte par paragraphe transformait la lecture en
+          suite d'encadrés. Ici, seul le rythme typographique et l'espace séparent
+          les sections — comme dans un vrai texte. */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-6)" }}>
         {article.sections.map((s, i) => (
-          <Card key={s.heading} className="p-4" style={{ display: "flex", gap: 14 }}>
+          <section key={s.heading} style={{ display: "flex", gap: "var(--sp-4)" }}>
             <div
+              className="tnum"
+              aria-hidden
               style={{
                 flexShrink: 0,
-                width: 24,
-                height: 24,
+                width: 26,
+                height: 26,
                 borderRadius: "50%",
                 background: "rgba(212,175,55,0.12)",
-                border: "1px solid var(--gold)",
                 color: "var(--gold)",
-                fontSize: 11.5,
+                fontSize: "var(--fs-xs)",
                 fontWeight: 700,
                 display: "flex",
                 alignItems: "center",
@@ -254,11 +283,24 @@ function ArticleView({ article, read, onBack, onOpen }) {
             >
               {i + 1}
             </div>
-            <div>
-              <Eyebrow style={{ marginBottom: 8 }}>{s.heading}</Eyebrow>
-              <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{s.text}</p>
+            <div style={{ minWidth: 0 }}>
+              <h3
+                style={{
+                  fontFamily: "var(--display)",
+                  fontSize: "var(--fs-lg)",
+                  fontWeight: 700,
+                  color: "var(--text)",
+                  lineHeight: "var(--lh-tight)",
+                  marginBottom: "var(--sp-2)",
+                }}
+              >
+                {s.heading}
+              </h3>
+              <p className="prose" style={{ fontSize: "var(--fs-base)", color: "var(--dim)" }}>
+                {s.text}
+              </p>
             </div>
-          </Card>
+          </section>
         ))}
       </div>
 

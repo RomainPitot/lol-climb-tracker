@@ -21,6 +21,37 @@
   --display: "Rajdhani", sans-serif;
   --body: "Inter", sans-serif;
 
+  /* ---------------------------------------------------------------------
+     Échelle typographique — 6 marches nettement distinctes. Avant, l'app
+     empilait 10 tailles séparées d'un demi-pixel (11 / 11.5 / 12 / 12.5 /
+     13 / 13.5…) : invisible à l'œil, mais ça retire toute hiérarchie et
+     donne l'impression d'un assemblage plutôt que d'un système.
+     --------------------------------------------------------------------- */
+  --fs-xs: 11px;    /* eyebrow, méta, légendes */
+  --fs-sm: 12.5px;  /* texte secondaire */
+  --fs-base: 14px;  /* corps de texte */
+  --fs-lg: 17px;    /* titre de carte / de groupe */
+  --fs-xl: 22px;    /* titre de section */
+  --fs-2xl: 32px;   /* titre de page */
+  --lh-tight: 1.2;
+  --lh-snug: 1.4;
+  --lh-normal: 1.6;
+
+  /* Longueur de ligne maximale pour un vrai paragraphe : au-delà, l'œil perd
+     la ligne suivante en revenant à la marge (le briefing coach faisait
+     150+ caractères par ligne, soit le double du confortable). */
+  --measure: 68ch;
+
+  /* Échelle d'espacement (base 4) — remplace les 6, 9, 14, 18, 22px posés à
+     la main un peu partout. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
   /* Rayons partagés — un seul jeu de valeurs pour tous les composants. */
   --radius-sm: 8px;
   --radius-md: 10px;
@@ -33,8 +64,19 @@
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --fast: 140ms;
+  --med: 240ms;
 
   color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 *,
@@ -164,11 +206,54 @@ a {
 
 /* Petite pastille discrète, pour les libellés "eyebrow" (SITUATION ACTUELLE, OBLIGATOIRE…). */
 .eyebrow {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.7px;
   text-transform: uppercase;
   color: var(--dim);
+}
+
+/* ---------------------------------------------------------------------------
+   Lisibilité du texte long : tout paragraphe destiné à être LU (briefing coach,
+   tutos Learn, explications) est plafonné en longueur de ligne. Sans ça, sur un
+   écran large, une phrase court sur 150 caractères et l'œil rate la ligne
+   suivante en revenant à la marge.
+   --------------------------------------------------------------------------- */
+.prose {
+  max-width: var(--measure);
+  line-height: var(--lh-normal);
+}
+
+/* ---------------------------------------------------------------------------
+   Niveaux de surface. Avant, chaque bloc était une carte bordée identique :
+   une page pouvait aligner 58 encadrés de même poids, donc aucune hiérarchie.
+   Trois niveaux désormais, du plus léger au plus marqué.
+   --------------------------------------------------------------------------- */
+.surface-ghost {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.surface-flat {
+  background: var(--bg-elevated);
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+
+.surface-raised {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Séparateur discret — remplace un encadrement quand il s'agit juste de
+   marquer une frontière entre deux groupes d'information. */
+.divider {
+  height: 1px;
+  background: var(--border);
+  border: none;
+  margin: 0;
 }
 
 @keyframes fade-in-up {
@@ -185,6 +270,49 @@ a {
 .fade-in {
   animation: fade-in-up 180ms var(--ease);
 }
+
+/* Entrée en cascade des sections d'une page : chaque bloc arrive légèrement
+   après le précédent (40ms d'écart), ce qui donne un ordre de lecture au lieu
+   d'un mur qui apparaît d'un coup. Volontairement court — on ne fait jamais
+   attendre l'utilisateur devant une animation. */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Transition de page : léger fondu + montée. Assez court (200ms) pour ne jamais
+   donner l'impression d'attendre en changeant d'onglet. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-in 200ms var(--ease);
+}
+
+.reveal > * {
+  animation: reveal-up 320ms var(--ease) both;
+}
+
+.reveal > *:nth-child(1) { animation-delay: 0ms; }
+.reveal > *:nth-child(2) { animation-delay: 45ms; }
+.reveal > *:nth-child(3) { animation-delay: 90ms; }
+.reveal > *:nth-child(4) { animation-delay: 135ms; }
+.reveal > *:nth-child(5) { animation-delay: 175ms; }
+.reveal > *:nth-child(n + 6) { animation-delay: 210ms; }
 
 @keyframes spin {
   to {
@@ -391,6 +519,52 @@ a {
   box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
 }
 
+/* Bloc bas de sidebar : rang + accès aux Paramètres. */
+.app-sidebar-rank {
+  margin-top: auto;
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.app-sidebar-rank-badge {
+  min-width: 0;
+  flex: 1;
+}
+
+.tab-btn:hover[aria-selected="false"] {
+  color: var(--text);
+}
+
+.tab-btn::-webkit-scrollbar {
+  display: none;
+}
+
+/* Carte de tuto : la bordure et le fond ne se révèlent qu'au survol — la grille
+   reste calme au repos, la cible cliquable reste évidente au pointeur. */
+.learn-card:hover {
+  background: var(--card) !important;
+  border-color: var(--border-hover) !important;
+  opacity: 1 !important;
+}
+
+/* Le libellé de l'onglet glisse légèrement au survol : un retour tactile discret
+   qui confirme que l'élément est cliquable, sans déplacer la mise en page. */
+.app-sidebar-nav-item span {
+  transition: transform var(--fast) var(--ease);
+}
+
+.app-sidebar-nav-item:hover:not([aria-current="page"]) span {
+  transform: translateX(2px);
+}
+
+.app-sidebar-nav-item:hover:not([aria-current="page"]) {
+  background: var(--card);
+  color: var(--text);
+}
+
 /* Carte "héro" en tête de Dashboard : léger dégradé teinté selon le tier du rang actuel,
    posé en variable inline (--hero-color) par le composant — jamais une couleur random. */
 .hero-card {
@@ -439,6 +613,12 @@ a {
     margin-bottom: 0 !important;
   }
 
+  /* Le mot-clé de marque mangeait la moitié de la barre : sur mobile, l'icône
+     suffit à identifier l'app et la place revient aux onglets. */
+  .app-sidebar-brand-word {
+    display: none;
+  }
+
   .app-sidebar-nav {
     flex-direction: row !important;
     flex: 1;
@@ -468,7 +648,17 @@ a {
     border-radius: 3px 3px 0 0;
   }
 
+  /* En barre horizontale, le rang détaillé prendrait toute la place réservée aux
+     onglets : on ne garde que la roue crantée, qui reste le seul chemin vers les
+     Paramètres. */
   .app-sidebar-rank {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    flex-shrink: 0;
+  }
+
+  .app-sidebar-rank-badge {
     display: none;
   }
 

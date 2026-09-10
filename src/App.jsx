@@ -91,8 +91,11 @@ export default function App() {
     <div className="app-shell">
       <AlertBanner alert={alert} onDismiss={() => setAlert(null)} />
       <Sidebar page={page} setPage={setPage} currentRank={data.currentRank} />
+      {/* `key={page}` remonte le contenu à chaque changement d'onglet : l'animation
+          d'entrée rejoue donc à chaque navigation, ce qui signale visuellement
+          qu'on a changé de page (sinon le contenu se substitue sans transition). */}
       <main className="app-main">
-        <div className="fade-in" key={page} style={{ maxWidth: 1440, margin: "0 auto", width: "100%" }}>
+        <div className="page-enter" key={page} style={{ maxWidth: 1440, margin: "0 auto", width: "100%" }}>
           <Page {...pageProps} />
         </div>
       </main>

@@ -40,7 +40,7 @@ export default function MatchupNotesPanel({ champion, data, saveMatchupNote, del
   };
 
   return (
-    <Card className="p-4 my-5">
+    <Card variant="flat" className="p-4 my-5">
       <Eyebrow style={{ marginBottom: 10 }}>Notes de préparation par matchup (plan de lane)</Eyebrow>
 
       {!editingOpponent && (

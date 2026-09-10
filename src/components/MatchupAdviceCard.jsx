@@ -25,7 +25,7 @@ export default function MatchupAdviceCard({ champion, sorted, data }) {
   const opponent = opponents.includes(selected) ? selected : opponents[0];
 
   return (
-    <Card className="p-4 my-5">
+    <Card variant="flat" className="p-4 my-5">
       <Eyebrow style={{ marginBottom: 10 }}>Comment gagner ce matchup</Eyebrow>
       <div style={{ marginBottom: 12, maxWidth: 260 }}>
         <Select value={opponent} onChange={(e) => setSelected(e.target.value)}>

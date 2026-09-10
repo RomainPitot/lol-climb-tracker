@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, ReferenceArea, ReferenceLine, Tooltip, ResponsiveContainer } from "recharts";
 import { ChevronDown, Percent, Zap, Swords, Trophy, Layers, Flame, Check } from "lucide-react";
-import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, Select } from "../components/ui/primitives.jsx";
+import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, Select, Section, SectionTitle } from "../components/ui/primitives.jsx";
 import RankBadge from "../components/RankBadge.jsx";
 import LadderTrack from "../components/LadderTrack.jsx";
 import StatLadder from "../components/StatLadder.jsx";
@@ -119,20 +119,25 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
   const heroColor = TIER_COLORS[currentRank.tier] || "var(--gold)";
 
   return (
-    <div>
-      {/* Le rang d'abord : c'est le repère "où j'en suis", il n'a rien à faire sous quatre
-          encadrés de coaching. Le briefing du coach vient juste après. */}
+    <div className="reveal">
+      <SectionTitle sub="Où tu en es, ce qu'il faut corriger, puis le détail — dans cet ordre.">
+        Dashboard
+      </SectionTitle>
+
+      {/* NIVEAU 1 — Où j'en suis. Rang, forme du moment, distance à l'objectif.
+          La courbe de LP et les succès qui traînaient ici ont été retirés : la
+          première faisait doublon avec la carte "LP au fil des games" plus bas,
+          les seconds ont déjà leur propre section. */}
       <Card className="hero-card p-6 mb-6" style={{ "--hero-color": heroColor }}>
-        <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 260px" }}>
-            <Eyebrow style={{ marginBottom: 10 }}>Situation actuelle</Eyebrow>
+        <div style={{ display: "flex", gap: "var(--sp-6)", flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ flex: "1 1 300px", minWidth: 0 }}>
             <RankBadge
               name={data.settings.riotGameName ? `${data.settings.riotGameName}#${data.settings.riotTagLine || ""}` : undefined}
               tier={currentRank.tier}
               div={currentRank.div}
               lp={currentRank.lp}
             />
-            <div style={{ marginTop: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ marginTop: "var(--sp-4)", display: "flex", gap: "var(--sp-2)", alignItems: "center", flexWrap: "wrap" }}>
               <Pill tone={allAgg.wr >= 50 ? "win" : "loss"}>
                 {allAgg.wins}W / {allAgg.losses}L — {round1(allAgg.wr)}% WR
               </Pill>
@@ -161,100 +166,16 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
             </div>
           </div>
 
-          <div style={{ flex: "1 1 260px", minWidth: 220, display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-              <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: "auto", flexShrink: 0 }}>
-                {PERIODS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            <Eyebrow style={{ marginBottom: 8 }}>
-              Progression sur l'échelle des rangs{" "}
-              <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>
-                ({rankObjectiveTiers.length > 1 ? "objectifs" : "objectif"} : {rankObjectiveTiers.join(", ")})
-              </span>
+          <div style={{ flex: "1 1 300px", minWidth: 240 }}>
+            <Eyebrow style={{ marginBottom: "var(--sp-2)" }}>
+              Objectif : {rankObjectiveTiers.join(", ")}
             </Eyebrow>
             <LadderTrack tier={currentRank.tier} div={currentRank.div} objectiveTiers={rankObjectiveTiers} />
           </div>
         </div>
-
-        <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)", display: "flex", gap: 20, flexWrap: "wrap" }}>
-          <div style={{ flex: "3 1 320px", minHeight: 200 }}>
-            {lpSeries.length > 1 && lpBands ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={lpSeries} margin={{ top: 4, left: 0, right: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="heroLpStroke" x1="0" y1="0" x2="0" y2="1">
-                      {lpBands.gradientStops.map((s, i) => (
-                        <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={1} />
-                      ))}
-                    </linearGradient>
-                    <linearGradient id="heroLpFill" x1="0" y1="0" x2="0" y2="1">
-                      {lpBands.gradientStops.map((s, i) => (
-                        <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={0.25} />
-                      ))}
-                    </linearGradient>
-                  </defs>
-                  <YAxis hide domain={[lpBands.domainMin, lpBands.domainMax]} />
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    labelFormatter={(v) => `Game #${v}`}
-                    formatter={(_, __, item) => [
-                      `${rankLabel(item.payload.tier, item.payload.div)} — ${item.payload.lpAfter} LP`,
-                      "Rang",
-                    ]}
-                  />
-                  <Area type="monotone" dataKey="lp" stroke="url(#heroLpStroke)" fill="url(#heroLpFill)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, fontSize: 11.5, color: "var(--dim)" }}>
-                Ajoute au moins 2 games pour voir la courbe.
-              </div>
-            )}
-          </div>
-
-          {unlockedCount > 0 && (
-            <div
-              style={{ flex: "1 1 100px", display: "flex", flexDirection: "column", gap: 8 }}
-              title={`Succès — ${unlockedCount}/${achievements.length} débloqués`}
-            >
-              <Eyebrow>Succès</Eyebrow>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {achievements
-                  .filter((a) => a.unlocked)
-                  .map((a) => {
-                    const Icon = a.icon;
-                    return (
-                      <div
-                        key={a.id}
-                        title={a.label}
-                        style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: "rgba(212,175,55,0.1)",
-                          border: "1px solid var(--gold)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Icon size={14} color="var(--gold)" />
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
-        </div>
       </Card>
 
+      {/* NIVEAU 2 — Quoi faire. Une seule voix, en tête de page. */}
       <CoachBriefing
         data={data}
         sorted={sorted}
@@ -262,9 +183,16 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
         onSelectGame={setPendingAnalysisId}
       />
 
-      <FocusTracker data={data} sorted={sorted} setSettings={setSettings} />
-
-      <PopulationReference repSorted={repSorted} bench={bench} />
+      {/* NIVEAU 3 — Progression. Trois blocs qui parlaient déjà de la même chose
+          (focus, comparaison à soi, repères de rang) réunis sous un seul titre,
+          séparés par de l'espace plutôt que par trois bordures concurrentes. */}
+      <Section
+        title="Progression"
+        sub="Ce que tu travailles en ce moment, et où tu en es par rapport à toi-même et à ton rang."
+      >
+        <FocusTracker data={data} sorted={sorted} setSettings={setSettings} />
+        <PopulationReference repSorted={repSorted} bench={bench} />
+      </Section>
 
       <Collapsible
         title={`Succès — ${unlockedCount}/${achievements.length} débloqués`}
@@ -281,21 +209,24 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           {achievements.map((a) => {
             const Icon = a.icon;
             return (
+              // Seul un succès débloqué mérite d'être encadré : les autres restent
+              // en retrait typographique, sans bordure qui les mettrait au même
+              // niveau visuel que ceux réellement obtenus.
               <div
                 key={a.id}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 8,
-                  padding: "8px 10px",
-                  borderRadius: 8,
-                  background: a.unlocked ? "rgba(212,175,55,0.1)" : "var(--bg-elevated)",
-                  border: `1px solid ${a.unlocked ? "var(--gold)" : "var(--border)"}`,
-                  opacity: a.unlocked ? 1 : 0.45,
+                  gap: "var(--sp-2)",
+                  padding: "var(--sp-2) var(--sp-3)",
+                  borderRadius: "var(--radius-sm)",
+                  background: a.unlocked ? "rgba(212,175,55,0.1)" : "transparent",
+                  border: `1px solid ${a.unlocked ? "rgba(212,175,55,0.45)" : "transparent"}`,
+                  opacity: a.unlocked ? 1 : 0.4,
                 }}
               >
-                <Icon size={16} color={a.unlocked ? "var(--gold)" : "var(--dim)"} />
-                <span style={{ fontSize: 11.5, fontWeight: 600, color: a.unlocked ? "var(--text)" : "var(--dim)" }}>
+                <Icon size={15} color={a.unlocked ? "var(--gold)" : "var(--dim)"} style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: a.unlocked ? "var(--text)" : "var(--dim)" }}>
                   {a.label}
                 </span>
               </div>
@@ -317,12 +248,30 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
         </div>
       </Collapsible>
 
+      {/* Le sélecteur de période vivait dans la carte du rang, à ~1000px des
+          chiffres qu'il filtre : un contrôle doit être à côté de ce qu'il change. */}
+      <Section
+        title="Statistiques"
+        action={
+          <Select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            aria-label="Période des statistiques"
+            style={{ width: "auto", flexShrink: 0 }}
+          >
+            {PERIODS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </Select>
+        }
+      >
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-          gap: 12,
-          marginBottom: 20,
+          gap: "var(--sp-3)",
         }}
       >
         <StatCard
@@ -360,6 +309,7 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           icon={Layers}
         />
       </div>
+      </Section>
 
       <Card className="p-4 mb-6">
         <button

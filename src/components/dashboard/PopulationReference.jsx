@@ -34,23 +34,23 @@ export default function PopulationReference({ repSorted, bench }) {
         trois fenêtres, plutôt qu'un repère externe qu'on ne peut pas vérifier.
       </p>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-sm)" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--dim)" }}>
-              <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10.5 }} className="eyebrow">
+              <th style={{ textAlign: "left", padding: "6px 8px", fontSize: "var(--fs-xs)" }} className="eyebrow">
                 Métrique
               </th>
-              <th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10.5 }} className="eyebrow">
+              <th style={{ textAlign: "right", padding: "6px 8px", fontSize: "var(--fs-xs)" }} className="eyebrow">
                 Dernières {RECENT_WINDOW}
               </th>
-              <th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10.5 }} className="eyebrow">
+              <th style={{ textAlign: "right", padding: "6px 8px", fontSize: "var(--fs-xs)" }} className="eyebrow">
                 Dernières {MID_WINDOW}
               </th>
-              <th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10.5 }} className="eyebrow">
+              <th style={{ textAlign: "right", padding: "6px 8px", fontSize: "var(--fs-xs)" }} className="eyebrow">
                 Saison
               </th>
               {bench && (
-                <th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10.5 }} className="eyebrow">
+                <th style={{ textAlign: "right", padding: "6px 8px", fontSize: "var(--fs-xs)" }} className="eyebrow">
                   Repère rôle
                 </th>
               )}

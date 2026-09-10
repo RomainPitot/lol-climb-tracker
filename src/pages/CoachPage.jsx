@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Sparkles, Copy, Check } from "lucide-react";
-import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip, Collapsible } from "../components/ui/primitives.jsx";
+import { Sparkles, Copy, Check, ClipboardCheck, Map } from "lucide-react";
+import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip, Collapsible, Tabs } from "../components/ui/primitives.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import GameRecapCard from "../components/GameRecapCard.jsx";
 import CorrectionsPanel from "../components/coach/CorrectionsPanel.jsx";
@@ -35,6 +35,7 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
   const [selected, setSelected] = useState(() => new Set(sorted.slice(-20).map((g) => g.id)));
   const [recap, setRecap] = useState("");
   const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState("bilans");
 
   /** Le bilan de compte compare toujours les N dernières games au reste du profil —
    * indépendant de la sélection manuelle ci-dessous, qui sert au recap à coller/copier.
@@ -159,23 +160,29 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
     }
   };
 
+  const activeCorrectionCount = (data.corrections || []).filter((c) => c.status === "in_progress").length;
+
   return (
-    <div>
-      <SectionTitle sub="Sélectionne les games à inclure dans le recap, puis génère un récapitulatif structuré pour une IA coach.">
+    <div className="page-enter">
+      <SectionTitle sub="Trois outils : générer un bilan à coller dans une IA, suivre tes correctifs, ou fouiller tes games.">
         Coach IA
       </SectionTitle>
 
-      <GameRecapCard data={data} sorted={sorted} />
-
-      <CorrectionsPanel
-        data={data}
-        sorted={sorted}
-        addCorrection={addCorrection}
-        updateCorrection={updateCorrection}
-        deleteCorrection={deleteCorrection}
+      {/* Six outils distincts s'empilaient verticalement sur une seule page : il
+          fallait scroller devant tout pour en atteindre un. Regroupés par intention. */}
+      <Tabs
+        active={tab}
+        onChange={setTab}
+        tabs={[
+          { id: "bilans", label: "Bilans", icon: Sparkles },
+          { id: "correctifs", label: "Correctifs", icon: ClipboardCheck, badge: activeCorrectionCount || null },
+          { id: "analyse", label: "Analyse", icon: Map },
+        ]}
       />
 
-      <MapHeatmap data={data} sorted={sorted} />
+      {tab === "bilans" && (
+      <div className="reveal">
+      <GameRecapCard data={data} sorted={sorted} />
 
       <Card className="p-5 mb-5">
         <Eyebrow style={{ marginBottom: 6 }}>Bilan de compte</Eyebrow>
@@ -207,6 +214,24 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
           disabledReason="Aucune game trackée cette semaine — rien à rapporter."
         />
       </Card>
+      </div>
+      )}
+
+      {tab === "correctifs" && (
+        <div className="reveal">
+          <CorrectionsPanel
+            data={data}
+            sorted={sorted}
+            addCorrection={addCorrection}
+            updateCorrection={updateCorrection}
+            deleteCorrection={deleteCorrection}
+          />
+        </div>
+      )}
+
+      {tab === "analyse" && (
+      <div className="reveal">
+      <MapHeatmap data={data} sorted={sorted} />
 
       <Collapsible title="Raccourcis de sélection" sub={`${selectedGames.length} game(s) sélectionnée(s)`}>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
@@ -319,6 +344,8 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
             {recap}
           </pre>
         </Card>
+      )}
+      </div>
       )}
     </div>
   );

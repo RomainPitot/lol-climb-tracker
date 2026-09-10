@@ -1,50 +1,108 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowUp, ArrowDown, Minus, ChevronDown, Inbox } from "lucide-react";
 
-export const Card = ({ children, className = "", style = {} }) => (
+/**
+ * Trois niveaux de surface au lieu d'un encadré unique répété partout :
+ * - "raised" (défaut) : vraie carte, pour un bloc autonome de niveau 1/2.
+ * - "flat" : fond légèrement décollé, sans bordure — pour un sous-groupe DANS
+ *   une carte, là où une seconde bordure ne ferait qu'ajouter du bruit.
+ * - "ghost" : ni fond ni bordure — quand seul l'espacement doit regrouper.
+ * Un encadrement doit structurer l'information, pas décorer.
+ */
+export const Card = ({ children, className = "", variant = "raised", style = {} }) => (
   <div
-    className={className}
-    style={{
-      background: "var(--card)",
-      border: "1px solid var(--border)",
-      borderRadius: "var(--radius-lg)",
-      boxShadow: "var(--shadow-sm)",
-      ...style,
-    }}
+    className={`surface-${variant} ${className}`}
+    style={{ borderRadius: "var(--radius-lg)", ...style }}
   >
     {children}
   </div>
 );
 
-export const SectionTitle = ({ children, sub }) => (
-  <div className="mb-5" style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-    <span
-      aria-hidden
-      style={{
-        width: 4,
-        borderRadius: 3,
-        background: "linear-gradient(180deg, var(--gold), var(--gold-active))",
-        alignSelf: "stretch",
-        minHeight: 34,
-        flexShrink: 0,
-      }}
-    />
-    <div>
-      <h2
+export const SectionTitle = ({ children, sub, action }) => (
+  <div
+    className="mb-6"
+    style={{ display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}
+  >
+    <div style={{ display: "flex", gap: 14, alignItems: "flex-start", minWidth: 0 }}>
+      <span
+        aria-hidden
         style={{
-          fontFamily: "var(--display)",
-          fontSize: 32,
-          fontWeight: 700,
-          color: "var(--text)",
-          letterSpacing: 0.2,
-          lineHeight: 1.15,
+          width: 4,
+          borderRadius: 3,
+          background: "linear-gradient(180deg, var(--gold), var(--gold-active))",
+          alignSelf: "stretch",
+          minHeight: 34,
+          flexShrink: 0,
+        }}
+      />
+      <div style={{ minWidth: 0 }}>
+        <h2
+          style={{
+            fontFamily: "var(--display)",
+            fontSize: "var(--fs-2xl)",
+            fontWeight: 700,
+            color: "var(--text)",
+            letterSpacing: 0.2,
+            lineHeight: "var(--lh-tight)",
+          }}
+        >
+          {children}
+        </h2>
+        {sub && (
+          <p className="prose" style={{ color: "var(--dim)", fontSize: "var(--fs-sm)", marginTop: 6 }}>
+            {sub}
+          </p>
+        )}
+      </div>
+    </div>
+    {action}
+  </div>
+);
+
+/**
+ * Groupe de contenu À L'INTÉRIEUR d'une page : un titre typographique et de
+ * l'espace, plutôt qu'une carte de plus. C'est ce qui permet d'avoir plusieurs
+ * niveaux de lecture sans empiler les encadrements.
+ */
+export const Section = ({ title, sub, action, children, className = "", style = {} }) => (
+  <section className={className} style={{ marginBottom: "var(--sp-6)", ...style }}>
+    {(title || action) && (
+      <header
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: "var(--sp-3)",
+          marginBottom: "var(--sp-3)",
+          flexWrap: "wrap",
         }}
       >
-        {children}
-      </h2>
-      {sub && <p style={{ color: "var(--dim)", fontSize: 13.5, marginTop: 5, maxWidth: 640, lineHeight: 1.5 }}>{sub}</p>}
-    </div>
-  </div>
+        <div style={{ minWidth: 0 }}>
+          {title && (
+            <h3
+              style={{
+                fontFamily: "var(--display)",
+                fontSize: "var(--fs-xl)",
+                fontWeight: 700,
+                color: "var(--text)",
+                letterSpacing: 0.2,
+                lineHeight: "var(--lh-tight)",
+              }}
+            >
+              {title}
+            </h3>
+          )}
+          {sub && (
+            <p className="prose" style={{ color: "var(--dim)", fontSize: "var(--fs-sm)", marginTop: 4 }}>
+              {sub}
+            </p>
+          )}
+        </div>
+        {action}
+      </header>
+    )}
+    {children}
+  </section>
 );
 
 /** Petit libellé discret en majuscules (SITUATION ACTUELLE, OBLIGATOIRE…) — un seul
@@ -92,29 +150,38 @@ export const Pill = ({ children, tone = "neutral", className, ...rest }) => {
   );
 };
 
+/**
+ * Une stat n'a pas besoin d'une carte complète : le chiffre en display porte
+ * déjà toute l'emphase. Surface plate + liseré de ton, sans bordure ni ombre —
+ * une grille de 10 stats redevient lisible au lieu de 10 encadrés en compétition.
+ */
 export const StatCard = ({ label, value, sub, tone, icon: Icon }) => (
-  <Card className="stat-card p-5" style={{ "--accent-color": tone || "var(--border)" }}>
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-      <div className="eyebrow" style={{ marginBottom: 10 }}>
+  <Card
+    variant="flat"
+    className="stat-card p-4"
+    style={{ "--accent-color": tone || "var(--border)" }}
+  >
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--sp-2)" }}>
+      <div className="eyebrow" style={{ marginBottom: "var(--sp-2)" }}>
         {label}
       </div>
       {Icon && (
-        <Icon size={16} color={tone || "var(--dim)"} style={{ opacity: 0.8, flexShrink: 0, marginTop: -1 }} />
+        <Icon size={15} color={tone || "var(--dim)"} style={{ opacity: 0.7, flexShrink: 0, marginTop: -1 }} />
       )}
     </div>
     <div
       className="tnum"
       style={{
         fontFamily: "var(--display)",
-        fontSize: 30,
+        fontSize: 28,
         fontWeight: 700,
         color: tone || "var(--text)",
-        lineHeight: 1.1,
+        lineHeight: "var(--lh-tight)",
       }}
     >
       {value}
     </div>
-    {sub && <div style={{ fontSize: 12, color: "var(--dim)", marginTop: 6 }}>{sub}</div>}
+    {sub && <div style={{ fontSize: "var(--fs-xs)", color: "var(--dim)", marginTop: 5 }}>{sub}</div>}
   </Card>
 );
 
@@ -208,6 +275,67 @@ export function ToggleChip({ active, disabled, onClick, children, title }) {
   );
 }
 
+/**
+ * Onglets d'une même page — pour une page qui empile plusieurs outils distincts
+ * (Coach IA : bilans, correctifs, analyse) au lieu de tout dérouler verticalement.
+ * Le trait actif est un vrai élément animé : il glisse d'un onglet à l'autre
+ * plutôt que de clignoter d'une position à une autre.
+ */
+export function Tabs({ tabs, active, onChange, className = "" }) {
+  return (
+    <div
+      role="tablist"
+      className={className}
+      style={{
+        display: "flex",
+        gap: "var(--sp-1)",
+        borderBottom: "1px solid var(--border)",
+        marginBottom: "var(--sp-5)",
+        overflowX: "auto",
+        scrollbarWidth: "none",
+      }}
+    >
+      {tabs.map((t) => {
+        const isActive = t.id === active;
+        const Icon = t.icon;
+        return (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(t.id)}
+            className="tab-btn"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--sp-2)",
+              padding: "var(--sp-3) var(--sp-4)",
+              background: "none",
+              border: "none",
+              borderBottom: `2px solid ${isActive ? "var(--gold)" : "transparent"}`,
+              color: isActive ? "var(--gold)" : "var(--dim)",
+              fontSize: "var(--fs-base)",
+              fontWeight: isActive ? 700 : 500,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              marginBottom: -1,
+              transition: "color var(--fast) var(--ease), border-color var(--fast) var(--ease)",
+            }}
+          >
+            {Icon && <Icon size={15} />}
+            {t.label}
+            {t.badge != null && (
+              <Pill tone={isActive ? "gold" : "neutral"} style={{ marginLeft: 2 }}>
+                {t.badge}
+              </Pill>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Petit rond tournant, pour les boutons en cours d'action asynchrone. */
 export function Spinner({ size = 14 }) {
   return <span className="spinner" style={{ width: size, height: size }} />;
@@ -267,8 +395,16 @@ export function Collapsible({ title, sub, defaultOpen = false, forceOpen = false
   useEffect(() => {
     if (forceOpen) setOpen(true);
   }, [forceOpen]);
+  // Replié, un accordéon n'est qu'une ligne de titre : il ne prend la bordure et
+  // le fond d'une vraie carte qu'une fois ouvert, quand il porte réellement du
+  // contenu. Évite qu'une page aligne des encadrés vides de même poids que ses
+  // blocs principaux.
   return (
-    <Card className="mb-4" style={{ padding: 0, overflow: "hidden" }}>
+    <Card
+      variant={open ? "raised" : "flat"}
+      className="mb-4"
+      style={{ padding: 0, overflow: "hidden", transition: `background-color var(--fast) var(--ease)` }}
+    >
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -278,29 +414,35 @@ export function Collapsible({ title, sub, defaultOpen = false, forceOpen = false
           justifyContent: "space-between",
           alignItems: "center",
           width: "100%",
-          padding: "15px 18px",
+          padding: "var(--sp-3) var(--sp-4)",
           background: "none",
           border: "none",
           cursor: "pointer",
         }}
       >
-        <div style={{ textAlign: "left" }}>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{title}</div>
-          {sub && <div style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 3, lineHeight: 1.4 }}>{sub}</div>}
+        <div style={{ textAlign: "left", minWidth: 0 }}>
+          <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, color: open ? "var(--text)" : "var(--dim)" }}>
+            {title}
+          </div>
+          {sub && (
+            <div style={{ fontSize: "var(--fs-xs)", color: "var(--dim)", marginTop: 3, lineHeight: "var(--lh-snug)" }}>
+              {sub}
+            </div>
+          )}
         </div>
         <ChevronDown
           size={16}
           color="var(--dim)"
           style={{
             transform: open ? "rotate(180deg)" : "none",
-            transition: `transform ${"var(--fast)"} var(--ease)`,
+            transition: `transform var(--med) var(--ease)`,
             flexShrink: 0,
-            marginLeft: 12,
+            marginLeft: "var(--sp-3)",
           }}
         />
       </button>
       {open && (
-        <div className="fade-in" style={{ padding: "0 18px 18px" }}>
+        <div className="fade-in" style={{ padding: "0 var(--sp-4) var(--sp-4)" }}>
           {children}
         </div>
       )}
