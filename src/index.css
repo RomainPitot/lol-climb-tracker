@@ -349,6 +349,9 @@ a {
   display: flex;
 }
 
+/* Collée au viewport : les pages (Dashboard surtout) sont longues, la navigation et le
+   bloc rang + roue crantée des Paramètres doivent rester atteignables sans remonter toute
+   la page. */
 .app-sidebar {
   width: 248px;
   flex-shrink: 0;
@@ -358,6 +361,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .app-main {
@@ -422,6 +429,9 @@ a {
     position: sticky;
     top: 0;
     z-index: 30;
+    /* En barre horizontale, la hauteur pleine page du mode colonne n'a plus de sens. */
+    height: auto;
+    overflow-y: visible;
   }
 
   .app-sidebar-brand {

@@ -1,4 +1,4 @@
-import { Swords } from "lucide-react";
+import { Swords, Settings as SettingsIcon } from "lucide-react";
 import { NAV } from "../constants/nav.js";
 import RankBadge from "./RankBadge.jsx";
 
@@ -71,11 +71,37 @@ export default function Sidebar({ page, setPage, currentRank }) {
         })}
       </nav>
 
+      {/* Rang + accès aux Paramètres : la roue crantée reste discrète à côté du rang plutôt
+          que de peser comme un onglet à part entière dans la navigation. */}
       <div
         className="app-sidebar-rank"
-        style={{ marginTop: "auto", paddingTop: 20, borderTop: "1px solid var(--border)" }}
+        style={{
+          marginTop: "auto",
+          paddingTop: 20,
+          borderTop: "1px solid var(--border)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
       >
-        <RankBadge tier={currentRank.tier} div={currentRank.div} lp={currentRank.lp} size="sm" />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <RankBadge tier={currentRank.tier} div={currentRank.div} lp={currentRank.lp} size="sm" />
+        </div>
+        <button
+          onClick={() => setPage("settings")}
+          aria-label="Paramètres"
+          aria-current={page === "settings" ? "page" : undefined}
+          title="Paramètres"
+          className="icon-btn"
+          style={{
+            flexShrink: 0,
+            padding: 8,
+            color: page === "settings" ? "var(--gold)" : "var(--dim)",
+            background: page === "settings" ? "rgba(212,175,55,0.14)" : "transparent",
+          }}
+        >
+          <SettingsIcon size={17} />
+        </button>
       </div>
     </aside>
   );

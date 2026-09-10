@@ -91,7 +91,7 @@ function compareToRole(agg, bench, deathPattern) {
     if (gapPct >= MIN_GAP_PCT) {
       // Le coach ne flatte jamais gratuitement : un point fort est noté, pas célébré —
       // et sert surtout à dire que ce n'est pas là qu'il faut chercher le problème.
-      strengths.push(`${m.label} correct pour ton rang (${cur} vs ${tgt} attendu) — ce n'est pas ton problème actuel.`);
+      strengths.push({ key: m.key, text: `${m.label} correct pour ton rang (${cur} vs ${tgt} attendu).` });
     } else if (gapPct <= -MIN_GAP_PCT) {
       const severe = gapPct <= -SEVERE_GAP_PCT;
       // Pour une métrique inversée (deaths : moins = mieux), être "en retard" veut dire
@@ -102,7 +102,14 @@ function compareToRole(agg, bench, deathPattern) {
         : `${m.label} à ${cur}, ${direction} ${tgt} attendus à ton rang.`;
       const reason = (m.key === "deaths" && deathPatternPhrase(deathPattern)) || null;
       const action = METRIC_ADVICE[m.key];
-      weaknesses.push([verdict, reason, action].filter(Boolean).join(" "));
+      weaknesses.push({
+        key: m.key,
+        gapPct,
+        verdict,
+        reason,
+        action,
+        text: [verdict, reason, action].filter(Boolean).join(" "),
+      });
     }
   }
   return { strengths, weaknesses };

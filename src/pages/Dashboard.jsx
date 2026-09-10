@@ -8,12 +8,8 @@ import StatLadder from "../components/StatLadder.jsx";
 import ProgressionDetails from "../components/dashboard/ProgressionDetails.jsx";
 import GamesHistory from "../components/dashboard/GamesHistory.jsx";
 import FocusTracker from "../components/dashboard/FocusTracker.jsx";
-import AlertsPanel from "../components/dashboard/AlertsPanel.jsx";
-import PrioritiesPanel from "../components/dashboard/PrioritiesPanel.jsx";
-import NegativeStreakBanner from "../components/dashboard/NegativeStreakBanner.jsx";
-import UntaggedReminder from "../components/dashboard/UntaggedReminder.jsx";
 import PopulationReference from "../components/dashboard/PopulationReference.jsx";
-import AutoCoachCard from "../components/dashboard/AutoCoachCard.jsx";
+import CoachBriefing from "../components/dashboard/CoachBriefing.jsx";
 import { PERIODS } from "../constants/game.js";
 import { roleBenchmark, TIER_COLORS } from "../constants/ranks.js";
 import { rankValue, rankLabel, bestRankOf, objectiveTierOf } from "../lib/rank.js";
@@ -124,12 +120,8 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
 
   return (
     <div>
-      <AutoCoachCard data={data} sorted={sorted} currentRank={currentRank} />
-      <NegativeStreakBanner data={data} sorted={sorted} />
-      <AlertsPanel data={data} sorted={sorted} />
-      <PrioritiesPanel data={data} sorted={sorted} currentRank={currentRank} />
-      <UntaggedReminder data={data} sorted={sorted} onSelectGame={setPendingAnalysisId} />
-
+      {/* Le rang d'abord : c'est le repère "où j'en suis", il n'a rien à faire sous quatre
+          encadrés de coaching. Le briefing du coach vient juste après. */}
       <Card className="hero-card p-6 mb-6" style={{ "--hero-color": heroColor }}>
         <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 260px" }}>
@@ -262,6 +254,13 @@ export default function Dashboard({ data, sorted, currentRank, deleteGame, delet
           )}
         </div>
       </Card>
+
+      <CoachBriefing
+        data={data}
+        sorted={sorted}
+        currentRank={currentRank}
+        onSelectGame={setPendingAnalysisId}
+      />
 
       <FocusTracker data={data} sorted={sorted} setSettings={setSettings} />
 

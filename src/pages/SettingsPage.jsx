@@ -1,69 +1,16 @@
 import { useState } from "react";
-import { Check, RotateCcw, AlertTriangle } from "lucide-react";
-import { SectionTitle, Field, Input, Select, Btn, Collapsible } from "../components/ui/primitives.jsx";
-import GoalsSection from "../components/settings/GoalsSection.jsx";
+import { RotateCcw } from "lucide-react";
+import { SectionTitle, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GameDetectorSection from "../components/settings/GameDetectorSection.jsx";
 import RiotImportSection from "../components/settings/RiotImportSection.jsx";
-import { TIERS, APEX, DIVS } from "../constants/ranks.js";
-import { rankLabel } from "../lib/rank.js";
 
-export default function SettingsPage({
-  data, sorted, currentRank, addGoal, deleteGoal,
-  setCurrentRank, setSettings, importRiotResult, resetAll, resetStats,
-}) {
-  const [rankForm, setRankForm] = useState({
-    tier: currentRank.tier,
-    div: currentRank.div || "IV",
-    lp: currentRank.lp,
-  });
-  const [msg, setMsg] = useState("");
-  const [msgError, setMsgError] = useState(false);
+export default function SettingsPage({ data, setSettings, importRiotResult, resetAll, resetStats }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmResetStats, setConfirmResetStats] = useState(false);
-
-  const notify = (text, isError = false) => {
-    setMsg(text);
-    setMsgError(isError);
-  };
-
-  const saveCurrentRank = () => {
-    const isApex = APEX.includes(rankForm.tier);
-    setCurrentRank({
-      tier: rankForm.tier,
-      div: isApex ? null : rankForm.div,
-      lp: Math.max(0, Math.round(Number(rankForm.lp) || 0)),
-    });
-    notify("Rang actuel mis à jour.");
-  };
 
   return (
     <div style={{ maxWidth: 820 }}>
       <SectionTitle sub="Sections repliables — ouvre uniquement ce dont tu as besoin.">Paramètres</SectionTitle>
-
-      {msg && (
-        <div
-          className="fade-in"
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 8,
-            padding: "10px 14px",
-            background: msgError ? "rgba(255,92,92,0.08)" : "rgba(15,214,138,0.08)",
-            border: `1px solid ${msgError ? "rgba(255,92,92,0.3)" : "rgba(15,214,138,0.3)"}`,
-            borderRadius: "var(--radius-md)",
-            marginBottom: 16,
-            fontSize: 13,
-            color: "var(--text)",
-          }}
-        >
-          {msgError ? (
-            <AlertTriangle size={14} color="var(--loss)" style={{ flexShrink: 0, marginTop: 1 }} />
-          ) : (
-            <Check size={14} color="var(--win)" style={{ flexShrink: 0, marginTop: 1 }} />
-          )}
-          {msg}
-        </div>
-      )}
 
       <Collapsible
         title="Ajouter une game"
@@ -77,40 +24,6 @@ export default function SettingsPage({
         sub="Statut en direct de ta partie (recherche, chargement, en jeu...) — plus de notification Discord, tout s'affiche ici et sur Phone control."
       >
         <GameDetectorSection />
-      </Collapsible>
-
-      <Collapsible
-        title="Rang actuel"
-        sub={`Actuellement : ${rankLabel(currentRank.tier, currentRank.div)} — ${currentRank.lp} LP. Corrige-le ici s'il n'est pas à jour.`}
-      >
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12, alignItems: "end" }}>
-          <Field label="Tier">
-            <Select value={rankForm.tier} onChange={(e) => setRankForm((p) => ({ ...p, tier: e.target.value }))}>
-              {[...TIERS, ...APEX].map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </Select>
-          </Field>
-          {!APEX.includes(rankForm.tier) && (
-            <Field label="Division">
-              <Select value={rankForm.div} onChange={(e) => setRankForm((p) => ({ ...p, div: e.target.value }))}>
-                {DIVS.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </Select>
-            </Field>
-          )}
-          <Field label="LP">
-            <Input type="number" value={rankForm.lp} onChange={(e) => setRankForm((p) => ({ ...p, lp: e.target.value }))} />
-          </Field>
-          <Btn variant="primary" onClick={saveCurrentRank}>
-            <Check size={14} /> Mettre à jour le rang actuel
-          </Btn>
-        </div>
-      </Collapsible>
-
-      <Collapsible title="Objectifs" sub={`${data.goals.length} objectif(s) défini(s)`}>
-        <GoalsSection data={data} sorted={sorted} addGoal={addGoal} deleteGoal={deleteGoal} />
       </Collapsible>
 
       <Collapsible
