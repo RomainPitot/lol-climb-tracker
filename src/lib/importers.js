@@ -1,6 +1,5 @@
 import { uid } from "./format.js";
 import { isBotLaneRole } from "./gameModel.js";
-import { REVERSE_CHAMP } from "../constants/roster.js";
 import { RIOT_ROLE_MAP } from "../constants/riot.js";
 
 /** Parse un tableau collé (TSV depuis un tableur, ou CSV) en objets clés-en-minuscules. */
@@ -25,7 +24,7 @@ export function csvToGames(text) {
     rankBeforeTier: r.rankbeforetier || "Émeraude",
     rankBeforeDiv: r.rankbeforediv || "III",
     lpBefore: Number(r.lpbefore) || 0,
-    champion: r.champion || "Yone",
+    champion: r.champion || "",
     role: r.role || "Mid",
     roleStatus: r.rolestatus || "Rôle principal",
     win: /^(1|true|victoire|win|w)$/i.test(r.win || r.result || ""),
@@ -51,10 +50,13 @@ export function csvToGames(text) {
 /**
  * Convertit un match Riot (Match-V5) en game du tracker, du point de vue du joueur `puuid`.
  * Renvoie null si le puuid n'apparaît pas dans le match.
+ * `champById` : index Data Dragon id → nom affiché (voir lib/championIndex.js), à charger
+ * une fois via ensureChampionIndex() avant d'appeler cette fonction (typiquement en boucle
+ * sur plusieurs matchs) — remplace l'ancienne table REVERSE_CHAMP codée en dur (14 entrées).
  * Note : l'API ne fournit pas le gain/perte de LP — `lpChange` reste à 0 ici ; c'est
  * `estimateLpChanges` (riotApi.js) qui le remplace ensuite par une estimation si possible.
  */
-export function riotMatchToGame(match, puuid) {
+export function riotMatchToGame(match, puuid, champById = new Map()) {
   const info = match?.info;
   const me = info?.participants?.find((p) => p.puuid === puuid);
   if (!me) return null;
@@ -67,7 +69,7 @@ export function riotMatchToGame(match, puuid) {
   const opp = enemy(me.teamPosition);
   const oppAdc = enemy("BOTTOM");
   const oppSup = enemy("UTILITY");
-  const named = (p) => (p ? REVERSE_CHAMP[p.championName] || p.championName : "");
+  const named = (p) => (p ? champById.get(p.championName) || p.championName : "");
 
   const start = new Date(info.gameStartTimestamp || info.gameCreation);
 
@@ -115,7 +117,7 @@ export function riotMatchToGame(match, puuid) {
     endTimestamp: info.gameEndTimestamp || start.getTime() + (info.gameDuration || 0) * 1000,
     date: start.toISOString().slice(0, 10),
     time: start.toTimeString().slice(0, 5),
-    champion: REVERSE_CHAMP[me.championName] || me.championName,
+    champion: champById.get(me.championName) || me.championName,
     role,
     roleStatus: "Rôle principal",
     win: !!me.win,

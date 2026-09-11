@@ -4,6 +4,7 @@ import { riotMatchToGame } from "./importers.js";
 import { applyLpChange, rankScore } from "./rank.js";
 import { gameTime } from "./format.js";
 import { fetchMatchTimeline, buildTimelineSummary } from "./riotTimeline.js";
+import { ensureChampionIndex } from "./championIndex.js";
 
 /** Queue ID de la SoloQ classée. */
 const QUEUE_SOLO_RANKED = 420;
@@ -235,6 +236,10 @@ export async function fetchRiotGames(conn, existingMatchIds, beforeRank, rankHis
   );
   const newIds = ids.filter((id) => !existingMatchIds.has(id));
 
+  // Chargé une seule fois avant la boucle plutôt qu'un fetch par match — voir
+  // lib/championIndex.js (remplace l'ancienne table REVERSE_CHAMP codée en dur).
+  const { byId: champById } = await ensureChampionIndex();
+
   const games = [];
   for (const id of newIds) {
     // Séquentiel volontairement : le rate limit des clés de dev est très bas.
@@ -242,7 +247,7 @@ export async function fetchRiotGames(conn, existingMatchIds, beforeRank, rankHis
       `https://${continent}.api.riotgames.com/lol/match/v5/matches/${id}`,
       conn
     );
-    const game = riotMatchToGame(match, puuid);
+    const game = riotMatchToGame(match, puuid, champById);
     if (!game) continue;
 
     // La timeline est un appel séparé, en plus — un échec ici (rate limit, match trop

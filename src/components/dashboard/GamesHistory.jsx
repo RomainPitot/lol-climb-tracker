@@ -210,6 +210,7 @@ export default function GamesHistory({ data, sorted, addGame, deleteGame, delete
 
       {addingGame && (
         <AddGameModal
+          games={sorted}
           onCancel={() => setAddingGame(false)}
           onSave={(g) => {
             addGame(g);
@@ -221,6 +222,7 @@ export default function GamesHistory({ data, sorted, addGame, deleteGame, delete
       {editingGame && (
         <EditGameModal
           game={editingGame}
+          games={sorted}
           onCancel={() => setEditingGame(null)}
           onSave={(patch) => {
             updateGame(editingGame.id, patch);

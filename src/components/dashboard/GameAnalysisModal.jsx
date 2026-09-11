@@ -12,13 +12,11 @@ import {
   DRAFT_OUTCOME_TAGS,
   COMP_FUNCTIONS,
 } from "../../constants/coaching.js";
-import { REVERSE_CHAMP } from "../../constants/roster.js";
 import { fetchItemNames, fetchRuneTree } from "../../lib/ddragon.js";
 import { getMatchupNote } from "../../lib/matchupNotes.js";
 import { isBotLaneRole } from "../../lib/gameModel.js";
 import { guessDeathTag } from "../../lib/deathGuess.js";
-
-const champName = (raw) => (raw ? REVERSE_CHAMP[raw] || raw : "?");
+import { useChampionIndex } from "../../hooks/useChampionIndex.js";
 
 const OBJECTIVE_LABEL = {
   DRAGON: "Dragon",
@@ -60,6 +58,11 @@ function DiffCell({ value, suffix = "" }) {
  */
 export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose }) {
   const t = game.timelineSummary;
+  // Timeline Riot renvoie l'id Data Dragon ("Velkoz"), pas le nom affiché ("Vel'Koz") —
+  // remplace l'ancienne table REVERSE_CHAMP (14 entrées codées en dur) par l'index
+  // dynamique (voir lib/championIndex.js), qui couvre tous les champions.
+  const { byId } = useChampionIndex();
+  const champName = (raw) => (raw ? byId.get(raw) || raw : "?");
 
   // Pré-remplissage : pour toute mort pas déjà classée pour de vrai, une suggestion
   // automatique (voir lib/deathGuess.js) plutôt qu'un select vide — jamais présentée comme

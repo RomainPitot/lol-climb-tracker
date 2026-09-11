@@ -3,7 +3,7 @@ import { Check, X } from "lucide-react";
 import { Btn, IconBtn } from "./ui/primitives.jsx";
 import GameFormFields from "./GameFormFields.jsx";
 
-export default function EditGameModal({ game, onSave, onCancel }) {
+export default function EditGameModal({ game, games = [], onSave, onCancel }) {
   const [g, setG] = useState(game);
   const [showOptional, setShowOptional] = useState(true);
   const set = (k, v) => setG((p) => ({ ...p, [k]: v }));
@@ -51,7 +51,7 @@ export default function EditGameModal({ game, onSave, onCancel }) {
           </IconBtn>
         </div>
 
-        <GameFormFields g={g} set={set} showOptional={showOptional} setShowOptional={setShowOptional} />
+        <GameFormFields g={g} set={set} showOptional={showOptional} setShowOptional={setShowOptional} allGames={games} />
 
         <div style={{ display: "flex", gap: 10 }}>
           <Btn variant="primary" onClick={() => onSave(g)}>

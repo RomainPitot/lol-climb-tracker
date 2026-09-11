@@ -10,7 +10,7 @@ import { emptyGame } from "../lib/gameModel.js";
  * GameFormFields, partagé avec EditGameModal ; seule différence : part de emptyGame()
  * plutôt que d'une game existante, et appelle addGame plutôt que updateGame.
  */
-export default function AddGameModal({ onSave, onCancel }) {
+export default function AddGameModal({ games = [], onSave, onCancel }) {
   const [g, setG] = useState(emptyGame);
   const [showOptional, setShowOptional] = useState(false);
   const set = (k, v) => setG((p) => ({ ...p, [k]: v }));
@@ -57,7 +57,7 @@ export default function AddGameModal({ onSave, onCancel }) {
           </IconBtn>
         </div>
 
-        <GameFormFields g={g} set={set} showOptional={showOptional} setShowOptional={setShowOptional} />
+        <GameFormFields g={g} set={set} showOptional={showOptional} setShowOptional={setShowOptional} allGames={games} />
 
         <div style={{ display: "flex", gap: 10 }}>
           <Btn variant="primary" onClick={() => onSave(g)} disabled={!g.champion.trim()}>

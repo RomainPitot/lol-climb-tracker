@@ -2,9 +2,9 @@ import { useState, useMemo } from "react";
 import { Card, StatCard, SectionTitle, LowSample, EmptyChart, Eyebrow } from "../components/ui/primitives.jsx";
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import ChartBlock from "../components/ChartBlock.jsx";
-import { CHAMP_ROLE, CHAMP_DDRAGON, champColor } from "../constants/roster.js";
+import { champColor } from "../constants/roster.js";
 import { sortByDate } from "../lib/rank.js";
-import { computeAgg, groupByChampion, mostFrequentRole, streaksOf, movingAverage, getColor } from "../lib/stats.js";
+import { computeAgg, groupByChampion, roleForChampion, streaksOf, movingAverage, getColor } from "../lib/stats.js";
 import { representativeGames } from "../lib/gameModel.js";
 import { matchupsFor, MIN_MATCHUP_GAMES } from "../lib/matchups.js";
 import MatchupNotesPanel from "../components/MatchupNotesPanel.jsx";
@@ -31,10 +31,9 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
     () => Object.fromEntries(champsPlayed.map((c) => [c.champion, c])),
     [champsPlayed]
   );
-  // Rôle : celui suivi manuellement pour les mains connues, sinon le rôle le plus
-  // fréquent observé sur les games de ce champion (jamais deviné au hasard).
-  const roleOf = (champion) =>
-    CHAMP_ROLE[champion] || mostFrequentRole(repGames.filter((g) => g.champion === champion)) || "?";
+  // Rôle le plus fréquent observé sur les games de ce champion — jamais une table figée
+  // à la main, jamais deviné au hasard pour un champion qui n'a pas encore de rôle dominant.
+  const roleOf = (champion) => roleForChampion(repGames, champion) || "?";
 
   const [active, setActive] = useState(() => champsPlayed[0]?.champion || null);
 
@@ -49,10 +48,6 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
   // 1 CS/min n'est pas "mauvais") — voir constants/ranks.js ROLE_CSMIN_FACTOR.
   const activeRole = active ? roleOf(active) : null;
   const hist = active ? data.historical[HISTORICAL_KEY[active]] || null : null;
-  // Les champions hors du petit roster suivi à la main n'ont pas d'entrée CHAMP_DDRAGON,
-  // mais `g.champion` est déjà l'identifiant Data Dragon brut dans ce cas (voir
-  // importers.js) — on peut donc quand même afficher la vraie icône.
-  const activeDdragonId = active && !CHAMP_DDRAGON[active] ? active : undefined;
 
   const chartData = useMemo(() => {
     const csmin = activeGames.map((g) => (g.duration ? g.cs / g.duration : 0));
@@ -105,7 +100,6 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
           {champsPlayed.map((stats) => {
             const isActive = active === stats.champion;
             const cc = champColor(stats.champion);
-            const ddragonId = !CHAMP_DDRAGON[stats.champion] ? stats.champion : undefined;
             return (
               // Seul le champion sélectionné porte une bordure colorée : les autres
               // restent des tuiles plates. Avant, 14 cartes bordées se disputaient
@@ -130,7 +124,7 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <ChampAvatar name={stats.champion} ddragonId={ddragonId} size={38} />
+                  <ChampAvatar name={stats.champion} size={38} />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: "var(--fs-base)", color: "var(--text)" }}>
                       {stats.champion}
@@ -153,7 +147,7 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
       {active && (
       <Card className="hero-card p-6" style={{ "--hero-color": accent }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 22 }}>
-          <ChampAvatar name={active} ddragonId={activeDdragonId} size={64} />
+          <ChampAvatar name={active} size={64} />
           <div>
             <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: "var(--fs-2xl)", color: accent, lineHeight: 1.1 }}>
               {active}

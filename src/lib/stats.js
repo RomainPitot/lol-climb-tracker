@@ -101,6 +101,14 @@ export function mostFrequentRole(games) {
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
 }
 
+/** Rôle le plus fréquent observé pour UN champion précis — remplace l'ancienne table
+ * CHAMP_ROLE codée en dur (14 champions) : déduit du vrai historique de jeu, valable
+ * pour n'importe quel champion réellement joué, jamais deviné pour un champion jamais
+ * joué (retourne null plutôt qu'un rôle par défaut arbitraire). */
+export function roleForChampion(games, champion) {
+  return mostFrequentRole(games.filter((g) => g.champion === champion));
+}
+
 export function streaksOf(sortedGames) {
   let bestWin = 0;
   let worstLoss = 0;

@@ -1,18 +1,33 @@
+import { useMemo } from "react";
 import { ChevronRight } from "lucide-react";
 import { Card, Field, Input, Select, TextArea, Eyebrow } from "./ui/primitives.jsx";
-import { ROSTER, CHAMP_ROLE } from "../constants/roster.js";
 import { ROLES, ROLE_STATUS, SIDES, DEATH_CAUSES } from "../constants/game.js";
 import { isBotLaneRole } from "../lib/gameModel.js";
+import { groupByChampion, roleForChampion } from "../lib/stats.js";
 
-/** Champs partagés par « Ajouter une game » et la modale d'édition. */
-export default function GameFormFields({ g, set, showOptional, setShowOptional }) {
+/** Nombre de suggestions de champions ("mes mains") proposées dans le champ Champion. */
+const MAX_SUGGESTIONS = 14;
+
+/** Champs partagés par « Ajouter une game » et la modale d'édition. `allGames` (tout
+ * l'historique, pas seulement les games représentatives) sert à déduire dynamiquement
+ * les champions les plus joués et leur rôle habituel — jamais une liste codée en dur : un
+ * champion jamais joué n'a simplement pas de rôle par défaut, à choisir soi-même. */
+export default function GameFormFields({ g, set, showOptional, setShowOptional, allGames = [] }) {
   const botLane = isBotLaneRole(g.role);
   const csPerMin = g.duration > 0 ? (Number(g.cs) / Number(g.duration)).toFixed(1) : "0";
 
-  // Changer de champion réaligne le rôle sur son rôle habituel.
+  // "Mes mains" — les champions les plus joués, déduits du vrai historique plutôt que
+  // d'une liste maintenue à la main (voir groupByChampion, déjà trié par nombre de games).
+  const suggestions = useMemo(
+    () => groupByChampion(allGames).slice(0, MAX_SUGGESTIONS).map((c) => c.champion),
+    [allGames]
+  );
+
+  // Changer de champion réaligne le rôle sur son rôle habituel — déduit du vrai
+  // historique de jeu pour ce champion précis, jamais deviné pour un champion jamais joué.
   const onChampionChange = (name) => {
     set("champion", name);
-    set("role", CHAMP_ROLE[name] || g.role);
+    set("role", roleForChampion(allGames, name) || g.role);
   };
 
   return (
@@ -27,9 +42,8 @@ export default function GameFormFields({ g, set, showOptional, setShowOptional }
             <Input type="time" value={g.time} onChange={(e) => set("time", e.target.value)} />
           </Field>
           <Field label="Champion" required>
-            {/* Texte libre + suggestions (pas un Select figé) : ROSTER n'est qu'une petite
-                liste de mains suivie à la main, restreindre la saisie à ces 14 rendrait
-                l'app inutilisable pour tout autre champion — voir aussi ChampionsPage. */}
+            {/* Texte libre + suggestions (pas un Select figé) : n'importe quel champion
+                doit pouvoir être saisi, pas seulement "mes mains" ci-dessous. */}
             <Input
               list="champion-suggestions"
               value={g.champion}
@@ -37,8 +51,8 @@ export default function GameFormFields({ g, set, showOptional, setShowOptional }
               placeholder="Nom du champion"
             />
             <datalist id="champion-suggestions">
-              {ROSTER.map((c) => (
-                <option key={c.name} value={c.name} />
+              {suggestions.map((name) => (
+                <option key={name} value={name} />
               ))}
             </datalist>
           </Field>
