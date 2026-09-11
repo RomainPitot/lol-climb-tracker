@@ -1,4 +1,4 @@
-import { DDRAGON_VERSION } from "../constants/roster.js";
+import { ensureDdragonVersion } from "./ddragonVersion.js";
 
 let cached = null;
 let cachedRuneTree = null;
@@ -13,7 +13,8 @@ let cachedItemNames = null;
  */
 export async function fetchChampionList() {
   if (cached) return cached;
-  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/fr_FR/champion.json`);
+  const version = await ensureDdragonVersion();
+  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${version}/data/fr_FR/champion.json`);
   if (!res.ok) throw new Error(`Data Dragon a répondu ${res.status}`);
   const body = await res.json();
   cached = Object.values(body.data)
@@ -35,7 +36,8 @@ export async function fetchChampionList() {
  */
 export async function fetchRuneTree() {
   if (cachedRuneTree) return cachedRuneTree;
-  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/fr_FR/runesReforged.json`);
+  const version = await ensureDdragonVersion();
+  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${version}/data/fr_FR/runesReforged.json`);
   if (!res.ok) throw new Error(`Data Dragon a répondu ${res.status}`);
   const body = await res.json();
   cachedRuneTree = body.map((style) => ({
@@ -62,7 +64,8 @@ export async function fetchRuneTree() {
  */
 export async function fetchSummonerSpells() {
   if (cachedSpells) return cachedSpells;
-  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/fr_FR/summoner.json`);
+  const version = await ensureDdragonVersion();
+  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${version}/data/fr_FR/summoner.json`);
   if (!res.ok) throw new Error(`Data Dragon a répondu ${res.status}`);
   const body = await res.json();
   cachedSpells = Object.values(body.data)
@@ -70,7 +73,7 @@ export async function fetchSummonerSpells() {
     .map((s) => ({
       id: Number(s.key),
       name: s.name,
-      icon: `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/spell/${s.image.full}`,
+      icon: `https://ddragon.leagueoflegends.com/cdn/${version}/img/spell/${s.image.full}`,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
   return cachedSpells;
@@ -83,13 +86,14 @@ export async function fetchSummonerSpells() {
  */
 export async function fetchItemNames() {
   if (cachedItemNames) return cachedItemNames;
-  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/fr_FR/item.json`);
+  const version = await ensureDdragonVersion();
+  const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${version}/data/fr_FR/item.json`);
   if (!res.ok) throw new Error(`Data Dragon a répondu ${res.status}`);
   const body = await res.json();
   cachedItemNames = new Map(
     Object.entries(body.data).map(([id, item]) => [
       Number(id),
-      { name: item.name, icon: `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/item/${item.image.full}` },
+      { name: item.name, icon: `https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${item.image.full}` },
     ])
   );
   return cachedItemNames;

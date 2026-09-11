@@ -1,5 +1,3 @@
-export const DDRAGON_VERSION = "16.16.1";
-
 /**
  * Pool de champions suivi par l'app.
  * `ddragon` = identifiant Data Dragon pour l'icône (null = pas d'icône officielle,

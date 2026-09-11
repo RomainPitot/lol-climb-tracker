@@ -4,7 +4,7 @@ Tracker de progression SoloQ League of Legends. Suit tes games une par une, calc
 
 **Application en ligne : https://romainpitot.github.io/lol-climb-tracker/**
 
-> Toutes les données restent dans **ton navigateur** (`localStorage`). Rien n'est envoyé sur un serveur, il n'y a pas de compte, et le site n'a pas de backend. Pense à faire un export JSON de temps en temps (Paramètres → Import / export JSON) : vider les données du navigateur efface aussi ton historique.
+> Toutes les données restent dans **ton navigateur** (`localStorage`). Rien n'est envoyé sur un serveur, il n'y a pas de compte, et le site n'a pas de backend. Pense à faire un export JSON de temps en temps (Paramètres → Sauvegarde) : vider les données du navigateur efface aussi ton historique.
 
 ---
 
@@ -17,7 +17,7 @@ Tracker de progression SoloQ League of Legends. Suit tes games une par une, calc
 | **Champions** | Stats par champion du roster + graphiques (WR cumulé, CS/min, deaths, dégâts, LP), moyennes mobiles sur 10 games |
 | **Sessions** | Regroupement automatique des games jouées à moins de 3h d'écart, avec détection de baisse de perf |
 | **Coach IA** | Sélection libre de games → recap texte prêt à coller dans un LLM |
-| **Paramètres** | Import Riot API, rang manuel, objectifs, seuils de couleur, stats historiques, import CSV/JSON, export |
+| **Paramètres** | Import Riot API, rang manuel, objectifs, stats historiques, import CSV/JSON, export/import de sauvegarde |
 
 ### Ce que l'app calcule
 

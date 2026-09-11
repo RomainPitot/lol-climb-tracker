@@ -1,12 +1,47 @@
-import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { useRef, useState } from "react";
+import { Download, RotateCcw, Upload } from "lucide-react";
 import { SectionTitle, Btn, Collapsible } from "../components/ui/primitives.jsx";
 import GameDetectorSection from "../components/settings/GameDetectorSection.jsx";
 import RiotImportSection from "../components/settings/RiotImportSection.jsx";
 
-export default function SettingsPage({ data, setSettings, importRiotResult, resetAll, resetStats }) {
+export default function SettingsPage({ data, setSettings, importRiotResult, resetAll, resetStats, restoreBackup }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmResetStats, setConfirmResetStats] = useState(false);
+  const [confirmRestore, setConfirmRestore] = useState(null); // fichier en attente de confirmation
+  const [restoreError, setRestoreError] = useState("");
+  const fileInputRef = useRef(null);
+
+  /** Sauvegarde complète : tout l'état vit dans le navigateur, un export est la seule copie. */
+  const exportBackup = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `climb-euw-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onFilePicked = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setRestoreError("");
+    file
+      .text()
+      .then((text) => setConfirmRestore({ name: file.name, parsed: JSON.parse(text) }))
+      .catch(() => setRestoreError("Fichier illisible — pas un JSON valide."));
+  };
+
+  const confirmedRestore = () => {
+    try {
+      restoreBackup(confirmRestore.parsed);
+      setConfirmRestore(null);
+    } catch (e) {
+      setRestoreError(e.message);
+      setConfirmRestore(null);
+    }
+  };
 
   return (
     <div style={{ maxWidth: 820 }}>
@@ -50,6 +85,42 @@ export default function SettingsPage({ data, setSettings, importRiotResult, rese
             </span>
           </span>
         </label>
+      </Collapsible>
+
+      <Collapsible
+        title="Sauvegarde"
+        sub="Tes données ne vivent que dans ce navigateur — vider le cache ou changer d'appareil les efface. Pense à exporter de temps en temps."
+      >
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: confirmRestore || restoreError ? 12 : 0 }}>
+          <Btn onClick={exportBackup}>
+            <Download size={14} /> Exporter une sauvegarde
+          </Btn>
+          <Btn onClick={() => fileInputRef.current?.click()}>
+            <Upload size={14} /> Importer une sauvegarde
+          </Btn>
+          <input ref={fileInputRef} type="file" accept="application/json" onChange={onFilePicked} hidden />
+        </div>
+
+        {confirmRestore && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, color: "var(--text)" }}>
+              Remplacer toutes les données actuelles par le contenu de "{confirmRestore.name}" ?
+            </span>
+            <Btn variant="danger" onClick={confirmedRestore}>
+              Oui, restaurer
+            </Btn>
+            <Btn onClick={() => setConfirmRestore(null)}>Annuler</Btn>
+          </div>
+        )}
+        {restoreError && (
+          <div style={{ fontSize: 12, color: "var(--loss)", marginTop: 8 }}>{restoreError}</div>
+        )}
+        {!confirmRestore && !restoreError && (
+          <p style={{ fontSize: 11.5, color: "var(--dim)" }}>
+            Importer remplace intégralement les données actuelles — utile pour restaurer un export ou passer sur un
+            autre appareil, pas pour fusionner deux historiques.
+          </p>
+        )}
       </Collapsible>
 
       <Collapsible title="Zone sensible">

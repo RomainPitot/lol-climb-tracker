@@ -45,8 +45,10 @@ export function emptyState() {
   };
 }
 
-/** Complète un état chargé depuis le disque avec les champs ajoutés après coup. */
-function normalize(state) {
+/** Complète un état chargé depuis le disque avec les champs ajoutés après coup. Exporté
+ * pour être réutilisé par restoreBackup (useTrackerData.js) : un JSON restauré traverse le
+ * même filet de sécurité qu'un chargement normal, plutôt qu'un objet non validé. */
+export function normalize(state) {
   const d = { ...state };
   if (!Array.isArray(d.games)) d.games = [];
   if (!Array.isArray(d.goals)) d.goals = [];

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { DDRAGON_VERSION, CHAMP_DDRAGON, champColor } from "../constants/roster.js";
+import { CHAMP_DDRAGON, champColor } from "../constants/roster.js";
+import { useDdragonVersion } from "../hooks/useDdragonVersion.js";
 
 /**
  * Icône Data Dragon du champion, avec repli sur les initiales colorées.
@@ -9,6 +10,7 @@ import { DDRAGON_VERSION, CHAMP_DDRAGON, champColor } from "../constants/roster.
  */
 export default function ChampAvatar({ name, ddragonId, size = 32 }) {
   const [failed, setFailed] = useState(false);
+  const ddragonVersion = useDdragonVersion();
   const ddragon = ddragonId || CHAMP_DDRAGON[name];
   const color = champColor(name);
 
@@ -38,7 +40,7 @@ export default function ChampAvatar({ name, ddragonId, size = 32 }) {
 
   return (
     <img
-      src={`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${ddragon}.png`}
+      src={`https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${ddragon}.png`}
       alt={name}
       loading="lazy"
       onError={() => setFailed(true)}

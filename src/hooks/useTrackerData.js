@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { loadState, saveState, emptyState } from "../lib/storage.js";
+import { loadState, saveState, emptyState, normalize } from "../lib/storage.js";
 import { applyLpChange, recomputeCurrentRank, sortByDate } from "../lib/rank.js";
 import { uid } from "../lib/format.js";
 
@@ -207,6 +207,21 @@ export function useTrackerData() {
 
       resetAll() {
         save(emptyState());
+      },
+
+      /**
+       * Restaure une sauvegarde JSON exportée depuis cette app (voir SettingsPage.jsx) —
+       * seule copie possible des données tant qu'il n'y a ni compte ni backend. Remplace
+       * tout l'état courant (comme un chargement initial), donc passe par le même
+       * `normalize` que loadState plutôt que de faire confiance au fichier tel quel :
+       * un JSON d'une version plus ancienne de l'app doit rester chargeable. Lève une
+       * erreur sur une forme manifestement invalide plutôt que d'écraser en silence.
+       */
+      restoreBackup(raw) {
+        if (!raw || typeof raw !== "object" || !Array.isArray(raw.games)) {
+          throw new Error("Fichier de sauvegarde invalide (pas un export CLIMB.EUW).");
+        }
+        save(normalize(raw));
       },
 
       /** Ajoute un correctif (voir lib/corrections.js) — construit par l'appelant via
