@@ -2,8 +2,14 @@ import { useMemo, useState } from "react";
 import { Card, Eyebrow, ToggleChip, Select } from "../ui/primitives.jsx";
 import { representativeGames } from "../../lib/gameModel.js";
 import { collectHeatmapPoints, toScreen } from "../../lib/heatmap.js";
+import { filterByPeriod } from "../../lib/stats.js";
+import { PERIODS } from "../../constants/game.js";
 
 const SIZE = 320;
+/** Un filtre période est plus utile qu'un filtre rôle ici : un joueur mono-rôle n'a pas
+ * besoin de filtrer par rôle, mais "juste les 30 derniers jours" repère un changement de
+ * comportement récent qu'une moyenne sur toute la saison noierait. */
+const DEFAULT_PERIOD = "30d";
 const TYPE_OPTIONS = [
   { id: "deaths", label: "Morts", color: "var(--loss)" },
   { id: "wards", label: "Wards posées", color: "#5AC8FA" },
@@ -20,11 +26,14 @@ const TYPE_OPTIONS = [
 export default function MapHeatmap({ data, sorted }) {
   const [activeTypes, setActiveTypes] = useState(() => new Set(["deaths"]));
   const [champion, setChampion] = useState("");
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
 
   const repSorted = useMemo(
     () => representativeGames(sorted, !!data.settings.includeExcludedGames),
     [sorted, data.settings.includeExcludedGames]
   );
+
+  const periodGames = useMemo(() => filterByPeriod(repSorted, period), [repSorted, period]);
 
   const champions = useMemo(
     () => [...new Set(repSorted.map((g) => g.champion).filter(Boolean))].sort(),
@@ -32,11 +41,11 @@ export default function MapHeatmap({ data, sorted }) {
   );
 
   const points = useMemo(
-    () => collectHeatmapPoints(repSorted, { champion: champion || undefined, types: [...activeTypes] }),
-    [repSorted, champion, activeTypes]
+    () => collectHeatmapPoints(periodGames, { champion: champion || undefined, types: [...activeTypes] }),
+    [periodGames, champion, activeTypes]
   );
 
-  const hasAnyTimeline = useMemo(() => repSorted.some((g) => g.timelineSummary), [repSorted]);
+  const hasAnyTimeline = useMemo(() => periodGames.some((g) => g.timelineSummary), [periodGames]);
 
   const toggleType = (id) =>
     setActiveTypes((prev) => {
@@ -54,29 +63,34 @@ export default function MapHeatmap({ data, sorted }) {
         stylisée, pas une texture Riot, juste pour situer les points.
       </p>
 
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12, alignItems: "center" }}>
+        {TYPE_OPTIONS.map((t) => (
+          <ToggleChip key={t.id} active={activeTypes.has(t.id)} onClick={() => toggleType(t.id)}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: t.color, display: "inline-block" }} />
+              {t.label}
+            </span>
+          </ToggleChip>
+        ))}
+        <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: "auto", marginLeft: "auto" }}>
+          {PERIODS.map((p) => (
+            <option key={p.id} value={p.id}>{p.label}</option>
+          ))}
+        </Select>
+        <Select value={champion} onChange={(e) => setChampion(e.target.value)} style={{ width: "auto" }}>
+          <option value="">Tous les champions</option>
+          {champions.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </Select>
+      </div>
+
       {!hasAnyTimeline ? (
         <div style={{ fontSize: 12, color: "var(--dim)", padding: 12 }}>
-          Aucune game avec timeline stockée pour l'instant — la heatmap se remplira au fil des games importées.
+          Aucune game avec timeline sur cette période — élargis la période ou attends de nouvelles games importées.
         </div>
       ) : (
         <>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12, alignItems: "center" }}>
-            {TYPE_OPTIONS.map((t) => (
-              <ToggleChip key={t.id} active={activeTypes.has(t.id)} onClick={() => toggleType(t.id)}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: t.color, display: "inline-block" }} />
-                  {t.label}
-                </span>
-              </ToggleChip>
-            ))}
-            <Select value={champion} onChange={(e) => setChampion(e.target.value)} style={{ width: "auto", marginLeft: "auto" }}>
-              <option value="">Tous les champions</option>
-              {champions.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </Select>
-          </div>
-
           <div style={{ display: "flex", justifyContent: "center" }}>
             <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ borderRadius: 10, background: "#0e1f14" }}>
               {/* Rivière (diagonale bas-gauche → haut-droite, approximative). */}
