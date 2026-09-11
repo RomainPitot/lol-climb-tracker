@@ -4,6 +4,8 @@ Tracker de progression SoloQ League of Legends. Suit tes games une par une, calc
 
 **Application en ligne : https://romainpitot.github.io/lol-climb-tracker/**
 
+Un bug, une idée ? [Ouvre une issue](https://github.com/RomainPitot/lol-climb-tracker/issues) — aussi accessible depuis l'app (Paramètres, en bas).
+
 > Toutes les données restent dans **ton navigateur** (`localStorage`). Rien n'est envoyé sur un serveur, il n'y a pas de compte, et le site n'a pas de backend. Pense à faire un export JSON de temps en temps (Paramètres → Sauvegarde) : vider les données du navigateur efface aussi ton historique.
 
 ---

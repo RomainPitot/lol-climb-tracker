@@ -179,6 +179,17 @@ export default function SettingsPage({ data, setSettings, importRiotResult, rese
           "repartir de zéro".
         </p>
       </Collapsible>
+
+      <p style={{ fontSize: 11.5, color: "var(--dim)", textAlign: "center", marginTop: 24 }}>
+        <a
+          href="https://github.com/RomainPitot/lol-climb-tracker/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "inherit" }}
+        >
+          Signaler un bug ou une idée
+        </a>
+      </p>
     </div>
   );
 }

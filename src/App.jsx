@@ -1,21 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
 import RankUpCelebration from "./components/RankUpCelebration.jsx";
 import NewGameRecapModal from "./components/NewGameRecapModal.jsx";
 import AlertBanner from "./components/AlertBanner.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import ChampionsPage from "./pages/ChampionsPage.jsx";
-import TierlistPage from "./pages/TierlistPage.jsx";
-import ChampSelectPage from "./pages/ChampSelectPage.jsx";
-import CoachPage from "./pages/CoachPage.jsx";
-import LearnPage from "./pages/LearnPage.jsx";
-import SettingsPage from "./pages/SettingsPage.jsx";
 import { useTrackerData } from "./hooks/useTrackerData.js";
 import { useAutoRiotImport } from "./hooks/useAutoRiotImport.js";
 import { useGameDetectorAlerts } from "./hooks/useGameDetectorAlerts.js";
 import { notifyGameEvent } from "./lib/notify.js";
 
 const ALERT_DISPLAY_MS = 6000;
+
+// Chargées à la demande plutôt qu'au démarrage : un visiteur qui n'ouvre jamais Tierlist
+// ou Coach IA n'a pas à en télécharger le code (recharts, entre autres, est lourd) —
+// un seul chunk unique de ~880 Ko téléchargé d'un coup, même pour ne voir que le
+// Dashboard, se lisait comme une vraie dette pour un public plus large que l'usage perso
+// habituel. Voir le <Suspense> plus bas pour le fallback pendant le téléchargement.
+const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const ChampionsPage = lazy(() => import("./pages/ChampionsPage.jsx"));
+const TierlistPage = lazy(() => import("./pages/TierlistPage.jsx"));
+const ChampSelectPage = lazy(() => import("./pages/ChampSelectPage.jsx"));
+const CoachPage = lazy(() => import("./pages/CoachPage.jsx"));
+const LearnPage = lazy(() => import("./pages/LearnPage.jsx"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage.jsx"));
 
 const PAGES = {
   dashboard: Dashboard,
@@ -111,7 +117,9 @@ export default function App() {
           qu'on a changé de page (sinon le contenu se substitue sans transition). */}
       <main className="app-main">
         <div className="page-enter" key={page} style={{ maxWidth: 1440, margin: "0 auto", width: "100%" }}>
-          <Page {...pageProps} />
+          <Suspense fallback={<PageLoadingFallback />}>
+            <Page {...pageProps} />
+          </Suspense>
         </div>
       </main>
       <RankUpCelebration
@@ -125,6 +133,17 @@ export default function App() {
         currentRank={data.currentRank}
         setSettings={actions.setSettings}
       />
+    </div>
+  );
+}
+
+/** Affiché brièvement pendant le téléchargement du code d'une page pas encore visitée
+ * cette session (voir les lazy() plus haut) — quasi instantané en pratique (chunk séparé
+ * de quelques dizaines de Ko), mais jamais un écran blanc en attendant. */
+function PageLoadingFallback() {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+      <span className="spinner" style={{ width: 20, height: 20, color: "var(--gold)" }} />
     </div>
   );
 }
