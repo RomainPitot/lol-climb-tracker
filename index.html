@@ -9,6 +9,12 @@
       content="Tracker de progression SoloQ League of Legends : stats par champion, sessions, objectifs et recap prêt à coller dans une IA coach."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- iOS ignore le manifest PWA pour l'écran d'accueil : ces balises sont le seul moyen
+         d'avoir une icône correcte et un mode plein écran sans barre d'adresse sur iPhone. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CLIMB.EUW" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

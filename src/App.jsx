@@ -64,6 +64,21 @@ export default function App() {
     window.history.replaceState({}, "", url);
   }, [loaded, actions]);
 
+  // "?page=..." : utilisé par le manifest PWA (start_url et le raccourci Dashboard, voir
+  // vite.config.js) pour ouvrir directement la bonne page au lancement depuis l'icône
+  // installée sur le téléphone — le host+token de pairing, eux, sont déjà en localStorage
+  // depuis le premier scan, pas besoin de les repasser dans l'URL à chaque fois.
+  useEffect(() => {
+    if (!loaded) return;
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("page");
+    if (!requested || !PAGES[requested]) return;
+    setPage(requested);
+    const url = new URL(window.location.href);
+    url.search = "";
+    window.history.replaceState({}, "", url);
+  }, [loaded]);
+
   if (!loaded) {
     return (
       <div
