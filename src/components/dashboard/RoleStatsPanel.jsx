@@ -65,7 +65,7 @@ function SupportBlock({ stats, bench }) {
       <Grid>
         <Metric
           icon={Eye}
-          label="Vision/min"
+          label="Score de vision/min"
           value={round2(stats.visionMin)}
           tone={visionOk ? "var(--win)" : "var(--loss)"}
           sub={`repère ${round2(bench.visionmin)} à ton rang`}
@@ -130,7 +130,7 @@ function LaneBlock({ stats, bench }) {
         />
         <Metric
           icon={Eye}
-          label="Vision/min"
+          label="Score de vision/min"
           value={round2(stats.visionMin)}
           tone={visionOk ? "var(--win)" : "var(--loss)"}
           sub={`repère ${round2(bench.visionmin)} à ton rang`}
@@ -160,7 +160,7 @@ function AdcBlock({ stats, bench }) {
         <Metric icon={Swords} label="Dégâts par game" value={Math.round(stats.damagePerGame).toLocaleString("fr-FR")} sub="ton rôle principal en teamfight" />
         {/* Vision volontairement sans code couleur ici : elle est en général portée par le
             support, un ADC bas en vision n'est pas nécessairement en faute. */}
-        <Metric icon={Eye} label="Vision/min" value={round2(stats.visionMin)} sub="généralement porté par ton support" />
+        <Metric icon={Eye} label="Score de vision/min" value={round2(stats.visionMin)} sub="généralement porté par ton support" />
       </Grid>
 
       {stats.deathSplit && (

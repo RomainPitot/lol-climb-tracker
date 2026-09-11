@@ -11,7 +11,7 @@ import { representativeGames } from "./gameModel.js";
  */
 export const FOCUS_METRICS = [
   { id: "csmin", label: "CS/min", invert: false, decimals: 1 },
-  { id: "visionmin", label: "Vision/min", invert: false, decimals: 2 },
+  { id: "visionmin", label: "Score de vision/min", invert: false, decimals: 2 },
   { id: "kda", label: "KDA", invert: false, decimals: 2 },
   { id: "deaths", label: "Deaths/game", invert: true, decimals: 1 },
   { id: "wr", label: "Winrate (%)", invert: false, decimals: 1 },

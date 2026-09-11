@@ -72,12 +72,12 @@ export default function GameRecapCard({ data, sorted }) {
 ${gameLine(last)}
 ${buildBlock()}
 === MOYENNE DES ${baseline.length} GAMES PRÉCÉDENTES (référence) ===
-KDA ${round2(baseAgg.kda)} — CS/min ${round1(baseAgg.csmin)} — Deaths/game ${round1(baseAgg.deaths)} — Dégâts/game ${Math.round(baseAgg.damageGame)} — Vision/min ${round1(baseAgg.visionMin)} — Winrate ${round1(baseAgg.wr)}%
+KDA ${round2(baseAgg.kda)} — CS/min ${round1(baseAgg.csmin)} — Deaths/game ${round1(baseAgg.deaths)} — Dégâts/game ${Math.round(baseAgg.damageGame)} — Score de vision/min ${round1(baseAgg.visionMin)} — Winrate ${round1(baseAgg.wr)}%
 
 === CETTE GAME EN DÉTAIL ===
 CS/min : ${round1(csmin)} (référence ${round1(baseAgg.csmin)})
 Deaths : ${last.deaths} (référence ${round1(baseAgg.deaths)})
-Vision/min : ${round1(visionMin)} (référence ${round1(baseAgg.visionMin)})
+Score de vision/min : ${round1(visionMin)} (référence ${round1(baseAgg.visionMin)})
 
 === DEMANDE ===
 Fais le bilan de CETTE game précisément (pas de généralités sur mon profil). Si le détail

@@ -244,7 +244,7 @@ export default function Dashboard({ data, sorted, currentRank, addGame, deleteGa
         </Eyebrow>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
           <StatLadder label="CS/min" value={a20.csmin} benchmark={bench.csmin} />
-          <StatLadder label="Vision/min" value={a20.visionMin} benchmark={bench.visionmin} />
+          <StatLadder label="Score de vision/min" value={a20.visionMin} benchmark={bench.visionmin} />
           <StatLadder label="KDA" value={a20.kda} benchmark={bench.kda} />
           <StatLadder label="Deaths/game" value={a20.deaths} benchmark={bench.deaths} invert />
         </div>

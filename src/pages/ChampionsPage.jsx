@@ -189,7 +189,7 @@ export default function ChampionsPage({ data, sorted, currentRank, saveMatchupNo
           <StatCard label="Gold/min" value={round1(activeAgg.goldmin)} />
           <StatCard label="Dégâts/game" value={Math.round(activeAgg.damageGame)} />
           <StatCard
-            label="Vision/min"
+            label="Score de vision/min"
             value={round1(activeAgg.visionMin)}
             tone={getColor("visionmin", activeAgg.visionMin, currentRank.tier, activeRole)}
           />

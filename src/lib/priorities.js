@@ -18,7 +18,7 @@ function weakestMetricCandidates(repSorted, currentRank) {
 
   const gaps = [
     { metric: "csmin", label: "CS/min", current: agg.csmin, target: bench.csmin, gapPct: bench.csmin ? (bench.csmin - agg.csmin) / bench.csmin : 0 },
-    { metric: "visionmin", label: "Vision/min", current: agg.visionMin, target: bench.visionmin, gapPct: bench.visionmin ? (bench.visionmin - agg.visionMin) / bench.visionmin : 0 },
+    { metric: "visionmin", label: "Score de vision/min", current: agg.visionMin, target: bench.visionmin, gapPct: bench.visionmin ? (bench.visionmin - agg.visionMin) / bench.visionmin : 0 },
     { metric: "deaths", label: "Deaths/game", current: agg.deaths, target: bench.deaths, gapPct: bench.deaths ? (agg.deaths - bench.deaths) / bench.deaths : 0 },
     { metric: "kda", label: "KDA", current: agg.kda, target: bench.kda, gapPct: bench.kda ? (bench.kda - agg.kda) / bench.kda : 0 },
   ];

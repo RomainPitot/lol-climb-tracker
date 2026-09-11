@@ -75,7 +75,7 @@ function deathPatternPhrase(deathPattern) {
 function compareToRole(agg, bench, deathPattern) {
   const metrics = [
     { key: "csmin", label: "CS/min", current: agg.csmin, target: bench.csmin, invert: false, decimals: 1 },
-    { key: "visionMin", label: "Vision/min", current: agg.visionMin, target: bench.visionmin, invert: false, decimals: 2 },
+    { key: "visionMin", label: "Score de vision/min", current: agg.visionMin, target: bench.visionmin, invert: false, decimals: 2 },
     { key: "kda", label: "KDA", current: agg.kda, target: bench.kda, invert: false, decimals: 2 },
     { key: "deaths", label: "Deaths/game", current: agg.deaths, target: bench.deaths, invert: true, decimals: 1 },
   ];

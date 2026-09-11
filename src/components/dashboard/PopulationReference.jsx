@@ -7,7 +7,7 @@ const MID_WINDOW = 20;
 
 const ROWS = [
   { key: "csmin", label: "CS/min", round: round1, invert: false },
-  { key: "visionMin", label: "Vision/min", round: round1, invert: false },
+  { key: "visionMin", label: "Score de vision/min", round: round1, invert: false },
   { key: "kda", label: "KDA", round: round2, invert: false },
   { key: "deaths", label: "Deaths/game", round: round1, invert: true },
 ];

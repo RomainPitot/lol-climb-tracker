@@ -86,7 +86,7 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
     const comparisonBlock = recentWindow.length
       ? `\n=== COMPARAISON À TOI-MÊME (rôle dominant : ${role}, repère ${rankLabel(currentRank.tier, currentRank.div)}) ===\n` +
         `CS/min — 5 dernières ${fmt(a5.csmin)}, 20 dernières ${fmt(a20.csmin)}, saison ${fmt(aSeason.csmin)}, repère ${fmt(bench.csmin)}.\n` +
-        `Vision/min — 5 dernières ${fmt(a5.visionMin, 2)}, 20 dernières ${fmt(a20.visionMin, 2)}, saison ${fmt(aSeason.visionMin, 2)}, repère ${fmt(bench.visionmin, 2)}.\n` +
+        `Score de vision/min — 5 dernières ${fmt(a5.visionMin, 2)}, 20 dernières ${fmt(a20.visionMin, 2)}, saison ${fmt(aSeason.visionMin, 2)}, repère ${fmt(bench.visionmin, 2)}.\n` +
         `KDA — 5 dernières ${fmt(a5.kda, 2)}, 20 dernières ${fmt(a20.kda, 2)}, saison ${fmt(aSeason.kda, 2)}, repère ${fmt(bench.kda, 2)}.\n` +
         `Deaths/game — 5 dernières ${fmt(a5.deaths)}, 20 dernières ${fmt(a20.deaths)}, saison ${fmt(aSeason.deaths)}, repère ${fmt(bench.deaths)}.\n`
       : "";
