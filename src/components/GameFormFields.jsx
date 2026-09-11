@@ -27,11 +27,20 @@ export default function GameFormFields({ g, set, showOptional, setShowOptional }
             <Input type="time" value={g.time} onChange={(e) => set("time", e.target.value)} />
           </Field>
           <Field label="Champion" required>
-            <Select value={g.champion} onChange={(e) => onChampionChange(e.target.value)}>
+            {/* Texte libre + suggestions (pas un Select figé) : ROSTER n'est qu'une petite
+                liste de mains suivie à la main, restreindre la saisie à ces 14 rendrait
+                l'app inutilisable pour tout autre champion — voir aussi ChampionsPage. */}
+            <Input
+              list="champion-suggestions"
+              value={g.champion}
+              onChange={(e) => onChampionChange(e.target.value)}
+              placeholder="Nom du champion"
+            />
+            <datalist id="champion-suggestions">
               {ROSTER.map((c) => (
-                <option key={c.name} value={c.name}>{c.name}</option>
+                <option key={c.name} value={c.name} />
               ))}
-            </Select>
+            </datalist>
           </Field>
           <Field label="Rôle" required>
             <Select value={g.role} onChange={(e) => set("role", e.target.value)}>

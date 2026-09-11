@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Trash2, Pencil, X, Flag, Microscope } from "lucide-react";
+import { Trash2, Pencil, Plus, X, Flag, Microscope } from "lucide-react";
 import { Card, Pill, Btn, Collapsible, IconBtn } from "../ui/primitives.jsx";
 import ChampAvatar from "../ChampAvatar.jsx";
+import AddGameModal from "../AddGameModal.jsx";
 import EditGameModal from "../EditGameModal.jsx";
 import GameAnalysisModal from "./GameAnalysisModal.jsx";
 import { rankLabel } from "../../lib/rank.js";
@@ -10,13 +11,14 @@ import { round1 } from "../../lib/format.js";
 const COLUMNS = ["Date", "Champion", "Statut rôle", "Résultat", "Rang", "LP", "KDA", "CS/min", "Dégâts", "Vision", ""];
 const cell = { padding: "9px 12px" };
 
-export default function GamesHistory({ data, sorted, deleteGame, deleteGames, updateGame, pendingAnalysisId, onPendingAnalysisHandled }) {
+export default function GamesHistory({ data, sorted, addGame, deleteGame, deleteGames, updateGame, pendingAnalysisId, onPendingAnalysisHandled }) {
   const rows = [...sorted].reverse();
   const [checked, setChecked] = useState(() => new Set());
   const [confirmId, setConfirmId] = useState(null);
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [editingGame, setEditingGame] = useState(null);
   const [analyzingGame, setAnalyzingGame] = useState(null);
+  const [addingGame, setAddingGame] = useState(false);
 
   // Ouvert depuis un rappel externe (ex: "morts non classées" sur le Dashboard, voir
   // UntaggedReminder) — force aussi l'Historique à se déplier puisque la modale vit dans
@@ -56,7 +58,17 @@ export default function GamesHistory({ data, sorted, deleteGame, deleteGames, up
   };
 
   return (
-    <Collapsible title="Historique" sub={`${rows.length} games trackées`} forceOpen={!!analyzingGame}>
+    <Collapsible
+      title="Historique"
+      sub={`${rows.length} games trackées`}
+      forceOpen={!!analyzingGame || rows.length === 0}
+    >
+      <div style={{ marginBottom: 10 }}>
+        <Btn variant="primary" onClick={() => setAddingGame(true)}>
+          <Plus size={14} /> Ajouter une game
+        </Btn>
+      </div>
+
       {checked.size > 0 && (
         <div style={{ marginBottom: 10 }}>
           {confirmBulk ? (
@@ -195,6 +207,16 @@ export default function GamesHistory({ data, sorted, deleteGame, deleteGames, up
           </tbody>
         </table>
       </Card>
+
+      {addingGame && (
+        <AddGameModal
+          onCancel={() => setAddingGame(false)}
+          onSave={(g) => {
+            addGame(g);
+            setAddingGame(false);
+          }}
+        />
+      )}
 
       {editingGame && (
         <EditGameModal

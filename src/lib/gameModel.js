@@ -4,7 +4,10 @@ export function emptyGame() {
   return {
     date: now.toISOString().slice(0, 10),
     time: now.toTimeString().slice(0, 5),
-    champion: "Yone",
+    // Champ texte libre (voir GameFormFields) : un défaut non-vide ("Yone" avant) se
+    // concatène avec ce que tape l'utilisateur s'il ne vide pas le champ avant de taper —
+    // vide, le placeholder du champ ("Nom du champion") l'invite clairement à le remplir.
+    champion: "",
     role: "Mid",
     roleStatus: "Rôle principal",
     win: true,

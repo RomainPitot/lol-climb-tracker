@@ -48,8 +48,8 @@ export default function SettingsPage({ data, setSettings, importRiotResult, rese
       <SectionTitle sub="Sections repliables — ouvre uniquement ce dont tu as besoin.">Paramètres</SectionTitle>
 
       <Collapsible
-        title="Ajouter une game"
-        sub="Récupère tes dernières games SoloQ automatiquement depuis l'API Riot — plus besoin de tout ressaisir à la main."
+        title="Import automatique (API Riot) — mode avancé"
+        sub="Optionnel : ajoute tes games à la main depuis le Dashboard (bouton « Ajouter une game »), ça marche sans rien configurer. Ceci récupère tes games SoloQ automatiquement, mais demande une clé Riot personnelle et de déployer un petit proxy toi-même (voir docs/RIOT_PROXY.md) — pour qui veut se passer de la saisie manuelle."
       >
         <RiotImportSection data={data} setSettings={setSettings} importRiotResult={importRiotResult} />
       </Collapsible>

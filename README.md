@@ -81,7 +81,9 @@ La logique métier vit dans `src/lib/` et ne dépend pas de React : c'est là qu
 
 ---
 
-## Import automatique des games (Riot API)
+## Import automatique des games (Riot API) — mode avancé
+
+Par défaut, ajoute tes games à la main depuis le Dashboard (bouton **Ajouter une game**) — ça marche sans rien configurer. Ce qui suit est optionnel, pour qui veut éviter la saisie manuelle.
 
 L'API Riot ne peut pas être appelée directement depuis un navigateur : pas de CORS, et une clé API ne doit jamais être exposée côté client. L'app passe donc par un petit proxy que **tu déploies toi-même**.
 
