@@ -35,5 +35,12 @@ const CHAMP_PALETTE = [
   "#C77DFF", "#4CC9F0", "#F72585", "#7BDFF2", "#FFB347", "#06D6A0", "#EF476F",
 ];
 
-export const champColor = (name) =>
-  CHAMP_PALETTE[ROSTER.findIndex((c) => c.name === name) % CHAMP_PALETTE.length] || "var(--gold)";
+/** Couleur d'accent d'un champion — position dans le roster suivi si connu, sinon un
+ * hash simple du nom pour rester stable et distinct entre deux champions hors roster. */
+export const champColor = (name) => {
+  const idx = ROSTER.findIndex((c) => c.name === name);
+  if (idx >= 0) return CHAMP_PALETTE[idx % CHAMP_PALETTE.length];
+  let hash = 0;
+  for (let i = 0; i < (name || "").length; i++) hash = (hash * 31 + name.charCodeAt(i)) % CHAMP_PALETTE.length;
+  return CHAMP_PALETTE[Math.abs(hash) % CHAMP_PALETTE.length];
+};

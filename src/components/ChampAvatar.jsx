@@ -10,7 +10,7 @@ import { DDRAGON_VERSION, CHAMP_DDRAGON, champColor } from "../constants/roster.
 export default function ChampAvatar({ name, ddragonId, size = 32 }) {
   const [failed, setFailed] = useState(false);
   const ddragon = ddragonId || CHAMP_DDRAGON[name];
-  const color = ddragonId ? "var(--gold)" : champColor(name);
+  const color = champColor(name);
 
   if (!ddragon || failed) {
     return (
