@@ -44,6 +44,9 @@ export const TACTICAL_NOTE_TYPES = [
   { id: "recall", label: "Recall" },
   { id: "roam", label: "Roam" },
   { id: "teamfight", label: "Teamfight" },
+  // Le succès d'un gank n'est PAS dérivable de la Timeline Riot (aucun événement "GANK") —
+  // le déduire des positions serait une pure spéculation. Tag manuel, comme les 4 autres.
+  { id: "gank", label: "Gank" },
 ];
 
 export const TACTICAL_NOTE_VALUES = {
@@ -51,6 +54,7 @@ export const TACTICAL_NOTE_VALUES = {
   recall: ["Optimal", "Acceptable", "Mauvais", "Très mauvais"],
   roam: ["Réussi", "Neutre", "Raté", "Très coûteux"],
   teamfight: ["Bon fight", "Mauvais fight", "Nécessaire", "Évitable"],
+  gank: ["Réussi", "Neutre", "Raté"],
 };
 
 /**

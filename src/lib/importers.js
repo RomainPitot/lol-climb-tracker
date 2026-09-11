@@ -124,6 +124,10 @@ export function riotMatchToGame(match, puuid) {
     deaths: me.deaths || 0,
     assists: me.assists || 0,
     cs: (me.totalMinionsKilled || 0) + (me.neutralMinionsKilled || 0),
+    // Camps neutres seuls (hors minions de lane) — nécessaire au panneau de stats Jungle
+    // (camps/min), absent des games importées avant cet ajout : ne jamais approximer à
+    // partir de `cs` seul (voir lib/roleStats.js computeJungleStats, gamesCovered).
+    jungleCs: me.neutralMinionsKilled ?? null,
     duration: Math.max(1, Math.round((info.gameDuration || 0) / 60)),
     damage: me.totalDamageDealtToChampions || 0,
     gold: me.goldEarned || 0,

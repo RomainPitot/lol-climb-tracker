@@ -16,6 +16,10 @@ export function emptyGame() {
     deaths: 0,
     assists: 0,
     cs: 0,
+    // Camps neutres seuls — voir importers.js. Jamais saisi à la main (pas de champ
+    // dédié dans GameFormFields, la CS totale suffit en saisie manuelle) ; null distingue
+    // "pas connu" de "connu et zéro" pour le panneau de stats Jungle.
+    jungleCs: null,
     duration: 25,
     damage: 0,
     gold: 0,
