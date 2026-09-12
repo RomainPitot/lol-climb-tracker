@@ -63,6 +63,38 @@ export function normalize(state) {
   if (!Array.isArray(d.corrections)) d.corrections = [];
   if (!d.matchupNotes || typeof d.matchupNotes !== "object") d.matchupNotes = {};
   if (!Array.isArray(d.learnRead)) d.learnRead = [];
+
+  // Migration : l'ancien "Point de focus" (settings.focusMetric et consorts) devient un
+  // correctif sans cible chiffrée — même concept, un seul système désormais (voir
+  // lib/corrections.js). Retire les champs de settings dans la même passe : idempotent,
+  // ne se déclenche plus au chargement suivant.
+  if (d.settings?.focusMetric) {
+    const legacyLabel = { csmin: "CS/min", visionmin: "Score de vision/min", kda: "KDA", deaths: "Deaths/game", wr: "Winrate (%)" }[d.settings.focusMetric] || d.settings.focusMetric;
+    d.corrections = [
+      ...d.corrections,
+      {
+        id: `migrated-focus-${Date.now()}`,
+        title: `${legacyLabel} (repris depuis l'ancien Point de focus)`,
+        cause: d.settings.focusNote || "",
+        action: "",
+        metric: d.settings.focusMetric,
+        targetValue: null,
+        initialValue: d.settings.focusStartValue ?? 0,
+        createdAt: d.settings.focusStartedAt || new Date().toISOString(),
+        status: "in_progress",
+        startedAt: d.settings.focusStartedAt || new Date().toISOString(),
+        startGameId: d.settings.focusStartGameId || null,
+      },
+    ];
+    const restSettings = { ...d.settings };
+    delete restSettings.focusMetric;
+    delete restSettings.focusStartedAt;
+    delete restSettings.focusStartGameId;
+    delete restSettings.focusStartValue;
+    delete restSettings.focusNote;
+    d.settings = restSettings;
+  }
+
   return d;
 }
 

@@ -1,30 +1,43 @@
-import { FOCUS_METRICS, focusMetricValue, gamesSinceFocusStart } from "./focus.js";
-import { computeAgg } from "./stats.js";
+import { FOCUS_METRICS, focusMetricValue, gamesSinceFocusStart, perGameValue } from "./focus.js";
+import { computeAgg, movingAverage } from "./stats.js";
 import { representativeGames } from "./gameModel.js";
 import { uid } from "./format.js";
 
-/** Mêmes métriques que le Point de focus (lib/focus.js) — pas la peine d'en redéfinir un
- * second jeu, un correctif n'est qu'un focus avec une cible chiffrée et un historique. */
+/** Mêmes métriques partout (voir lib/focus.js). */
 export const CORRECTION_METRICS = FOCUS_METRICS;
 
 /** Nombre de games consécutives sur lesquelles une cible doit être tenue pour compter comme
- * "corrigé" — reprend l'ordre de grandeur du GDD ("10 prochaines games"). */
+ * "corrigé" — reprend l'ordre de grandeur du GDD ("10 prochaines games"). Ne s'applique
+ * qu'aux correctifs AVEC cible chiffrée (voir evaluateCorrection). */
 export const VALIDATION_WINDOW = 10;
 
-/** Nouveau correctif : "todo" jusqu'à ce qu'on commence à le travailler (voir
+/** Fenêtre de la moyenne mobile affichée dans le graphe de tendance (correctionSeries) —
+ * même ordre de grandeur que l'ancien Point de focus. */
+const TREND_WINDOW = 5;
+
+/**
+ * Nouveau correctif : "todo" jusqu'à ce qu'on commence à le travailler (voir
  * startCorrection) — la valeur de départ est déjà connue (moyenne des 20 dernières games
- * représentatives, comme le Point de focus) pour donner un delta dès la création. */
+ * représentatives) pour donner un delta dès la création.
+ *
+ * `targetValue` est OPTIONNEL : sans cible chiffrée, c'est un suivi de tendance pur
+ * (l'ancien "Point de focus" — une seule chose à la fois, sans objectif précis, juste
+ * regarder si ça s'améliore). Avec une cible, "corrigé"/"régression" deviennent calculables
+ * (voir evaluateCorrection). Les deux vivent dans le même tableau `data.corrections` — un
+ * seul système plutôt que deux qui ne se parlaient pas.
+ */
 export function newCorrection({ title, cause, action, metricId, targetValue, sorted, settings }) {
   const repSorted = representativeGames(sorted, !!settings.includeExcludedGames);
   const baseline = repSorted.slice(-20);
   const initialValue = baseline.length ? focusMetricValue(computeAgg(baseline), metricId) : 0;
+  const hasTarget = targetValue !== "" && targetValue != null;
   return {
     id: uid(),
     title: title || "",
     cause: cause || "",
     action: action || "",
     metric: metricId,
-    targetValue: Number(targetValue) || 0,
+    targetValue: hasTarget ? Number(targetValue) : null,
     initialValue,
     createdAt: new Date().toISOString(),
     status: "todo", // todo | in_progress — corrigé/régression sont toujours dérivés, jamais cochés
@@ -34,7 +47,8 @@ export function newCorrection({ title, cause, action, metricId, targetValue, sor
 }
 
 /** Passe un correctif en "en cours" : fige la game de départ, à partir de laquelle les
- * games suivantes compteront pour juger si la cible est tenue. */
+ * games suivantes compteront pour juger si la cible est tenue (ou simplement pour tracer
+ * la tendance, sans cible). */
 export function startCorrection(correction, sorted) {
   return {
     ...correction,
@@ -52,7 +66,9 @@ function meetsTarget(value, def, target) {
  * État réel d'un correctif "en cours", calculé depuis les games jouées après son départ —
  * jamais stocké, toujours recalculé, pour qu'une régression ne puisse pas rester cachée
  * derrière un statut coché une fois pour toutes :
- * - "in_progress" : la cible n'a encore jamais été tenue sur VALIDATION_WINDOW games d'affilée.
+ * - "in_progress" : la cible n'a encore jamais été tenue sur VALIDATION_WINDOW games d'affilée
+ *   (ou : pas de cible du tout — un suivi de tendance pur reste toujours "in_progress",
+ *   "corrigé"/"régression" n'ont de sens que face à un objectif chiffré).
  * - "corrected" : elle l'a déjà été à un moment, ET elle l'est encore sur les dernières games.
  * - "regression" : elle l'a déjà été à un moment, mais ne l'est plus maintenant — exactement
  *   l'exemple du GDD ("0,6 → corrigé, puis retour à 2,1 → régression").
@@ -68,6 +84,14 @@ export function evaluateCorrection(correction, sorted, settings) {
 
   if (!since.length) {
     return { ...correction, derivedStatus: "in_progress", def, currentValue: null, gamesCount: 0 };
+  }
+
+  // Sans cible chiffrée : suivi de tendance pur (ex-Point de focus). "Corrigé"/"régression"
+  // n'ont pas de sens sans objectif à comparer — juste la valeur courante, sur tout
+  // l'historique depuis le départ plutôt qu'une fenêtre glissante de validation.
+  if (correction.targetValue == null) {
+    const currentValue = focusMetricValue(computeAgg(since), def.id);
+    return { ...correction, derivedStatus: "in_progress", def, currentValue, gamesCount: since.length };
   }
 
   const windowSize = Math.min(VALIDATION_WINDOW, since.length);
@@ -96,6 +120,34 @@ export function evaluateCorrection(correction, sorted, settings) {
     windowSize,
     windowFull: since.length >= VALIDATION_WINDOW,
   };
+}
+
+/** Série pour le graphe de tendance (moyenne mobile depuis le départ du correctif) —
+ * même logique que l'ancien Point de focus, généralisée à n'importe quel correctif
+ * "in_progress", avec ou sans cible chiffrée. */
+export function correctionSeries(correction, sorted, settings) {
+  const def = CORRECTION_METRICS.find((m) => m.id === correction.metric);
+  if (!def || correction.status === "todo") return [];
+  const repSorted = representativeGames(sorted, !!settings.includeExcludedGames);
+  const since = gamesSinceFocusStart(repSorted, correction.startGameId);
+  const ma = movingAverage(since.map((g) => perGameValue(g, def.id)), TREND_WINDOW);
+  return since.map((_, i) => ({ i: i + 1, value: ma[i] }));
+}
+
+/**
+ * Le correctif "en cours" à mettre en avant sur le Dashboard (widget principal, à la place
+ * de l'ancien Point de focus) — le plus récemment démarré parmi ceux "in_progress". On peut
+ * avoir plusieurs correctifs actifs (voir CorrectionsPanel, Coach IA), mais un seul mérite
+ * la vedette du Dashboard à la fois — cohérent avec le principe "une chose à la fois" qui
+ * motivait l'ancien Point de focus. Renvoie déjà évalué (currentValue, derivedStatus...),
+ * prêt à afficher.
+ */
+export function primaryActiveCorrection(data, sorted) {
+  const inProgress = (data.corrections || [])
+    .filter((c) => c.status === "in_progress")
+    .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+  if (!inProgress.length) return null;
+  return evaluateCorrection(inProgress[0], sorted, data.settings);
 }
 
 export const CORRECTION_STATUS_LABEL = {

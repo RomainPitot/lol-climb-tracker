@@ -19,10 +19,12 @@ function emptyForm() {
 }
 
 /**
- * Correctifs (problème → objectif chiffré → suivi → régression) — voir lib/corrections.js.
- * Contrairement au Point de focus (un seul actif, sans cible), on peut en avoir plusieurs
- * en même temps, chacun avec une métrique cible ; "corrigé" et "régression" ne se cochent
- * jamais à la main, ils se calculent depuis les games réellement jouées.
+ * Correctifs (problème → objectif → suivi → régression) — voir lib/corrections.js. La
+ * cible chiffrée est optionnelle : sans elle, c'est un suivi de tendance pur (l'ancien
+ * "Point de focus", affiché en avant sur le Dashboard — voir primaryActiveCorrection) ;
+ * avec elle, "corrigé"/"régression" deviennent calculables. On peut en avoir plusieurs en
+ * même temps ; "corrigé" et "régression" ne se cochent jamais à la main, ils se calculent
+ * depuis les games réellement jouées.
  */
 export default function CorrectionsPanel({ data, sorted, addCorrection, updateCorrection, deleteCorrection }) {
   const [showForm, setShowForm] = useState(false);
@@ -42,7 +44,7 @@ export default function CorrectionsPanel({ data, sorted, addCorrection, updateCo
   };
 
   const submit = () => {
-    if (!form.title.trim() || !form.targetValue) return;
+    if (!form.title.trim()) return;
     addCorrection(
       newCorrection({
         title: form.title.trim(),
@@ -84,8 +86,8 @@ export default function CorrectionsPanel({ data, sorted, addCorrection, updateCo
                 ))}
               </Select>
             </Field>
-            <Field label="Cible">
-              <Input type="number" step="0.1" value={form.targetValue} onChange={(e) => set("targetValue", e.target.value)} placeholder="Ex: 1" />
+            <Field label="Cible (optionnel)">
+              <Input type="number" step="0.1" value={form.targetValue} onChange={(e) => set("targetValue", e.target.value)} placeholder="Laisse vide pour juste suivre la tendance" />
             </Field>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 10 }}>
@@ -96,7 +98,7 @@ export default function CorrectionsPanel({ data, sorted, addCorrection, updateCo
               <TextArea rows={2} value={form.action} onChange={(e) => set("action", e.target.value)} placeholder="Ex: ne pas prendre la wave sans ward river" />
             </Field>
           </div>
-          <Btn variant="primary" onClick={submit} disabled={!form.title.trim() || !form.targetValue}>
+          <Btn variant="primary" onClick={submit} disabled={!form.title.trim()}>
             Créer le correctif
           </Btn>
         </div>
@@ -125,8 +127,10 @@ export default function CorrectionsPanel({ data, sorted, addCorrection, updateCo
                   <Pill tone={STATUS_TONE[c.derivedStatus]}>{CORRECTION_STATUS_LABEL[c.derivedStatus]}</Pill>
                 </div>
                 <div className="tnum" style={{ fontSize: 11.5, color: "var(--dim)" }}>
-                  {c.def?.label} — cible {c.def?.invert ? "≤" : "≥"} {c.targetValue}
-                  {c.currentValue != null && ` · actuel ${c.currentValue.toFixed(c.def.decimals)} (${c.gamesCount} game${c.gamesCount > 1 ? "s" : ""}${!c.windowFull ? ", fenêtre pas encore pleine" : ""})`}
+                  {c.def?.label}
+                  {c.targetValue != null && ` — cible ${c.def?.invert ? "≤" : "≥"} ${c.targetValue}`}
+                  {c.currentValue != null &&
+                    ` · actuel ${c.currentValue.toFixed(c.def.decimals)} (${c.gamesCount} game${c.gamesCount > 1 ? "s" : ""}${c.targetValue != null && !c.windowFull ? ", fenêtre pas encore pleine" : ""})`}
                   {c.currentValue == null && c.status !== "todo" && " · pas encore de game depuis le départ"}
                 </div>
                 {c.cause && <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 4 }}>Cause : {c.cause}</p>}

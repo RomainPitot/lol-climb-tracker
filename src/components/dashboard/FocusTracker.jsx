@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Target, X } from "lucide-react";
-import { Card, Eyebrow, Btn, IconBtn, Field, Select, Input } from "../ui/primitives.jsx";
-import { FOCUS_METRICS, computeFocus, buildFocusStart, clearFocus } from "../../lib/focus.js";
+import { Card, Eyebrow, Btn, IconBtn, Field, Select, Input, Pill } from "../ui/primitives.jsx";
+import {
+  CORRECTION_METRICS,
+  CORRECTION_STATUS_LABEL,
+  newCorrection,
+  startCorrection,
+  correctionSeries,
+  primaryActiveCorrection,
+} from "../../lib/corrections.js";
 
 const TOOLTIP_STYLE = {
   background: "var(--bg-elevated)",
@@ -12,16 +19,23 @@ const TOOLTIP_STYLE = {
   color: "var(--text)",
 };
 
-/**
- * Point de focus persistant — voir lib/focus.js pour le "pourquoi" (une seule chose à
- * la fois plutôt qu'une liste de points faibles qui repart de zéro à chaque bilan).
- */
-export default function FocusTracker({ data, sorted, setSettings }) {
-  const focus = computeFocus(sorted, data.settings);
-  const [metricId, setMetricId] = useState(FOCUS_METRICS[0].id);
-  const [note, setNote] = useState("");
+const STATUS_TONE = { in_progress: "gold", corrected: "win", regression: "loss" };
 
-  if (!focus) {
+/**
+ * Point de focus persistant — la vue "une seule chose à la fois" du Dashboard, mise en
+ * avant parmi les correctifs actifs (voir lib/corrections.js primaryActiveCorrection).
+ * Ancien système séparé (settings.focusMetric) fusionné avec les Correctifs : ce widget
+ * crée maintenant un vrai correctif (sans cible chiffrée par défaut — juste "Cible" en
+ * option, pour qui veut un objectif précis dès le départ) au lieu d'écrire dans settings —
+ * un seul système, visible ici ET dans Coach IA > Correctifs.
+ */
+export default function FocusTracker({ data, sorted, addCorrection, deleteCorrection }) {
+  const active = primaryActiveCorrection(data, sorted);
+  const [metricId, setMetricId] = useState(CORRECTION_METRICS[0].id);
+  const [note, setNote] = useState("");
+  const [target, setTarget] = useState("");
+
+  if (!active) {
     return (
       <Card className="p-5 mb-6">
         <Eyebrow style={{ marginBottom: 6 }}>Point de focus</Eyebrow>
@@ -32,10 +46,20 @@ export default function FocusTracker({ data, sorted, setSettings }) {
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
           <Field label="Métrique à travailler">
             <Select value={metricId} onChange={(e) => setMetricId(e.target.value)} style={{ minWidth: 160 }}>
-              {FOCUS_METRICS.map((m) => (
+              {CORRECTION_METRICS.map((m) => (
                 <option key={m.id} value={m.id}>{m.label}</option>
               ))}
             </Select>
+          </Field>
+          <Field label="Cible (optionnel)">
+            <Input
+              type="number"
+              step="0.1"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              placeholder="Laisse vide pour juste suivre"
+              style={{ minWidth: 140 }}
+            />
           </Field>
           <Field label="Note (optionnel)">
             <Input
@@ -45,7 +69,18 @@ export default function FocusTracker({ data, sorted, setSettings }) {
               style={{ minWidth: 220 }}
             />
           </Field>
-          <Btn variant="primary" onClick={() => setSettings(buildFocusStart(sorted, data.settings, metricId, note))}>
+          <Btn
+            variant="primary"
+            onClick={() => {
+              const def = CORRECTION_METRICS.find((m) => m.id === metricId);
+              addCorrection(
+                startCorrection(
+                  newCorrection({ title: `${def.label} — focus`, cause: note, action: "", metricId, targetValue: target, sorted, settings: data.settings }),
+                  sorted
+                )
+              );
+            }}
+          >
             <Target size={14} /> Démarrer ce focus
           </Btn>
         </div>
@@ -53,19 +88,25 @@ export default function FocusTracker({ data, sorted, setSettings }) {
     );
   }
 
-  const improving = focus.invert ? focus.delta <= 0 : focus.delta >= 0;
-  const flat = Math.abs(focus.delta) < 0.05;
+  const def = active.def;
+  const series = correctionSeries(active, sorted, data.settings);
+  const hasTarget = active.targetValue != null;
+  const improving = def.invert ? active.currentValue <= active.initialValue : active.currentValue >= active.initialValue;
+  const flat = active.currentValue == null || Math.abs(active.currentValue - active.initialValue) < 0.05;
   const deltaColor = flat ? "var(--dim)" : improving ? "var(--win)" : "var(--loss)";
-  const fmt = (v) => (v ?? 0).toFixed(focus.decimals);
+  const fmt = (v) => (v ?? 0).toFixed(def.decimals);
 
   return (
     <Card className="p-5 mb-6">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
         <div>
-          <Eyebrow color="var(--gold)" style={{ marginBottom: 4 }}>Point de focus — {focus.label}</Eyebrow>
-          {focus.note && <p style={{ fontSize: "var(--fs-sm)", color: "var(--dim)" }}>{focus.note}</p>}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <Eyebrow color="var(--gold)" style={{ marginBottom: 0 }}>Point de focus — {def.label}</Eyebrow>
+            {hasTarget && <Pill tone={STATUS_TONE[active.derivedStatus]}>{CORRECTION_STATUS_LABEL[active.derivedStatus]}</Pill>}
+          </div>
+          {active.cause && <p style={{ fontSize: "var(--fs-sm)", color: "var(--dim)" }}>{active.cause}</p>}
         </div>
-        <IconBtn onClick={() => setSettings(clearFocus())} aria-label="Terminer ce focus" title="Terminer ce focus">
+        <IconBtn onClick={() => deleteCorrection(active.id)} aria-label="Terminer ce focus" title="Terminer ce focus">
           <X size={14} />
         </IconBtn>
       </div>
@@ -74,27 +115,35 @@ export default function FocusTracker({ data, sorted, setSettings }) {
         <div>
           <div style={{ fontSize: 11, color: "var(--dim)" }}>Départ</div>
           <div className="tnum" style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 22, color: "var(--text)" }}>
-            {fmt(focus.startValue)}
+            {fmt(active.initialValue)}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: "var(--dim)" }}>Actuel ({focus.gamesCount} game{focus.gamesCount > 1 ? "s" : ""})</div>
+          <div style={{ fontSize: 11, color: "var(--dim)" }}>Actuel ({active.gamesCount} game{active.gamesCount > 1 ? "s" : ""})</div>
           <div className="tnum" style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 22, color: "var(--text)" }}>
-            {fmt(focus.currentValue)}
+            {fmt(active.currentValue)}
           </div>
         </div>
         <div>
           <div style={{ fontSize: 11, color: "var(--dim)" }}>Évolution</div>
           <div className="tnum" style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 22, color: deltaColor }}>
-            {focus.delta >= 0 ? "+" : ""}
-            {fmt(focus.delta)}
+            {active.currentValue != null && active.currentValue - active.initialValue >= 0 ? "+" : ""}
+            {active.currentValue != null ? fmt(active.currentValue - active.initialValue) : "—"}
           </div>
         </div>
+        {hasTarget && (
+          <div>
+            <div style={{ fontSize: 11, color: "var(--dim)" }}>Cible</div>
+            <div className="tnum" style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 22, color: "var(--gold)" }}>
+              {def.invert ? "≤" : "≥"} {active.targetValue}
+            </div>
+          </div>
+        )}
       </div>
 
-      {focus.series.length > 1 ? (
+      {series.length > 1 ? (
         <ResponsiveContainer width="100%" height={120}>
-          <LineChart data={focus.series}>
+          <LineChart data={series}>
             <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="i" stroke="var(--dim)" fontSize={10} tickLine={false} />
             <YAxis stroke="var(--dim)" fontSize={10} tickLine={false} width={30} />

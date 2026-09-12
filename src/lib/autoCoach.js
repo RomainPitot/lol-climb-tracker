@@ -2,7 +2,7 @@ import { computeAgg } from "./stats.js";
 import { roleBenchmark } from "../constants/ranks.js";
 import { computeAlerts } from "./alerts.js";
 import { computePriorities } from "./priorities.js";
-import { computeFocus } from "./focus.js";
+import { primaryActiveCorrection } from "./corrections.js";
 import { representativeGames } from "./gameModel.js";
 import { summarizeDeathPatterns } from "./deathPatterns.js";
 import { DEATH_TYPES, DEATH_CAUSES } from "../constants/coaching.js";
@@ -55,7 +55,11 @@ export function buildAutoCoachReport(data, sorted, currentRank) {
   const priorities = computePriorities(data, sorted, currentRank);
   const toFocus = [...alerts, ...priorities].slice(0, 4).map((a) => a.message);
 
-  const focus = computeFocus(sorted, data.settings);
+  // Correctif "en cours" mis en avant (ex-Point de focus, désormais un correctif comme un
+  // autre — voir lib/corrections.js) — juste le nécessaire pour la puce du briefing
+  // ("Focus : X · Ng"), pas tout l'objet évalué.
+  const active = primaryActiveCorrection(data, sorted);
+  const focus = active ? { label: active.def.label, gamesCount: active.gamesCount, note: active.cause } : null;
 
   return { game: gameReport, strengths, weaknesses, personalSignal, toFocus, focus, sampleSize: recent.length, deathPattern };
 }

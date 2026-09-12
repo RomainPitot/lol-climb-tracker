@@ -8,7 +8,6 @@ import MapHeatmap from "../components/coach/MapHeatmap.jsx";
 import { computeAgg, mostFrequentRole } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
 import { representativeGames } from "../lib/gameModel.js";
-import { computeFocus } from "../lib/focus.js";
 import { evaluateCorrection, CORRECTION_STATUS_LABEL } from "../lib/corrections.js";
 import { summarizeDeathPatterns } from "../lib/deathPatterns.js";
 import { buildWeeklyReportPrompt } from "../lib/weeklyReport.js";
@@ -46,19 +45,17 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
     const recentIds = new Set(repSorted.slice(-ACCOUNT_ANALYSIS_WINDOW).map((g) => g.id));
     const base = buildCoachRecap({ data, sorted: repSorted, selectedIds: recentIds }).split("=== QUESTION AU COACH IA ===")[0];
 
-    const focus = computeFocus(sorted, data.settings);
-    const focusBlock = focus
-      ? `\n=== FOCUS EN COURS ===\nJe travaille sur ${focus.label} depuis ${focus.gamesCount} game(s) (valeur de départ : ${focus.startValue.toFixed(focus.decimals)}, valeur actuelle : ${focus.currentValue.toFixed(focus.decimals)}).${focus.note ? ` Note : ${focus.note}.` : ""}\n`
-      : "";
-
+    // L'ancien "Point de focus" est désormais un correctif sans cible chiffrée comme un
+    // autre (voir lib/corrections.js) — il apparaît naturellement ici, plus besoin d'un
+    // bloc séparé qui aurait fini par le mentionner deux fois.
     const activeCorrections = (data.corrections || [])
       .map((c) => evaluateCorrection(c, sorted, data.settings))
       .filter((c) => c.status !== "todo");
     const correctionsBlock = activeCorrections.length
-      ? `\n=== CORRECTIFS SUIVIS ===\n${activeCorrections
+      ? `\n=== CORRECTIFS / FOCUS SUIVIS ===\n${activeCorrections
           .map(
             (c) =>
-              `- ${c.title} (${c.def?.label}, cible ${c.def?.invert ? "≤" : "≥"} ${c.targetValue}) : ${CORRECTION_STATUS_LABEL[c.derivedStatus]}${c.currentValue != null ? ` — actuel ${c.currentValue.toFixed(c.def.decimals)} sur ${c.gamesCount} game(s)` : ""}${c.derivedStatus === "regression" ? " — ATTENTION, retombé après avoir été corrigé" : ""}`
+              `- ${c.title} (${c.def?.label}${c.targetValue != null ? `, cible ${c.def?.invert ? "≤" : "≥"} ${c.targetValue}` : ""}) : ${CORRECTION_STATUS_LABEL[c.derivedStatus]}${c.currentValue != null ? ` — actuel ${c.currentValue.toFixed(c.def.decimals)} sur ${c.gamesCount} game(s)` : ""}${c.derivedStatus === "regression" ? " — ATTENTION, retombé après avoir été corrigé" : ""}`
           )
           .join("\n")}\n`
       : "";
@@ -110,7 +107,7 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
       ? " Signale en premier toute régression listée ci-dessus — c'est plus urgent qu'un nouveau point faible."
       : "";
 
-    return `${base}${focusBlock}${correctionsBlock}${deathPatternBlock}${comparisonBlock}${matchupsBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
+    return `${base}${correctionsBlock}${deathPatternBlock}${comparisonBlock}${matchupsBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
   };
 
   // Gate simple sur le bouton du rapport hebdo — la vraie condition (au moins une game

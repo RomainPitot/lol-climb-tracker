@@ -30,7 +30,7 @@ const TOOLTIP_STYLE = {
   color: "var(--text)",
 };
 
-export default function Dashboard({ data, sorted, currentRank, addGame, deleteGame, deleteGames, updateGame, setSettings, addCorrection }) {
+export default function Dashboard({ data, sorted, currentRank, addGame, deleteGame, deleteGames, updateGame, addCorrection, deleteCorrection }) {
   const [period, setPeriod] = useState("30d");
   const [showProgression, setShowProgression] = useState(false);
   // Pont entre le rappel "morts non classées" (tout en haut) et la modale d'analyse, qui
@@ -192,7 +192,7 @@ export default function Dashboard({ data, sorted, currentRank, addGame, deleteGa
         title="Progression"
         sub="Ce que tu travailles en ce moment, et où tu en es par rapport à toi-même et à ton rang."
       >
-        <FocusTracker data={data} sorted={sorted} setSettings={setSettings} />
+        <FocusTracker data={data} sorted={sorted} addCorrection={addCorrection} deleteCorrection={deleteCorrection} />
         <RoleStatsPanel data={data} sorted={sorted} currentRank={currentRank} />
         <PopulationReference repSorted={repSorted} bench={bench} />
       </Section>
