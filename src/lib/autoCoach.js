@@ -9,6 +9,7 @@ import { DEATH_TYPES, DEATH_CAUSES } from "../constants/coaching.js";
 import { rankLabel } from "./rank.js";
 import { computeWinLossDiff, winLossDiffPhrase } from "./winLossDiff.js";
 import { computeScore, trendWeight, frequencyWeight } from "./priorityScore.js";
+import { computeLpImpact, lpImpactPhrase } from "./lpImpact.js";
 import { KEY_TO_METRIC_ID } from "./focus.js";
 
 const deathTypeLabel = (id) => DEATH_TYPES.find((t) => t.id === id)?.label;
@@ -130,6 +131,11 @@ function compareToRole(agg, bench, deathPattern, recentGames, winLossDiffs) {
       const freq = recentGames ? frequencyWeight(recentGames, metricId, m.invert, m.target) : 1;
       const score = computeScore(combinedGapPct, trend, freq);
 
+      // Estimation d'impact LP (≈ corrélation, jamais une preuve de causalité — voir
+      // lib/lpImpact.js) : transforme le constat en motivation concrète ("ça te coûte
+      // X LP") plutôt que de s'arrêter à "tu es sous le repère".
+      const lpImpact = recentGames ? lpImpactPhrase(computeLpImpact(recentGames, metricId), m.label, m.invert) : null;
+
       weaknesses.push({
         key: m.key,
         current: m.current,
@@ -141,7 +147,8 @@ function compareToRole(agg, bench, deathPattern, recentGames, winLossDiffs) {
         verdict,
         reason,
         action,
-        text: [verdict, reason, action].filter(Boolean).join(" "),
+        lpImpact,
+        text: [verdict, reason, action, lpImpact].filter(Boolean).join(" "),
       });
     }
   }
