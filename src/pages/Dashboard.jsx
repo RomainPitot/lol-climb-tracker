@@ -1,5 +1,4 @@
-import { useState, useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, ReferenceArea, ReferenceLine, Tooltip, ResponsiveContainer } from "recharts";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { ChevronDown, Percent, Zap, Swords, Trophy, Layers, Flame, Check } from "lucide-react";
 import { Card, Pill, StatCard, Collapsible, EmptyChart, Eyebrow, Select, Section, SectionTitle } from "../components/ui/primitives.jsx";
 import RankBadge from "../components/RankBadge.jsx";
@@ -7,7 +6,6 @@ import LadderTrack from "../components/LadderTrack.jsx";
 import StatLadder from "../components/StatLadder.jsx";
 import ProgressionDetails from "../components/dashboard/ProgressionDetails.jsx";
 import GamesHistory from "../components/dashboard/GamesHistory.jsx";
-import FocusTracker from "../components/dashboard/FocusTracker.jsx";
 import PopulationReference from "../components/dashboard/PopulationReference.jsx";
 import RankLadderComparison from "../components/dashboard/RankLadderComparison.jsx";
 import RankStanding from "../components/dashboard/RankStanding.jsx";
@@ -25,13 +23,12 @@ import { computeGoalProgress, goalPillLabel } from "../lib/goals.js";
 import { currentWinStreak, goalStreak, isStreakNotable } from "../lib/streaks.js";
 import { round1, round2 } from "../lib/format.js";
 
-const TOOLTIP_STYLE = {
-  background: "var(--bg-elevated)",
-  border: "1px solid var(--border)",
-  borderRadius: 8,
-  fontSize: 12,
-  color: "var(--text)",
-};
+// recharts + ses dépendances d3 (victory-vendor) forment de très loin le plus gros chunk
+// du site (~380 Ko/105 Ko gzip) — chargés en lazy() plutôt qu'en import direct pour que ce
+// poids se télécharge en parallèle du reste du Dashboard (la page par défaut) au lieu de
+// bloquer son rendu initial. Voir LpProgressChart.jsx pour le détail.
+const LpProgressChart = lazy(() => import("../components/dashboard/LpProgressChart.jsx"));
+const FocusTracker = lazy(() => import("../components/dashboard/FocusTracker.jsx"));
 
 export default function Dashboard({ data, sorted, currentRank, navigate, openLearnArticle, setSettings, importGames, addGame, deleteGame, deleteGames, updateGame, addCorrection, deleteCorrection }) {
   const [period, setPeriod] = useState("30d");
@@ -219,7 +216,9 @@ export default function Dashboard({ data, sorted, currentRank, navigate, openLea
         title="Progression"
         sub="Ce que tu travailles en ce moment, et où tu en es par rapport à toi-même et à ton rang."
       >
-        <FocusTracker data={data} sorted={sorted} addCorrection={addCorrection} deleteCorrection={deleteCorrection} />
+        <Suspense fallback={null}>
+          <FocusTracker data={data} sorted={sorted} addCorrection={addCorrection} deleteCorrection={deleteCorrection} />
+        </Suspense>
         <RoleStatsPanel data={data} sorted={sorted} currentRank={currentRank} />
         <PopulationReference repSorted={repSorted} bench={bench} />
         <RankLadderComparison repSorted={repSorted} role={dominantRole} />
@@ -365,63 +364,9 @@ export default function Dashboard({ data, sorted, currentRank, navigate, openLea
         </button>
 
         <div style={{ marginTop: 10 }}>
-          {lpSeries.length > 1 && lpBands ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={lpSeries} margin={{ left: 4, right: 8 }}>
-                <defs>
-                  {/* Courbe : mêmes couleurs que les bandes de fond, en opaque. */}
-                  <linearGradient id="lpStroke" x1="0" y1="0" x2="0" y2="1">
-                    {lpBands.gradientStops.map((s, i) => (
-                      <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={1} />
-                    ))}
-                  </linearGradient>
-                  {/* Remplissage sous la courbe : mêmes arrêts, translucides. */}
-                  <linearGradient id="lpFill" x1="0" y1="0" x2="0" y2="1">
-                    {lpBands.gradientStops.map((s, i) => (
-                      <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={0.22} />
-                    ))}
-                  </linearGradient>
-                </defs>
-
-                {lpBands.areas.map((a) => (
-                  <ReferenceArea
-                    key={a.tier}
-                    y1={Math.max(a.y1, lpBands.domainMin)}
-                    y2={Math.min(a.y2, lpBands.domainMax)}
-                    fill={a.color}
-                    fillOpacity={0.07}
-                    stroke="none"
-                    ifOverflow="hidden"
-                  />
-                ))}
-                {lpBands.lines.map((l) => (
-                  <ReferenceLine
-                    key={l.score}
-                    y={l.score}
-                    stroke={l.color}
-                    strokeOpacity={0.45}
-                    strokeDasharray="3 3"
-                    ifOverflow="hidden"
-                    label={{ value: l.label, position: "insideLeft", fill: l.color, fontSize: 10.5, fontWeight: 600 }}
-                  />
-                ))}
-
-                <XAxis dataKey="i" stroke="var(--dim)" fontSize={11} tickLine={false} />
-                <YAxis hide domain={[lpBands.domainMin, lpBands.domainMax]} />
-                <Tooltip
-                  contentStyle={TOOLTIP_STYLE}
-                  labelFormatter={(v) => `Game #${v}`}
-                  formatter={(_, __, item) => [
-                    `${rankLabel(item.payload.tier, item.payload.div)} — ${item.payload.lpAfter} LP`,
-                    "Rang",
-                  ]}
-                />
-                <Area type="monotone" dataKey="lp" stroke="url(#lpStroke)" fill="url(#lpFill)" strokeWidth={2.5} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart label="Ajoute au moins 2 games pour voir la courbe." />
-          )}
+          <Suspense fallback={<EmptyChart label="Chargement du graphe…" />}>
+            <LpProgressChart lpSeries={lpSeries} lpBands={lpBands} />
+          </Suspense>
         </div>
 
         {showProgression && <ProgressionDetails sorted={sorted} currentRank={currentRank} />}
