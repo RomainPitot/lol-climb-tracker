@@ -69,6 +69,7 @@ export function buildCoachBriefing(data, sorted, currentRank) {
 
   return {
     lastGame: report.game,
+    personalSignal: report.personalSignal,
     toFix: toFix.sort((a, b) => b.severity - a.severity).slice(0, MAX_TO_FIX),
     hiddenCount: Math.max(0, toFix.length - MAX_TO_FIX),
     strengths: report.strengths.slice(0, MAX_STRENGTHS),

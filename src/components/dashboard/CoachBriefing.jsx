@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bot, ChevronDown, Coffee, Microscope, Target } from "lucide-react";
+import { Bot, ChevronDown, Coffee, Crosshair, Microscope, Target } from "lucide-react";
 import { Card, Eyebrow, Pill } from "../ui/primitives.jsx";
 import { buildCoachBriefing } from "../../lib/coachBriefing.js";
 
@@ -15,7 +15,7 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
   const briefing = buildCoachBriefing(data, sorted, currentRank);
   if (!briefing) return null;
 
-  const { lastGame, toFix, strengths, focus, streak, untaggedGames, sampleSize } = briefing;
+  const { lastGame, personalSignal, toFix, strengths, focus, streak, untaggedGames, sampleSize } = briefing;
   const hasSecondary = strengths.length > 0 || streak || untaggedGames.length > 0 || focus;
 
   return (
@@ -42,6 +42,33 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
           ))}
         </div>
       </div>
+
+      {/* Signal "chez toi" (victoire vs défaite) — affiché séparément et AVANT la
+          comparaison au rang ci-dessous : c'est le signal le plus personnel, jamais noyé
+          dans la liste générique. Reste toujours en plus, jamais à la place de "À corriger"
+          (voir winLossDiff.js — une métrique mauvaise dans les deux cas n'a pas d'écart ici). */}
+      {personalSignal && (
+        <div
+          style={{
+            display: "flex",
+            gap: "var(--sp-3)",
+            alignItems: "flex-start",
+            padding: "var(--sp-3) var(--sp-4)",
+            marginBottom: "var(--sp-5)",
+            borderRadius: "var(--radius-md)",
+            background: "rgba(212,175,55,0.08)",
+            border: "1px solid rgba(212,175,55,0.3)",
+          }}
+        >
+          <Crosshair size={16} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <div>
+            <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 3 }}>Ton signal n°1</div>
+            <span className="prose" style={{ fontSize: "var(--fs-base)", color: "var(--text)", fontWeight: 600 }}>
+              {personalSignal.text}
+            </span>
+          </div>
+        </div>
+      )}
 
       {toFix.length > 0 && (
         <div>

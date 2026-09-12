@@ -7,6 +7,7 @@ import { representativeGames } from "./gameModel.js";
 import { summarizeDeathPatterns } from "./deathPatterns.js";
 import { DEATH_TYPES, DEATH_CAUSES } from "../constants/coaching.js";
 import { rankLabel } from "./rank.js";
+import { computeWinLossDiff, winLossDiffPhrase } from "./winLossDiff.js";
 
 const deathTypeLabel = (id) => DEATH_TYPES.find((t) => t.id === id)?.label;
 const deathCauseLabel = (id) => DEATH_CAUSES.find((c) => c.id === id)?.label;
@@ -43,13 +44,20 @@ export function buildAutoCoachReport(data, sorted, currentRank) {
   const bench = roleBenchmark(currentRank.tier, lastGame.role);
   const { strengths, weaknesses } = compareToRole(agg, bench, deathPattern);
 
+  // Signal "chez toi" (victoire vs défaite) — le plus personnel possible, calculé EN PLUS
+  // de la comparaison au rang ci-dessus, jamais à sa place (voir winLossDiff.js pour le
+  // pourquoi : une métrique mauvaise de façon uniforme en victoire ET en défaite n'a pas
+  // d'écart ici, seule la comparaison au rang la révèle).
+  const winLossDiffs = computeWinLossDiff(recent);
+  const personalSignal = winLossDiffs[0] ? { ...winLossDiffs[0], text: winLossDiffPhrase(winLossDiffs[0]) } : null;
+
   const alerts = computeAlerts(data, sorted);
   const priorities = computePriorities(data, sorted, currentRank);
   const toFocus = [...alerts, ...priorities].slice(0, 4).map((a) => a.message);
 
   const focus = computeFocus(sorted, data.settings);
 
-  return { game: gameReport, strengths, weaknesses, toFocus, focus, sampleSize: recent.length, deathPattern };
+  return { game: gameReport, strengths, weaknesses, personalSignal, toFocus, focus, sampleSize: recent.length, deathPattern };
 }
 
 /** Action concrète par métrique — générique (on n'a pas de cause plus fine que le chiffre
