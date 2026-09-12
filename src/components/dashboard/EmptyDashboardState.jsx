@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Swords, Settings as SettingsIcon } from "lucide-react";
+import { Swords, Settings as SettingsIcon, Eye } from "lucide-react";
 import { Card, Btn, SectionTitle } from "../ui/primitives.jsx";
 import AddGameModal from "../AddGameModal.jsx";
+import { buildDemoGames } from "../../lib/demoData.js";
 
 /**
  * Compte à 0 game : le Dashboard normal affiche quand même Hero (0W/0L), Progression,
@@ -11,8 +12,14 @@ import AddGameModal from "../AddGameModal.jsx";
  * scroller — le reste du Dashboard n'a de sens qu'à partir de la première game (voir
  * Dashboard.jsx, retour anticipé sur `sorted.length === 0`).
  */
-export default function EmptyDashboardState({ addGame, onGoToSettings }) {
+export default function EmptyDashboardState({ addGame, onGoToSettings, importGames, setSettings }) {
   const [adding, setAdding] = useState(false);
+
+  const viewDemo = () => {
+    if (!importGames || !setSettings) return;
+    importGames(buildDemoGames());
+    setSettings({ demoMode: true });
+  };
 
   return (
     <div className="reveal">
@@ -32,13 +39,18 @@ export default function EmptyDashboardState({ addGame, onGoToSettings }) {
         <Btn variant="primary" onClick={() => setAdding(true)} style={{ margin: "0 auto" }}>
           <Swords size={14} /> Ajouter ta première game
         </Btn>
-        {onGoToSettings && (
-          <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+          {onGoToSettings && (
             <Btn variant="ghost" onClick={onGoToSettings} style={{ margin: "0 auto", fontSize: "var(--fs-xs)" }}>
               <SettingsIcon size={12} /> Ou configurer l'import automatique (Riot API)
             </Btn>
-          </div>
-        )}
+          )}
+          {importGames && setSettings && (
+            <Btn variant="ghost" onClick={viewDemo} style={{ margin: "0 auto", fontSize: "var(--fs-xs)" }}>
+              <Eye size={12} /> Ou voir un exemple rempli
+            </Btn>
+          )}
+        </div>
       </Card>
 
       {adding && (

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
 import Footer from "./components/Footer.jsx";
+import DemoModeBanner from "./components/DemoModeBanner.jsx";
 import RankUpCelebration from "./components/RankUpCelebration.jsx";
 import NewGameRecapModal from "./components/NewGameRecapModal.jsx";
 import AlertBanner from "./components/AlertBanner.jsx";
@@ -138,6 +139,7 @@ export default function App() {
           qu'on a changé de page (sinon le contenu se substitue sans transition). */}
       <main className="app-main">
         <div className="page-enter" key={page} style={{ maxWidth: 1440, margin: "0 auto", width: "100%" }}>
+          <DemoModeBanner active={!!data.settings.demoMode} onExit={actions.resetStats} />
           <Suspense fallback={<PageLoadingFallback />}>
             <Page {...pageProps} />
           </Suspense>

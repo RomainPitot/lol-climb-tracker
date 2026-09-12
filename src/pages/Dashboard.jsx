@@ -33,7 +33,7 @@ const TOOLTIP_STYLE = {
   color: "var(--text)",
 };
 
-export default function Dashboard({ data, sorted, currentRank, navigate, openLearnArticle, setSettings, addGame, deleteGame, deleteGames, updateGame, addCorrection, deleteCorrection }) {
+export default function Dashboard({ data, sorted, currentRank, navigate, openLearnArticle, setSettings, importGames, addGame, deleteGame, deleteGames, updateGame, addCorrection, deleteCorrection }) {
   const [period, setPeriod] = useState("30d");
   const [showProgression, setShowProgression] = useState(false);
   // Pont entre le rappel "morts non classées" (tout en haut) et la modale d'analyse, qui
@@ -128,7 +128,14 @@ export default function Dashboard({ data, sorted, currentRank, navigate, openLea
   // EmptyDashboardState.jsx). Après tous les hooks ci-dessus : un retour anticipé plus haut
   // sauterait des Hooks selon les branches, ce que React interdit.
   if (!sorted.length) {
-    return <EmptyDashboardState addGame={addGame} onGoToSettings={navigate ? () => navigate("settings") : null} />;
+    return (
+      <EmptyDashboardState
+        addGame={addGame}
+        onGoToSettings={navigate ? () => navigate("settings") : null}
+        importGames={importGames}
+        setSettings={setSettings}
+      />
+    );
   }
 
   return (
