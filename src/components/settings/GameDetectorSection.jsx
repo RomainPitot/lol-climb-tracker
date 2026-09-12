@@ -111,11 +111,24 @@ export default function GameDetectorSection() {
         </Btn>
       </a>
       <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 8 }}>
+        Pas encore installé ?{" "}
+        <a
+          href="https://github.com/RomainPitot/GameDetectorLol"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "var(--gold)" }}
+        >
+          Télécharger GameDetectorLol
+        </a>{" "}
+        (Windows uniquement — le script s'appuie sur le client League of Legends et l'enregistrement d'un
+        protocole `.reg`, propres à Windows).
+      </p>
+      <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 8 }}>
         Ce site ne peut pas démarrer de programme sur ton PC de lui-même (aucun site ne le peut, c'est une
         restriction de sécurité des navigateurs) — ce bouton utilise un lien <code>gamedetectorlol://</code>, le
         même mécanisme que les liens qui ouvrent Spotify ou Discord. Il faut avoir importé{" "}
-        <code>register_protocol.reg</code> une fois (voir le README du script) ; ton navigateur demandera une
-        confirmation à chaque clic, c'est normal.
+        <code>register_protocol.reg</code> une fois (voir le README du script, lien ci-dessus) ; ton navigateur
+        demandera une confirmation à chaque clic, c'est normal.
       </p>
 
       <div style={{ paddingTop: 16, marginTop: 16, borderTop: "1px solid var(--border)" }}>

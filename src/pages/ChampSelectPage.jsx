@@ -196,6 +196,18 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
                 <Play size={14} /> Lancer GameDetectorLol
               </Btn>
             </a>
+            <p style={{ fontSize: 11.5, color: "var(--dim)", marginTop: 10 }}>
+              Pas encore installé ?{" "}
+              <a
+                href="https://github.com/RomainPitot/GameDetectorLol"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--gold)" }}
+              >
+                Télécharger GameDetectorLol
+              </a>{" "}
+              (Windows uniquement).
+            </p>
           </>
         )}
 
