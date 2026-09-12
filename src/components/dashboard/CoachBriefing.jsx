@@ -94,52 +94,29 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame,
           <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--loss)", marginBottom: "var(--sp-3)" }}>
             <Target size={12} /> À corriger — {sampleSize} dernières games
           </div>
-          {/* Chaque item est un vrai paragraphe (jusqu'à ~260 caractères) : sans
-              plafond de longueur de ligne, il courait sur 1100px et l'œil ratait
-              la ligne suivante. Le numéro sert d'ancre de lecture à gauche. */}
-          <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
-            {toFix.map((item, i) => (
-              <li key={item.id} style={{ display: "flex", gap: "var(--sp-3)", alignItems: "flex-start" }}>
-                <span
-                  className="tnum"
-                  style={{
-                    flexShrink: 0,
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    background: item.tone === "loss" ? "rgba(255,92,92,0.14)" : "rgba(212,175,55,0.14)",
-                    color: item.tone === "loss" ? "var(--loss)" : "var(--gold)",
-                    fontSize: "var(--fs-xs)",
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginTop: 1,
-                  }}
-                >
-                  {i + 1}
-                </span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span className="prose" style={{ fontSize: "var(--fs-base)", color: "var(--text)" }}>
-                    {item.text}
-                  </span>
-                  {item.trackable?.metricId && (
-                    <div style={{ marginTop: 6 }}>
-                      {justTracked.has(item.id) || trackedMetrics.has(item.trackable.metricId) ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "var(--fs-xs)", color: "var(--win)" }}>
-                          <Check size={12} /> Suivi comme correctif
-                        </span>
-                      ) : (
-                        <Btn onClick={() => trackPoint(item)} style={{ padding: "4px 10px", fontSize: "var(--fs-xs)" }}>
-                          <Crosshair size={11} /> Suivre ce point
-                        </Btn>
-                      )}
-                    </div>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ol>
+          {/* Le n°1 (score le plus haut, voir lib/priorityScore.js) se distingue vraiment du
+              reste — encadré, texte plus grand — plutôt qu'une liste plate où les trois
+              points ont l'air d'égale urgence alors que le score dit rarement ça. Le reste
+              n'est là qu'en complément, en plus petit, en plus discret. */}
+          <ToFixItem
+            item={toFix[0]}
+            primary
+            tracked={justTracked.has(toFix[0].id) || trackedMetrics.has(toFix[0].trackable?.metricId)}
+            onTrack={() => trackPoint(toFix[0])}
+          />
+          {toFix.length > 1 && (
+            <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "var(--sp-2)", marginTop: "var(--sp-3)" }}>
+              {toFix.slice(1).map((item, i) => (
+                <ToFixItem
+                  key={item.id}
+                  item={item}
+                  rank={i + 2}
+                  tracked={justTracked.has(item.id) || trackedMetrics.has(item.trackable?.metricId)}
+                  onTrack={() => trackPoint(item)}
+                />
+              ))}
+            </ol>
+          )}
         </div>
       )}
 
@@ -206,5 +183,99 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame,
         rédigé, utilise "Bilan de compte" dans Coach IA.
       </p>
     </Card>
+  );
+}
+
+/** Une ligne de "À corriger" — `primary` (le n°1, score le plus haut) reçoit un encadré et
+ * un texte plus grand ; les autres restent une liste compacte et discrète. Même contenu
+ * (verdict + bouton "Suivre ce point"), juste un poids visuel différent selon le rang. */
+function ToFixItem({ item, rank, primary, tracked, onTrack }) {
+  const toneColor = item.tone === "loss" ? "var(--loss)" : "var(--gold)";
+  const badgeBg = item.tone === "loss" ? "rgba(255,92,92,0.14)" : "rgba(212,175,55,0.14)";
+
+  const track = item.trackable?.metricId && (
+    <div style={{ marginTop: 6 }}>
+      {tracked ? (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "var(--fs-xs)", color: "var(--win)" }}>
+          <Check size={12} /> Suivi comme correctif
+        </span>
+      ) : (
+        <Btn onClick={onTrack} style={{ padding: "4px 10px", fontSize: "var(--fs-xs)" }}>
+          <Crosshair size={11} /> Suivre ce point
+        </Btn>
+      )}
+    </div>
+  );
+
+  if (primary) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          gap: "var(--sp-3)",
+          alignItems: "flex-start",
+          padding: "var(--sp-3) var(--sp-4)",
+          borderRadius: "var(--radius-md)",
+          background: item.tone === "loss" ? "rgba(255,92,92,0.08)" : "rgba(212,175,55,0.08)",
+          border: `1px solid ${item.tone === "loss" ? "rgba(255,92,92,0.3)" : "rgba(212,175,55,0.3)"}`,
+        }}
+      >
+        <span
+          className="tnum"
+          style={{
+            flexShrink: 0,
+            width: 26,
+            height: 26,
+            borderRadius: "50%",
+            background: badgeBg,
+            color: toneColor,
+            fontSize: "var(--fs-sm)",
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 1,
+          }}
+        >
+          1
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span className="prose" style={{ fontSize: "var(--fs-base)", fontWeight: 600, color: "var(--text)" }}>
+            {item.text}
+          </span>
+          {track}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <li style={{ display: "flex", gap: "var(--sp-3)", alignItems: "flex-start" }}>
+      <span
+        className="tnum"
+        style={{
+          flexShrink: 0,
+          width: 18,
+          height: 18,
+          borderRadius: "50%",
+          background: badgeBg,
+          color: toneColor,
+          fontSize: "10px",
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: 2,
+        }}
+      >
+        {rank}
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span className="prose" style={{ fontSize: "var(--fs-sm)", color: "var(--dim)" }}>
+          {item.text}
+        </span>
+        {track}
+      </span>
+    </li>
   );
 }
