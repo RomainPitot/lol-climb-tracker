@@ -29,6 +29,8 @@ jobs:
 
       - run: npm ci
 
+      - run: npm test
+
       - run: npm run build
 
       # Pages doit être activé une fois dans Settings → Pages (Source: GitHub Actions).
