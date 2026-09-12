@@ -85,6 +85,8 @@ export function buildCoachBriefing(data, sorted, currentRank) {
       // Vrai lien vers le tuto correspondant (voir autoCoach.js/learnContent.js) plutôt
       // qu'un texte brut "voir Learn" que le joueur devait retrouver lui-même.
       learnArticle: w.learnArticle || null,
+      // Mini-courbe de tendance (voir autoCoach.js) — null si pas assez de games récentes.
+      sparkline: w.sparkline || null,
     });
   }
 

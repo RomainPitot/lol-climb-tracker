@@ -10,7 +10,8 @@ import { rankLabel } from "./rank.js";
 import { computeWinLossDiff, winLossDiffPhrase } from "./winLossDiff.js";
 import { computeScore, trendWeight, frequencyWeight } from "./priorityScore.js";
 import { computeLpImpact, lpImpactPhrase } from "./lpImpact.js";
-import { KEY_TO_METRIC_ID } from "./focus.js";
+import { KEY_TO_METRIC_ID, perGameValue } from "./focus.js";
+import { movingAverage } from "./stats.js";
 
 const deathTypeLabel = (id) => DEATH_TYPES.find((t) => t.id === id)?.label;
 const deathCauseLabel = (id) => DEATH_CAUSES.find((c) => c.id === id)?.label;
@@ -22,6 +23,14 @@ const MIN_GAP_PCT = 0.08;
 /** Écart à partir duquel le ton monte d'un cran (verdict plus sévère) — un léger retard
  * n'appelle pas le même degré de fermeté qu'un très gros retard. */
 const SEVERE_GAP_PCT = 0.2;
+/** Fenêtre de la mini-courbe de tendance affichée à côté de chaque point faible (voir
+ * CoachBriefing.jsx) — la seule tendance visuelle existait déjà dans FocusTracker, mais
+ * seulement une fois un correctif démarré manuellement ; ici, ajout purement visuel sur
+ * la liste "À corriger" elle-même, avant même de suivre le point. */
+const SPARKLINE_WINDOW = 10;
+/** Lissage léger (moyenne mobile) plutôt que le point brut de chaque game — sinon la forme
+ * saute trop d'une game à l'autre pour se lire d'un coup d'œil sur une largeur de 56px. */
+const SPARKLINE_SMOOTHING = 3;
 
 /**
  * "Coach automatique" — PAS une vraie IA : une synthèse en français, entièrement calculée
@@ -149,6 +158,12 @@ function compareToRole(agg, bench, deathPattern, recentGames, winLossDiffs) {
       // X LP") plutôt que de s'arrêter à "tu es sous le repère".
       const lpImpact = recentGames ? lpImpactPhrase(computeLpImpact(recentGames, metricId), m.label, m.invert) : null;
 
+      // Mini-courbe de tendance (voir SPARKLINE_WINDOW ci-dessus) — juste la forme, pas de
+      // jugement de couleur selon si ça monte ou descend (le sens "bon"/"mauvais" dépend du
+      // sens de la métrique, voir m.invert ; laissé à l'œil du joueur, pas recalculé ici).
+      const rawSeries = recentGames ? recentGames.slice(-SPARKLINE_WINDOW).map((g) => perGameValue(g, metricId)) : [];
+      const sparkline = rawSeries.length >= 3 ? movingAverage(rawSeries, SPARKLINE_SMOOTHING) : null;
+
       weaknesses.push({
         key: m.key,
         current: m.current,
@@ -162,6 +177,7 @@ function compareToRole(agg, bench, deathPattern, recentGames, winLossDiffs) {
         action,
         lpImpact,
         learnArticle: METRIC_LEARN_ARTICLE[m.key] || null,
+        sparkline,
         text: [verdict, reason, action, lpImpact].filter(Boolean).join(" "),
       });
     }

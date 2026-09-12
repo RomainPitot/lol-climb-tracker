@@ -257,6 +257,7 @@ function ToFixItem({ item, rank, primary, tracked, onTrack, openLearnArticle }) 
           </span>
           {track}
         </span>
+        <Sparkline points={item.sparkline} color={toneColor} />
       </div>
     );
   }
@@ -288,6 +289,31 @@ function ToFixItem({ item, rank, primary, tracked, onTrack, openLearnArticle }) 
         </span>
         {track}
       </span>
+      <Sparkline points={item.sparkline} color={toneColor} />
     </li>
+  );
+}
+
+/** Mini-courbe de tendance (10-15px de haut) à côté de chaque point de "À corriger" — juste
+ * la forme des ~10 dernières games (voir autoCoach.js SPARKLINE_WINDOW), un ajout purement
+ * visuel : ni couleur ni jugement selon que ça monte ou descend (le sens "mieux"/"pire"
+ * dépend du sens de la métrique, laissé à la lecture du joueur). `null` si pas assez de
+ * games récentes pour qu'une forme veuille dire quelque chose. */
+function Sparkline({ points, color }) {
+  if (!points || points.length < 3) return null;
+  const w = 56;
+  const h = 14;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+  const stepX = w / (points.length - 1);
+  const path = points
+    .map((v, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(1)} ${(h - ((v - min) / range) * h).toFixed(1)}`)
+    .join(" ");
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ flexShrink: 0, marginTop: 4 }} aria-hidden="true">
+      <path d={path} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.85} />
+    </svg>
   );
 }
