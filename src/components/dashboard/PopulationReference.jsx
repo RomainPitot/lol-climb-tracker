@@ -1,4 +1,5 @@
 import { Card, Eyebrow } from "../ui/primitives.jsx";
+import ScrollFadeX from "../ui/ScrollFadeX.jsx";
 import { computeAgg } from "../../lib/stats.js";
 import { round1, round2 } from "../../lib/format.js";
 
@@ -37,7 +38,7 @@ export default function PopulationReference({ repSorted, bench }) {
         Pas de moyenne de population Riot par rôle/elo/patch disponible publiquement — comparaison à toi-même sur
         trois fenêtres, plutôt qu'un repère externe qu'on ne peut pas vérifier.
       </p>
-      <div style={{ overflowX: "auto" }}>
+      <ScrollFadeX>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-sm)" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--dim)" }}>
@@ -82,7 +83,7 @@ export default function PopulationReference({ repSorted, bench }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollFadeX>
     </Card>
   );
 }

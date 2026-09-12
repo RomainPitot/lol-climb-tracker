@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Trash2, Pencil, Plus, X, Flag, Microscope } from "lucide-react";
 import { Card, Pill, Btn, Collapsible, IconBtn } from "../ui/primitives.jsx";
+import ScrollFadeX from "../ui/ScrollFadeX.jsx";
 import ChampAvatar from "../ChampAvatar.jsx";
 import AddGameModal from "../AddGameModal.jsx";
 import EditGameModal from "../EditGameModal.jsx";
@@ -85,8 +86,9 @@ export default function GamesHistory({ data, sorted, addGame, deleteGame, delete
         </div>
       )}
 
-      <Card className="p-0" style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, color: "var(--text)" }}>
+      <Card className="p-0">
+        <ScrollFadeX>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, color: "var(--text)" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--dim)" }}>
               <th style={{ padding: "10px 12px" }}>
@@ -206,6 +208,7 @@ export default function GamesHistory({ data, sorted, addGame, deleteGame, delete
             ))}
           </tbody>
         </table>
+        </ScrollFadeX>
       </Card>
 
       {addingGame && (

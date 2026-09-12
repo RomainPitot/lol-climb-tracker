@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, Skull, Eye, Swords, ShoppingBag, Plus, Trash2, Video, ListChecks, Layers } from "lucide-react";
 import { Btn, IconBtn, Select, Input, Eyebrow, Pill, Spinner, ToggleChip } from "../ui/primitives.jsx";
+import ScrollFadeX from "../ui/ScrollFadeX.jsx";
 import {
   DEATH_TYPES,
   DEATH_CAUSES,
@@ -184,7 +185,7 @@ export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose 
         {t && intervals.length > 0 && (
           <>
             <Eyebrow style={{ marginBottom: 8 }}>Diffs vs adversaire de rôle</Eyebrow>
-            <div style={{ overflowX: "auto", marginBottom: 20 }}>
+            <ScrollFadeX style={{ marginBottom: 20 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--dim)" }}>
@@ -223,7 +224,7 @@ export default function GameAnalysisModal({ game, matchupNotes, onSave, onClose 
                   </tr>
                 </tbody>
               </table>
-            </div>
+            </ScrollFadeX>
           </>
         )}
 
