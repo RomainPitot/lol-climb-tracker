@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0A0D13" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <title>Conditions d'utilisation — CLIMB.EUW</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0d13;
+        --card: #12161f;
+        --border: #232838;
+        --text: #e8eaf0;
+        --dim: #8a8fa3;
+        --gold: #d4af37;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", system-ui, sans-serif;
+        line-height: 1.65;
+        padding: 48px 20px 80px;
+      }
+      main { max-width: 680px; margin: 0 auto; }
+      h1 {
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 700;
+        font-size: 30px;
+        margin: 0 0 6px;
+        color: var(--text);
+      }
+      .updated { color: var(--dim); font-size: 13px; margin-bottom: 32px; }
+      h2 {
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        color: var(--gold);
+        margin: 32px 0 10px;
+      }
+      p, li { font-size: 14.5px; color: var(--text); }
+      ul { padding-left: 20px; }
+      a { color: var(--gold); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .disclaimer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--dim);
+      }
+      .back { display: inline-block; margin-bottom: 28px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="./">← Retour à CLIMB.EUW</a>
+      <h1>Conditions d'utilisation</h1>
+      <div class="updated">Dernière mise à jour : 12 septembre 2026</div>
+
+      <p>
+        CLIMB.EUW est un outil personnel gratuit de suivi de progression pour League of Legends (SoloQ), fourni par
+        un développeur indépendant, sans lien avec Riot Games. En utilisant le site, tu acceptes les conditions
+        ci-dessous.
+      </p>
+
+      <h2>Le service</h2>
+      <ul>
+        <li>Le site est gratuit, sans compte à créer, sans publicité.</li>
+        <li>
+          Le coach automatique et les repères de rang sont mécaniques (calculés à partir de tes stats), pas une
+          intelligence artificielle — toute approximation est signalée par "≈" plutôt que présentée comme un fait
+          certain.
+        </li>
+        <li>
+          Fourni "en l'état" : aucune garantie de disponibilité continue, d'exactitude à 100% des données Riot
+          récupérées, ou d'absence d'erreur. C'est un projet personnel, pas un service commercial avec obligation de
+          résultat.
+        </li>
+      </ul>
+
+      <h2>Import automatique via l'API Riot Games</h2>
+      <ul>
+        <li>
+          L'import automatique passe par un serveur relais qui interroge l'API officielle de Riot Games en ton nom
+          — voir la <a href="./privacy.html">Politique de confidentialité</a> pour le détail.
+        </li>
+        <li>
+          Ce service est fourni pour un usage personnel raisonnable. Toute utilisation abusive (automatisation
+          massive, spam de requêtes, tentative de contournement des limites) peut entraîner une coupure de l'accès,
+          sans préavis — notamment pour rester conforme aux
+          <a href="https://developer.riotgames.com/policies/general" target="_blank" rel="noopener">règles de Riot Games</a>.
+        </li>
+        <li>
+          CLIMB.EUW n'est ni sponsorisé ni approuvé par Riot Games ni par quiconque impliqué officiellement dans la
+          production ou la gestion des propriétés de Riot Games (voir l'encart en bas de page).
+        </li>
+      </ul>
+
+      <h2>Tes données</h2>
+      <p>
+        Tes games, ton rang et tes réglages t'appartiennent et restent dans ton navigateur — tu peux les exporter
+        ou les effacer à tout moment depuis Paramètres. Je n'ai pas accès à ces données.
+      </p>
+
+      <h2>Aucune monétisation liée aux données Riot</h2>
+      <p>
+        Conformément aux règles de Riot Games, ce service ne revend ni ne monétise d'aucune façon les données issues
+        de l'API Riot. Le code source est public et gratuit.
+      </p>
+
+      <h2>Évolutions du service</h2>
+      <p>
+        Ce projet personnel peut évoluer, changer de fonctionnement, ou s'arrêter à tout moment, sans préavis
+        particulier — un historique des changements notables est visible depuis la cloche de notification dans
+        l'application.
+      </p>
+
+      <h2>Droit applicable</h2>
+      <p>Ces conditions sont régies par le droit français.</p>
+
+      <h2>Contact</h2>
+      <p>
+        Une question, un problème, une demande ? Ouvre une
+        <a href="https://github.com/RomainPitot/lol-climb-tracker/issues" target="_blank" rel="noopener">issue sur le dépôt GitHub</a>.
+      </p>
+
+      <div class="disclaimer">
+        CLIMB.EUW isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone
+        officially involved in producing or managing Riot Games properties. Riot Games, and all associated
+        properties are trademarks or registered trademarks of Riot Games, Inc.
+      </div>
+    </main>
+  </body>
+</html>

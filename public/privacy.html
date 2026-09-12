@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0A0D13" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <title>Politique de confidentialité — CLIMB.EUW</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0d13;
+        --card: #12161f;
+        --border: #232838;
+        --text: #e8eaf0;
+        --dim: #8a8fa3;
+        --gold: #d4af37;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", system-ui, sans-serif;
+        line-height: 1.65;
+        padding: 48px 20px 80px;
+      }
+      main { max-width: 680px; margin: 0 auto; }
+      h1 {
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 700;
+        font-size: 30px;
+        margin: 0 0 6px;
+        color: var(--text);
+      }
+      .updated { color: var(--dim); font-size: 13px; margin-bottom: 32px; }
+      h2 {
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        color: var(--gold);
+        margin: 32px 0 10px;
+      }
+      p, li { font-size: 14.5px; color: var(--text); }
+      ul { padding-left: 20px; }
+      a { color: var(--gold); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .disclaimer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--dim);
+      }
+      .back { display: inline-block; margin-bottom: 28px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="./">← Retour à CLIMB.EUW</a>
+      <h1>Politique de confidentialité</h1>
+      <div class="updated">Dernière mise à jour : 12 septembre 2026</div>
+
+      <p>
+        CLIMB.EUW est un projet personnel, gratuit et open source (dépôt public sur GitHub), maintenu par un
+        développeur indépendant. Cette page décrit simplement et honnêtement ce qui se passe avec tes données.
+      </p>
+
+      <h2>Ce qui reste dans ton navigateur</h2>
+      <p>
+        Tes games trackées, ton rang, tes objectifs et tous tes réglages sont stockés uniquement dans le
+        <code>localStorage</code> de ton navigateur — jamais envoyés vers un serveur sous mon contrôle, jamais
+        partagés avec qui que ce soit. Vider le cache de ton navigateur ou changer d'appareil efface ces données
+        (pense à exporter une sauvegarde depuis Paramètres si besoin).
+      </p>
+
+      <h2>Ton Riot ID et l'API Riot Games</h2>
+      <p>
+        Quand tu utilises l'import automatique, le Riot ID que tu tapes (nom + tag) est transmis à un serveur relais
+        (Cloudflare Worker) qui interroge l'API officielle de Riot Games en ton nom, puis te renvoie directement le
+        résultat (tes games, ton rang). Ce Riot ID n'est jamais stocké de façon permanente côté serveur — il ne sert
+        qu'à faire cette requête précise.
+      </p>
+      <p>
+        L'utilisation de l'API Riot Games est par ailleurs soumise à la
+        <a href="https://www.riotgames.com/en/privacy-notice" target="_blank" rel="noopener">politique de confidentialité de Riot Games</a>,
+        que je ne contrôle pas.
+      </p>
+
+      <h2>Logs techniques</h2>
+      <p>
+        Le serveur relais garde des logs techniques temporaires (adresse IP, horodatage, endpoint appelé) — uniquement
+        pour du debug et pour repérer un abus (quelqu'un qui spamme le service). Ces logs sont conservés au maximum
+        30 jours, jamais vendus, jamais partagés avec un tiers, jamais utilisés pour construire un profil ou pour du
+        ciblage publicitaire. Ils ne sont jamais recroisés avec ton Riot ID.
+      </p>
+
+      <h2>Pas de pub, pas de tracking</h2>
+      <p>
+        CLIMB.EUW n'utilise aucun cookie de tracking, aucun outil d'analyse tiers (Google Analytics ou équivalent) et
+        n'affiche aucune publicité.
+      </p>
+
+      <h2>Tes droits</h2>
+      <p>
+        Comme tes données de jeu vivent uniquement dans ton navigateur, tu en as déjà le contrôle total : les
+        consulter, les exporter ou les effacer se fait directement depuis la page Paramètres, sans avoir à me
+        contacter. Pour toute question sur les logs techniques du serveur relais, ou une demande de retrait,
+        ouvre une <a href="https://github.com/RomainPitot/lol-climb-tracker/issues" target="_blank" rel="noopener">issue sur le dépôt GitHub</a>.
+      </p>
+
+      <h2>Changements</h2>
+      <p>
+        Cette page peut évoluer si le projet évolue (par exemple si le mode d'import change) — la date de mise à
+        jour en haut reflète la dernière révision.
+      </p>
+
+      <div class="disclaimer">
+        CLIMB.EUW isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone
+        officially involved in producing or managing Riot Games properties. Riot Games, and all associated
+        properties are trademarks or registered trademarks of Riot Games, Inc.
+      </div>
+    </main>
+  </body>
+</html>
