@@ -189,6 +189,12 @@ export default function SettingsPage({ data, setSettings, importRiotResult, rese
         >
           Signaler un bug ou une idée
         </a>
+        {" · "}
+        {/* Don ponctuel, jamais lié à une fonctionnalité — rien de gratuit aujourd'hui ne
+            devient payant, voir la Politique de confidentialité/Conditions d'utilisation. */}
+        <a href="https://ko-fi.com/globulous" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>
+          Soutenir le projet ☕
+        </a>
       </p>
     </div>
   );

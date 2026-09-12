@@ -35,6 +35,9 @@ export default function Footer() {
         >
           Code source
         </a>
+        <a href="https://ko-fi.com/globulous" target="_blank" rel="noopener noreferrer" style={{ color: "var(--dim)" }}>
+          ☕ Soutenir le projet
+        </a>
       </div>
       CLIMB.EUW isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone
       officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties
