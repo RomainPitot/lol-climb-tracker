@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bot, Check, ChevronDown, Coffee, Crosshair, Microscope, Target } from "lucide-react";
+import { Bot, Check, ChevronDown, Coffee, Crosshair, Microscope, Target, GraduationCap } from "lucide-react";
 import { Card, Eyebrow, Pill, Btn } from "../ui/primitives.jsx";
 import { buildCoachBriefing } from "../../lib/coachBriefing.js";
 import { newCorrection, startCorrection } from "../../lib/corrections.js";
@@ -11,7 +11,7 @@ import { newCorrection, startCorrection } from "../../lib/corrections.js";
  * Objectif de lisibilité : comprendre quoi corriger en quelques secondes plutôt que lire
  * quatre encadrés qui se répètent. Toujours mécanique, jamais une vraie IA (voir la note).
  */
-export default function CoachBriefing({ data, sorted, currentRank, onSelectGame, addCorrection }) {
+export default function CoachBriefing({ data, sorted, currentRank, onSelectGame, addCorrection, openLearnArticle }) {
   const [openDetail, setOpenDetail] = useState(false);
   const [justTracked, setJustTracked] = useState(() => new Set());
   const briefing = buildCoachBriefing(data, sorted, currentRank);
@@ -103,6 +103,7 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame,
             primary
             tracked={justTracked.has(toFix[0].id) || trackedMetrics.has(toFix[0].trackable?.metricId)}
             onTrack={() => trackPoint(toFix[0])}
+            openLearnArticle={openLearnArticle}
           />
           {toFix.length > 1 && (
             <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "var(--sp-2)", marginTop: "var(--sp-3)" }}>
@@ -113,6 +114,7 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame,
                   rank={i + 2}
                   tracked={justTracked.has(item.id) || trackedMetrics.has(item.trackable?.metricId)}
                   onTrack={() => trackPoint(item)}
+                  openLearnArticle={openLearnArticle}
                 />
               ))}
             </ol>
@@ -189,19 +191,29 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame,
 /** Une ligne de "À corriger" — `primary` (le n°1, score le plus haut) reçoit un encadré et
  * un texte plus grand ; les autres restent une liste compacte et discrète. Même contenu
  * (verdict + bouton "Suivre ce point"), juste un poids visuel différent selon le rang. */
-function ToFixItem({ item, rank, primary, tracked, onTrack }) {
+function ToFixItem({ item, rank, primary, tracked, onTrack, openLearnArticle }) {
   const toneColor = item.tone === "loss" ? "var(--loss)" : "var(--gold)";
   const badgeBg = item.tone === "loss" ? "rgba(255,92,92,0.14)" : "rgba(212,175,55,0.14)";
+  const learnArticle = item.learnArticle;
 
-  const track = item.trackable?.metricId && (
-    <div style={{ marginTop: 6 }}>
-      {tracked ? (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "var(--fs-xs)", color: "var(--win)" }}>
-          <Check size={12} /> Suivi comme correctif
-        </span>
-      ) : (
-        <Btn onClick={onTrack} style={{ padding: "4px 10px", fontSize: "var(--fs-xs)" }}>
-          <Crosshair size={11} /> Suivre ce point
+  const track = (item.trackable?.metricId || learnArticle) && (
+    <div style={{ marginTop: 6, display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {item.trackable?.metricId && (
+        tracked ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "var(--fs-xs)", color: "var(--win)" }}>
+            <Check size={12} /> Suivi comme correctif
+          </span>
+        ) : (
+          <Btn onClick={onTrack} style={{ padding: "4px 10px", fontSize: "var(--fs-xs)" }}>
+            <Crosshair size={11} /> Suivre ce point
+          </Btn>
+        )
+      )}
+      {/* Vrai lien vers le tuto Learn correspondant (voir autoCoach.js) plutôt qu'un texte
+          brut "voir Learn" que le joueur devait retrouver lui-même dans la section. */}
+      {learnArticle && openLearnArticle && (
+        <Btn onClick={() => openLearnArticle(learnArticle.id)} style={{ padding: "4px 10px", fontSize: "var(--fs-xs)" }}>
+          <GraduationCap size={11} /> {learnArticle.title}
         </Btn>
       )}
     </div>

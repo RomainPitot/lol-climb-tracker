@@ -37,6 +37,17 @@ export default function App() {
   const { data, sorted, actions, loaded } = useTrackerData();
   const [page, setPage] = useState("dashboard");
 
+  // Lien direct vers un article Learn précis depuis un conseil du Coach (voir
+  // coachBriefing.js/CoachBriefing.jsx) — remplace le texte brut "voir Learn" qu'il
+  // fallait retrouver soi-même par une vraie navigation. Consommé une fois par LearnPage
+  // (onLearnDeepLinkConsumed) pour ne pas rouvrir le même article si le joueur revient sur
+  // Learn plus tard par un autre chemin.
+  const [learnDeepLink, setLearnDeepLink] = useState(null);
+  const openLearnArticle = useCallback((articleId) => {
+    setLearnDeepLink(articleId);
+    setPage("learn");
+  }, []);
+
   // Tourne indépendamment de la page affichée (pas seulement quand Paramètres est monté) :
   // tant que ce site reste ouvert dans un onglet, voir useAutoRiotImport.js.
   useAutoRiotImport(data, actions);
@@ -106,7 +117,16 @@ export default function App() {
   }
 
   const Page = PAGES[page] || Dashboard;
-  const pageProps = { data, sorted, currentRank: data.currentRank, navigate: setPage, ...actions };
+  const pageProps = {
+    data,
+    sorted,
+    currentRank: data.currentRank,
+    navigate: setPage,
+    openLearnArticle,
+    learnDeepLink,
+    onLearnDeepLinkConsumed: () => setLearnDeepLink(null),
+    ...actions,
+  };
 
   return (
     <div className="app-shell">

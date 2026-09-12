@@ -127,12 +127,22 @@ const GRID_STYLE = {
   maxWidth: 1120,
 };
 
-export default function LearnPage({ data, markLearnRead }) {
+export default function LearnPage({ data, markLearnRead, learnDeepLink, onLearnDeepLinkConsumed }) {
   const [activeId, setActiveId] = useState(null);
   const [category, setCategory] = useState(null);
   const [query, setQuery] = useState("");
   const readIds = data?.learnRead || [];
   const active = LEARN_ARTICLES.find((a) => a.id === activeId);
+
+  // Lien direct depuis un conseil du Coach (voir App.jsx) — ouvre l'article visé une seule
+  // fois, puis se consomme : revenir sur Learn plus tard (liste, recherche...) ne doit pas
+  // rouvrir le même article indéfiniment.
+  useEffect(() => {
+    if (!learnDeepLink) return;
+    setActiveId(learnDeepLink);
+    markLearnRead?.(learnDeepLink);
+    onLearnDeepLinkConsumed?.();
+  }, [learnDeepLink, markLearnRead, onLearnDeepLinkConsumed]);
 
   const openArticle = (id) => {
     setActiveId(id);

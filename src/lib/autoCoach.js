@@ -72,10 +72,23 @@ export function buildAutoCoachReport(data, sorted, currentRank) {
 /** Action concrète par métrique — générique (on n'a pas de cause plus fine que le chiffre
  * lui-même sauf pour les morts, où le pattern détecté sert de raison réelle). */
 const METRIC_ADVICE = {
-  csmin: "Reprends la gestion de wave (freeze/slow push, voir Learn) et compte les vagues ratées, pas juste le total en fin de game.",
+  csmin: "Reprends la gestion de wave (freeze/slow push) et compte les vagues ratées, pas juste le total en fin de game.",
   visionMin: "Achète plus de control wards et pose-les avant les combats d'objectif, pas après.",
   kda: "Chaque mort doit rapporter plus à l'équipe qu'elle ne coûte — sinon c'est un pari, pas un plan.",
   deaths: "Classe tes morts dans l'analyse détaillée : tant que tu ne sais pas pourquoi tu meurs, tu ne corriges rien.",
+};
+
+/** Article Learn (constants/learnContent.js) correspondant à chaque métrique — pour un vrai
+ * lien cliquable vers le tuto plutôt qu'un texte brut "(voir Learn)" que le joueur devait
+ * se souvenir d'aller chercher lui-même (voir CoachBriefing.jsx pour le rendu). Le titre est
+ * dupliqué ici plutôt qu'importé de learnContent.js (gros fichier de contenu, autrement
+ * tiré dans le chunk du Dashboard alors qu'il n'appartient qu'à Learn, lazy-chargé à part —
+ * voir App.jsx) ; ne pas laisser diverger de learnContent.js si un titre y change. */
+const METRIC_LEARN_ARTICLE = {
+  csmin: { id: "wave-management", title: "Gestion de wave" },
+  visionMin: { id: "vision", title: "Vision : wards et control wards" },
+  kda: { id: "trades-allin", title: "Trades et all-in en lane" },
+  deaths: { id: "map-awareness", title: "Map awareness et minimap" },
 };
 
 function deathPatternPhrase(deathPattern) {
@@ -148,6 +161,7 @@ function compareToRole(agg, bench, deathPattern, recentGames, winLossDiffs) {
         reason,
         action,
         lpImpact,
+        learnArticle: METRIC_LEARN_ARTICLE[m.key] || null,
         text: [verdict, reason, action, lpImpact].filter(Boolean).join(" "),
       });
     }

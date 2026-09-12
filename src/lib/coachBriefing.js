@@ -82,6 +82,9 @@ export function buildCoachBriefing(data, sorted, currentRank) {
         metricId: KEY_TO_FOCUS_ID[w.key],
         targetValue: w.target,
       },
+      // Vrai lien vers le tuto correspondant (voir autoCoach.js/learnContent.js) plutôt
+      // qu'un texte brut "voir Learn" que le joueur devait retrouver lui-même.
+      learnArticle: w.learnArticle || null,
     });
   }
 
