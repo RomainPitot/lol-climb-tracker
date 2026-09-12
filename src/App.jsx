@@ -111,7 +111,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <AlertBanner alert={alert} onDismiss={() => setAlert(null)} />
-      <Sidebar page={page} setPage={setPage} currentRank={data.currentRank} />
+      <Sidebar page={page} setPage={setPage} currentRank={data.currentRank} settings={data.settings} setSettings={actions.setSettings} />
       {/* `key={page}` remonte le contenu à chaque changement d'onglet : l'animation
           d'entrée rejoue donc à chaque navigation, ce qui signale visuellement
           qu'on a changé de page (sinon le contenu se substitue sans transition). */}

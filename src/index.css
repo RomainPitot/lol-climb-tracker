@@ -519,7 +519,7 @@ a {
   box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
 }
 
-/* Bloc bas de sidebar : rang + accès aux Paramètres. */
+/* Bloc bas de sidebar : rang + nouveautés + accès aux Paramètres. */
 .app-sidebar-rank {
   margin-top: auto;
   padding-top: var(--sp-5);

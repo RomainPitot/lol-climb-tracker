@@ -1,8 +1,19 @@
-import { Swords, Settings as SettingsIcon } from "lucide-react";
+import { useState } from "react";
+import { Bell, Swords, Settings as SettingsIcon } from "lucide-react";
 import { NAV } from "../constants/nav.js";
+import { CHANGELOG } from "../constants/changelog.js";
 import RankBadge from "./RankBadge.jsx";
+import ChangelogPanel from "./ChangelogPanel.jsx";
 
-export default function Sidebar({ page, setPage, currentRank }) {
+export default function Sidebar({ page, setPage, currentRank, settings, setSettings }) {
+  const [showChangelog, setShowChangelog] = useState(false);
+  const hasUnseenChangelog = CHANGELOG.length > 0 && settings?.lastSeenChangelogId !== CHANGELOG[0].id;
+
+  const openChangelog = () => {
+    setShowChangelog(true);
+    setSettings?.({ lastSeenChangelogId: CHANGELOG[0]?.id });
+  };
+
   return (
     <aside className="app-sidebar">
       <div
@@ -82,6 +93,30 @@ export default function Sidebar({ page, setPage, currentRank }) {
           <RankBadge tier={currentRank.tier} div={currentRank.div} lp={currentRank.lp} size="sm" />
         </div>
         <button
+          onClick={openChangelog}
+          aria-label="Nouveautés"
+          title="Nouveautés"
+          className="icon-btn"
+          style={{ flexShrink: 0, padding: 8, position: "relative", color: "var(--dim)" }}
+        >
+          <Bell size={17} />
+          {hasUnseenChangelog && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: 6,
+                right: 6,
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "var(--gold)",
+                border: "1.5px solid var(--card)",
+              }}
+            />
+          )}
+        </button>
+        <button
           onClick={() => setPage("settings")}
           aria-label="Paramètres"
           aria-current={page === "settings" ? "page" : undefined}
@@ -97,6 +132,8 @@ export default function Sidebar({ page, setPage, currentRank }) {
           <SettingsIcon size={17} />
         </button>
       </div>
+
+      {showChangelog && <ChangelogPanel onClose={() => setShowChangelog(false)} />}
     </aside>
   );
 }
