@@ -10,6 +10,7 @@ import GamesHistory from "../components/dashboard/GamesHistory.jsx";
 import FocusTracker from "../components/dashboard/FocusTracker.jsx";
 import PopulationReference from "../components/dashboard/PopulationReference.jsx";
 import RankLadderComparison from "../components/dashboard/RankLadderComparison.jsx";
+import RankStanding from "../components/dashboard/RankStanding.jsx";
 import EmptyDashboardState from "../components/dashboard/EmptyDashboardState.jsx";
 import CoachBriefing from "../components/dashboard/CoachBriefing.jsx";
 import RoleStatsPanel from "../components/dashboard/RoleStatsPanel.jsx";
@@ -32,7 +33,7 @@ const TOOLTIP_STYLE = {
   color: "var(--text)",
 };
 
-export default function Dashboard({ data, sorted, currentRank, navigate, openLearnArticle, addGame, deleteGame, deleteGames, updateGame, addCorrection, deleteCorrection }) {
+export default function Dashboard({ data, sorted, currentRank, navigate, openLearnArticle, setSettings, addGame, deleteGame, deleteGames, updateGame, addCorrection, deleteCorrection }) {
   const [period, setPeriod] = useState("30d");
   const [showProgression, setShowProgression] = useState(false);
   // Pont entre le rappel "morts non classées" (tout en haut) et la modale d'analyse, qui
@@ -175,6 +176,13 @@ export default function Dashboard({ data, sorted, currentRank, navigate, openLea
               ) : (
                 <Pill tone="gold">Objectif : {objectiveTier}</Pill>
               )}
+            </div>
+
+            {/* Où le joueur se situe parmi les autres, pas seulement à son propre palier —
+                voir RankStanding.jsx (percentile estimé sous Master, rang exact réel
+                au-dessus). */}
+            <div style={{ marginTop: "var(--sp-2)" }}>
+              <RankStanding data={data} setSettings={setSettings} currentRank={currentRank} />
             </div>
           </div>
 
