@@ -52,6 +52,12 @@ export default defineConfig(({ command }) => ({
         // Le shell (JS/CSS/icônes) en cache pour un démarrage instantané et hors-ligne ;
         // jamais les données du joueur, qui ne vivent que dans localStorage.
         globPatterns: ["**/*.{js,css,html,svg,png}"],
+        // Par défaut, Workbox redirige TOUTE navigation vers index.html (SPA classique) —
+        // ce qui rendait privacy.html/terms.html injoignables en navigation directe (le
+        // navigateur affichait le Dashboard à leur place) une fois le service worker
+        // installé, même si les deux fichiers sont bien précachés. Ces deux pages statiques
+        // ne font pas partie du routage de la SPA : on les exclut explicitement du fallback.
+        navigateFallbackDenylist: [/\/privacy\.html$/, /\/terms\.html$/],
       },
     }),
   ],
