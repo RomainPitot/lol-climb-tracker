@@ -4,6 +4,7 @@ import { Card, SectionTitle, Eyebrow, Field, Input, Select, Btn, Pill, Spinner, 
 import ChampAvatar from "../components/ChampAvatar.jsx";
 import AiCoachPanel from "../components/AiCoachPanel.jsx";
 import QrModal from "../components/QrModal.jsx";
+import InGamePanel from "../components/InGamePanel.jsx";
 import PoolSuggestions from "../components/PoolSuggestions.jsx";
 import { useChampionList } from "../hooks/useChampionList.js";
 import { useChampSelect } from "../hooks/useChampSelect.js";
@@ -156,7 +157,7 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
 
   return (
     <div style={{ maxWidth: 820 }}>
-      <SectionTitle sub="Choisis ton champion, bannis, et change tes runes depuis ton téléphone pendant la sélection — tant qu'il reste sur le même Wi-Fi que le PC qui fait tourner GameDetectorLol.">
+      <SectionTitle sub="Choisis ton champion, bannis, change tes runes pendant la sélection, puis suis la partie en direct une fois en jeu — tant que ton téléphone reste sur le même Wi-Fi que le PC qui fait tourner GameDetectorLol.">
         Sélection de champion
       </SectionTitle>
 
@@ -242,8 +243,13 @@ export default function ChampSelectPage({ data, sorted, currentRank, setSettings
         )}
       </Card>
 
+      {connected && !inChampSelect && phase === "InProgress" && gameLoaded && (
+        <InGamePanel host={host} token={token} />
+      )}
       {connected && !inChampSelect && phase === "ReadyCheck" && <ReadyCheckPanel host={host} token={token} />}
-      {connected && !inChampSelect && phase !== "ReadyCheck" && <QueuePanel host={host} token={token} phase={phase} />}
+      {connected && !inChampSelect && phase !== "ReadyCheck" && !(phase === "InProgress" && gameLoaded) && (
+        <QueuePanel host={host} token={token} phase={phase} />
+      )}
 
       {inChampSelect && (
         <>

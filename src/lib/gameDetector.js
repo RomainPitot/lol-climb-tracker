@@ -138,6 +138,16 @@ export async function cancelQueue(host, token) {
   return body;
 }
 
+/** État de la partie en cours (joueurs, items, niveau, KDA, CS, événements objectifs) —
+ * uniquement disponible une fois en jeu et le chargement terminé (voir gameLoaded dans
+ * useChampSelect) ; l'appel échoue proprement (409) sinon, ce n'est pas une erreur réseau. */
+export async function fetchLiveGame(host, token) {
+  const res = await fetch(`${baseUrl(host)}/livegame`, { headers: authHeaders(token) });
+  const body = await parseJson(res);
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return body;
+}
+
 /** Accepte ou refuse la partie trouvée (ready check). */
 export async function respondReadyCheck(host, token, accept) {
   const res = await fetch(`${baseUrl(host)}/readycheck/${accept ? "accept" : "decline"}`, {
