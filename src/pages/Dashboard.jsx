@@ -30,7 +30,7 @@ const TOOLTIP_STYLE = {
   color: "var(--text)",
 };
 
-export default function Dashboard({ data, sorted, currentRank, addGame, deleteGame, deleteGames, updateGame, setSettings }) {
+export default function Dashboard({ data, sorted, currentRank, addGame, deleteGame, deleteGames, updateGame, setSettings, addCorrection }) {
   const [period, setPeriod] = useState("30d");
   const [showProgression, setShowProgression] = useState(false);
   // Pont entre le rappel "morts non classées" (tout en haut) et la modale d'analyse, qui
@@ -182,6 +182,7 @@ export default function Dashboard({ data, sorted, currentRank, addGame, deleteGa
         sorted={sorted}
         currentRank={currentRank}
         onSelectGame={setPendingAnalysisId}
+        addCorrection={addCorrection}
       />
 
       {/* NIVEAU 3 — Progression. Trois blocs qui parlaient déjà de la même chose

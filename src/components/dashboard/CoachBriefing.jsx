@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Bot, ChevronDown, Coffee, Crosshair, Microscope, Target } from "lucide-react";
-import { Card, Eyebrow, Pill } from "../ui/primitives.jsx";
+import { Bot, Check, ChevronDown, Coffee, Crosshair, Microscope, Target } from "lucide-react";
+import { Card, Eyebrow, Pill, Btn } from "../ui/primitives.jsx";
 import { buildCoachBriefing } from "../../lib/coachBriefing.js";
+import { newCorrection, startCorrection } from "../../lib/corrections.js";
 
 /**
  * Briefing unique du haut de Dashboard — remplace cinq cartes empilées (coach automatique,
@@ -10,10 +11,28 @@ import { buildCoachBriefing } from "../../lib/coachBriefing.js";
  * Objectif de lisibilité : comprendre quoi corriger en quelques secondes plutôt que lire
  * quatre encadrés qui se répètent. Toujours mécanique, jamais une vraie IA (voir la note).
  */
-export default function CoachBriefing({ data, sorted, currentRank, onSelectGame }) {
+export default function CoachBriefing({ data, sorted, currentRank, onSelectGame, addCorrection }) {
   const [openDetail, setOpenDetail] = useState(false);
+  const [justTracked, setJustTracked] = useState(() => new Set());
   const briefing = buildCoachBriefing(data, sorted, currentRank);
   if (!briefing) return null;
+
+  // Un point déjà suivi (correctif en cours sur la même métrique, créé avant ou pendant
+  // cette session) n'affiche plus le bouton — jamais deux correctifs sur la même métrique.
+  const trackedMetrics = new Set(
+    (data.corrections || []).filter((c) => c.status === "in_progress").map((c) => c.metric)
+  );
+
+  const trackPoint = (item) => {
+    const t = item.trackable;
+    if (!t?.metricId || !addCorrection) return;
+    const correction = startCorrection(
+      newCorrection({ title: t.title, cause: t.cause, action: t.action, metricId: t.metricId, targetValue: t.targetValue, sorted, settings: data.settings }),
+      sorted
+    );
+    addCorrection(correction);
+    setJustTracked((prev) => new Set(prev).add(item.id));
+  };
 
   const { lastGame, personalSignal, toFix, strengths, focus, streak, untaggedGames, sampleSize } = briefing;
   const hasSecondary = strengths.length > 0 || streak || untaggedGames.length > 0 || focus;
@@ -100,8 +119,23 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame 
                 >
                   {i + 1}
                 </span>
-                <span className="prose" style={{ fontSize: "var(--fs-base)", color: "var(--text)" }}>
-                  {item.text}
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span className="prose" style={{ fontSize: "var(--fs-base)", color: "var(--text)" }}>
+                    {item.text}
+                  </span>
+                  {item.trackable?.metricId && (
+                    <div style={{ marginTop: 6 }}>
+                      {justTracked.has(item.id) || trackedMetrics.has(item.trackable.metricId) ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "var(--fs-xs)", color: "var(--win)" }}>
+                          <Check size={12} /> Suivi comme correctif
+                        </span>
+                      ) : (
+                        <Btn onClick={() => trackPoint(item)} style={{ padding: "4px 10px", fontSize: "var(--fs-xs)" }}>
+                          <Crosshair size={11} /> Suivre ce point
+                        </Btn>
+                      )}
+                    </div>
+                  )}
                 </span>
               </li>
             ))}

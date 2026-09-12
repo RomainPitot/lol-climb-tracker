@@ -112,6 +112,10 @@ function compareToRole(agg, bench, deathPattern) {
       const action = METRIC_ADVICE[m.key];
       weaknesses.push({
         key: m.key,
+        current: m.current,
+        target: m.target,
+        decimals: m.decimals,
+        invert: m.invert,
         gapPct,
         verdict,
         reason,

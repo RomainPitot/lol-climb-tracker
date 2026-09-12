@@ -22,6 +22,12 @@ const ID_TO_METRIC = {
   "avoidable-deaths": "deaths",
 };
 
+/** w.key (autoCoach.js, aligné sur les champs de computeAgg) → id FOCUS_METRICS/
+ * CORRECTION_METRICS (lib/focus.js) — les deux nomment "vision" différemment
+ * (visionMin vs visionmin), sinon mêmes métriques. Sert à pré-remplir un Correctif
+ * en un clic depuis "Suivre ce point" (voir trackable ci-dessous). */
+const KEY_TO_FOCUS_ID = { csmin: "csmin", visionMin: "visionmin", kda: "kda", deaths: "deaths" };
+
 /**
  * Briefing unique du Dashboard : fusionne ce qui était éclaté en cinq cartes empilées
  * (coach automatique, alertes, priorités, série de défaites, morts non classées) en une
@@ -51,7 +57,22 @@ export function buildCoachBriefing(data, sorted, currentRank) {
   const weaknesses = [...report.weaknesses].sort((a, b) => a.gapPct - b.gapPct);
   for (const w of weaknesses) {
     seenMetrics.add(w.key);
-    toFix.push({ id: `weak-${w.key}`, text: w.text, severity: 2, tone: "loss" });
+    toFix.push({
+      id: `weak-${w.key}`,
+      text: w.text,
+      severity: 2,
+      tone: "loss",
+      // Assez d'infos pour pré-remplir un Correctif en un clic ("Suivre ce point",
+      // CoachBriefing.jsx) sans rien faire ressaisir à la main — le diagnostic connaît
+      // déjà tout ça, pas la peine de le faire retaper.
+      trackable: {
+        title: w.verdict,
+        cause: w.reason || "",
+        action: w.action || "",
+        metricId: KEY_TO_FOCUS_ID[w.key],
+        targetValue: w.target,
+      },
+    });
   }
 
   // 3. Les priorités restantes (correctifs pas démarrés, etc.) seulement si elles
