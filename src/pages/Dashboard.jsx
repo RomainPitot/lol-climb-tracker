@@ -10,6 +10,7 @@ import GamesHistory from "../components/dashboard/GamesHistory.jsx";
 import FocusTracker from "../components/dashboard/FocusTracker.jsx";
 import PopulationReference from "../components/dashboard/PopulationReference.jsx";
 import RankLadderComparison from "../components/dashboard/RankLadderComparison.jsx";
+import EmptyDashboardState from "../components/dashboard/EmptyDashboardState.jsx";
 import CoachBriefing from "../components/dashboard/CoachBriefing.jsx";
 import RoleStatsPanel from "../components/dashboard/RoleStatsPanel.jsx";
 import { PERIODS } from "../constants/game.js";
@@ -31,7 +32,7 @@ const TOOLTIP_STYLE = {
   color: "var(--text)",
 };
 
-export default function Dashboard({ data, sorted, currentRank, addGame, deleteGame, deleteGames, updateGame, addCorrection, deleteCorrection }) {
+export default function Dashboard({ data, sorted, currentRank, navigate, addGame, deleteGame, deleteGames, updateGame, addCorrection, deleteCorrection }) {
   const [period, setPeriod] = useState("30d");
   const [showProgression, setShowProgression] = useState(false);
   // Pont entre le rappel "morts non classées" (tout en haut) et la modale d'analyse, qui
@@ -119,6 +120,15 @@ export default function Dashboard({ data, sorted, currentRank, addGame, deleteGa
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const heroColor = TIER_COLORS[currentRank.tier] || "var(--gold)";
+
+  // 0 game : le Dashboard normal n'est qu'un mur de zéros (0W/0L, succès 0/9,
+  // statistiques à 0%) — rien de tout ça n'a de sens avant la première game, alors autant
+  // ne rien en montrer et remplacer par la seule action qui compte (voir
+  // EmptyDashboardState.jsx). Après tous les hooks ci-dessus : un retour anticipé plus haut
+  // sauterait des Hooks selon les branches, ce que React interdit.
+  if (!sorted.length) {
+    return <EmptyDashboardState addGame={addGame} onGoToSettings={navigate ? () => navigate("settings") : null} />;
+  }
 
   return (
     <div className="reveal">
