@@ -73,18 +73,31 @@ export function rankEmblemUrl(tier) {
  * Sert uniquement à afficher des paliers de progression, jamais à juger une game isolée.
  * Repères "laner" de référence (Top/Mid/ADC) — voir ROLE_CSMIN_FACTOR/roleBenchmark
  * ci-dessous pour l'ajustement par rôle (Jungle/Support farment structurellement moins).
+ *
+ * csmin recalibré (12/09) sur des chiffres publiés sourcés — boostingmarket.com/blogs/
+ * lol-cs-per-minute-by-rank/ (cite lui-même : stats champion op.gg + agrégat de leurs
+ * commandes de boost), tableau Top vs ADC/Mid par palier ; valeur ici = moyenne des deux
+ * (l'app n'a qu'un seul repère "laner" pour Top/Mid/ADC, voir ROLE_CSMIN_FACTOR — leur
+ * tableau montre Top systématiquement ~0.5-1 CS/min sous ADC/Mid à chaque palier, un écart
+ * réel que ce repère unique ne peut pas représenter ; piste pour une future différenciation
+ * du facteur Top plutôt qu'un facteur 1 partagé avec Mid/ADC).
+ * kda/deaths NON recalibrés : aucune page publique d'u.gg/op.gg/Mobalytics trouvée avec un
+ * tableau agrégé par palier pour ces métriques (op.gg "Stats by tier" n'affiche que la
+ * distribution de la population par palier, pas de moyennes de performance) — restent des
+ * estimations non vérifiées, honnêtement toujours telles quelles plutôt que recalibrées sur
+ * une source trouvée trop faible pour être citée sérieusement.
  */
 export const BENCHMARKS = {
-  Fer: { csmin: 3.5, kda: 1.5, deaths: 8.5, wr: 50 },
+  Fer: { csmin: 3.3, kda: 1.5, deaths: 8.5, wr: 50 },
   Bronze: { csmin: 4.2, kda: 1.8, deaths: 8.0, wr: 50 },
   Argent: { csmin: 5.0, kda: 2.0, deaths: 7.5, wr: 50 },
-  Or: { csmin: 5.7, kda: 2.2, deaths: 7.0, wr: 50 },
-  Platine: { csmin: 6.3, kda: 2.5, deaths: 6.5, wr: 50 },
-  Émeraude: { csmin: 7.0, kda: 2.8, deaths: 6.0, wr: 50 },
-  Diamant: { csmin: 7.6, kda: 3.2, deaths: 5.5, wr: 50 },
-  Maître: { csmin: 8.2, kda: 3.6, deaths: 5.0, wr: 50 },
-  "Grand Maître": { csmin: 8.2, kda: 3.6, deaths: 5.0, wr: 50 },
-  Challenger: { csmin: 8.2, kda: 3.6, deaths: 5.0, wr: 50 },
+  Or: { csmin: 6.0, kda: 2.2, deaths: 7.0, wr: 50 },
+  Platine: { csmin: 6.7, kda: 2.5, deaths: 6.5, wr: 50 },
+  Émeraude: { csmin: 7.2, kda: 2.8, deaths: 6.0, wr: 50 },
+  Diamant: { csmin: 7.8, kda: 3.2, deaths: 5.5, wr: 50 },
+  Maître: { csmin: 8.5, kda: 3.6, deaths: 5.0, wr: 50 },
+  "Grand Maître": { csmin: 8.5, kda: 3.6, deaths: 5.0, wr: 50 },
+  Challenger: { csmin: 8.5, kda: 3.6, deaths: 5.0, wr: 50 },
 };
 
 /**
