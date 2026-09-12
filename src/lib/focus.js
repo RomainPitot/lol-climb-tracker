@@ -42,6 +42,12 @@ export function focusMetricValue(agg, metricId) {
   return agg[AGG_KEY[metricId]] ?? 0;
 }
 
+/** autoCoach.js utilise les noms de champs d'agrégat (visionMin, camelCase) comme clé de
+ * point faible ; ce fichier et lib/corrections.js utilisent l'id FOCUS_METRICS (visionmin,
+ * minuscule). Un seul endroit pour cette correspondance plutôt que dupliquée à chaque
+ * fichier qui doit faire le pont entre les deux conventions. */
+export const KEY_TO_METRIC_ID = { csmin: "csmin", visionMin: "visionmin", kda: "kda", deaths: "deaths", wr: "wr" };
+
 /** Games jouées depuis le début d'un correctif (dans une liste déjà représentative,
  * triée) — repart de la liste entière si la game de départ a depuis été supprimée ou
  * exclue. */

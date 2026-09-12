@@ -28,6 +28,14 @@ const ID_TO_METRIC = {
  * en un clic depuis "Suivre ce point" (voir trackable ci-dessous). */
 const KEY_TO_FOCUS_ID = { csmin: "csmin", visionMin: "visionmin", kda: "kda", deaths: "deaths" };
 
+/** alerts.js/priorities.js posent une sévérité entière (1 à 4) à la main, sur une échelle
+ * qui n'a jamais été pensée pour être comparée à autre chose — contrairement à w.score
+ * (voir priorityScore.js), un vrai calcul continu à partir de l'écart réel. Pour trier les
+ * trois sources dans une seule liste sans que l'échelle arbitraire écrase ou soit écrasée
+ * par le score calculé, on la ramène sur le même ordre de grandeur : 1→0.75, 2→1, 3→1.25,
+ * 4→1.5. Ce n'est pas plus précis qu'avant pour ces deux sources — juste comparable. */
+const RESCALE_SEVERITY = (sev) => 0.5 + sev * 0.25;
+
 /**
  * Briefing unique du Dashboard : fusionne ce qui était éclaté en cinq cartes empilées
  * (coach automatique, alertes, priorités, série de défaites, morts non classées) en une
@@ -50,17 +58,19 @@ export function buildCoachBriefing(data, sorted, currentRank) {
   for (const a of alerts) {
     const metric = ID_TO_METRIC[a.id];
     if (metric) continue; // traité via les points faibles du coach, plus détaillés
-    toFix.push({ id: a.id, text: a.message, severity: a.severity ?? 3, tone: "loss" });
+    toFix.push({ id: a.id, text: a.message, severity: RESCALE_SEVERITY(a.severity ?? 3), tone: "loss" });
   }
 
-  // 2. Les points faibles du coach (verdict + raison + action), du plus gros écart au plus petit.
-  const weaknesses = [...report.weaknesses].sort((a, b) => a.gapPct - b.gapPct);
+  // 2. Les points faibles du coach (verdict + raison + action), du score le plus haut au plus bas.
+  const weaknesses = [...report.weaknesses].sort((a, b) => b.score - a.score);
   for (const w of weaknesses) {
     seenMetrics.add(w.key);
     toFix.push({
       id: `weak-${w.key}`,
       text: w.text,
-      severity: 2,
+      // Score unique de priorité (voir priorityScore.js) : écart réel × tendance × fréquence,
+      // plutôt qu'une sévérité 2 posée au jugé pour tous les points faibles sans distinction.
+      severity: w.score,
       tone: "loss",
       // Assez d'infos pour pré-remplir un Correctif en un clic ("Suivre ce point",
       // CoachBriefing.jsx) sans rien faire ressaisir à la main — le diagnostic connaît
@@ -81,7 +91,7 @@ export function buildCoachBriefing(data, sorted, currentRank) {
     const metric = ID_TO_METRIC[p.id];
     if (metric && seenMetrics.has(metric)) continue;
     if (toFix.some((t) => t.id === p.id)) continue;
-    toFix.push({ id: p.id, text: p.message, severity: p.severity ?? 1, tone: "gold" });
+    toFix.push({ id: p.id, text: p.message, severity: RESCALE_SEVERITY(p.severity ?? 1), tone: "gold" });
   }
 
   const repSorted = representativeGames(sorted, !!data.settings.includeExcludedGames);

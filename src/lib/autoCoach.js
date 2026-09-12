@@ -8,6 +8,8 @@ import { summarizeDeathPatterns } from "./deathPatterns.js";
 import { DEATH_TYPES, DEATH_CAUSES } from "../constants/coaching.js";
 import { rankLabel } from "./rank.js";
 import { computeWinLossDiff, winLossDiffPhrase } from "./winLossDiff.js";
+import { computeScore, trendWeight, frequencyWeight } from "./priorityScore.js";
+import { KEY_TO_METRIC_ID } from "./focus.js";
 
 const deathTypeLabel = (id) => DEATH_TYPES.find((t) => t.id === id)?.label;
 const deathCauseLabel = (id) => DEATH_CAUSES.find((c) => c.id === id)?.label;
@@ -42,14 +44,16 @@ export function buildAutoCoachReport(data, sorted, currentRank) {
 
   const agg = computeAgg(recent);
   const bench = roleBenchmark(currentRank.tier, lastGame.role);
-  const { strengths, weaknesses } = compareToRole(agg, bench, deathPattern);
 
   // Signal "chez toi" (victoire vs défaite) — le plus personnel possible, calculé EN PLUS
-  // de la comparaison au rang ci-dessus, jamais à sa place (voir winLossDiff.js pour le
+  // de la comparaison au rang ci-dessous, jamais à sa place (voir winLossDiff.js pour le
   // pourquoi : une métrique mauvaise de façon uniforme en victoire ET en défaite n'a pas
-  // d'écart ici, seule la comparaison au rang la révèle).
+  // d'écart ici, seule la comparaison au rang la révèle). Réutilisé aussi pour le score de
+  // priorité (voir compareToRole) plutôt que recalculé une seconde fois.
   const winLossDiffs = computeWinLossDiff(recent);
   const personalSignal = winLossDiffs[0] ? { ...winLossDiffs[0], text: winLossDiffPhrase(winLossDiffs[0]) } : null;
+
+  const { strengths, weaknesses } = compareToRole(agg, bench, deathPattern, recent, winLossDiffs);
 
   const alerts = computeAlerts(data, sorted);
   const priorities = computePriorities(data, sorted, currentRank);
@@ -84,7 +88,7 @@ function deathPatternPhrase(deathPattern) {
   return `${lead.sharePct}% de tes morts récentes arrivent ${parts.join(", ")} — ce n'est pas la malchance, c'est un pattern.`;
 }
 
-function compareToRole(agg, bench, deathPattern) {
+function compareToRole(agg, bench, deathPattern, recentGames, winLossDiffs) {
   const metrics = [
     { key: "csmin", label: "CS/min", current: agg.csmin, target: bench.csmin, invert: false, decimals: 1 },
     { key: "visionMin", label: "Score de vision/min", current: agg.visionMin, target: bench.visionmin, invert: false, decimals: 2 },
@@ -114,6 +118,18 @@ function compareToRole(agg, bench, deathPattern) {
         : `${m.label} à ${cur}, ${direction} ${tgt} attendus à ton rang.`;
       const reason = (m.key === "deaths" && deathPatternPhrase(deathPattern)) || null;
       const action = METRIC_ADVICE[m.key];
+
+      // Score unique de priorité (voir lib/priorityScore.js) — remplace une sévérité
+      // arbitraire par un vrai calcul : l'écart le plus fort entre repère de rang et
+      // différentiel victoire/défaite (les deux coexistent toujours, jamais l'un à la
+      // place de l'autre), pondéré par la tendance récente et la fréquence réelle.
+      const metricId = KEY_TO_METRIC_ID[m.key];
+      const wl = winLossDiffs?.find((d) => d.key === m.key);
+      const combinedGapPct = Math.max(Math.abs(gapPct), wl?.gapPct ?? 0);
+      const trend = recentGames ? trendWeight(recentGames, metricId, m.invert) : 1;
+      const freq = recentGames ? frequencyWeight(recentGames, metricId, m.invert, m.target) : 1;
+      const score = computeScore(combinedGapPct, trend, freq);
+
       weaknesses.push({
         key: m.key,
         current: m.current,
@@ -121,6 +137,7 @@ function compareToRole(agg, bench, deathPattern) {
         decimals: m.decimals,
         invert: m.invert,
         gapPct,
+        score,
         verdict,
         reason,
         action,
