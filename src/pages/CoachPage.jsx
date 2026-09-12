@@ -1,23 +1,12 @@
 import { useState, useMemo } from "react";
 import { Sparkles, Copy, Check, ClipboardCheck, Map } from "lucide-react";
 import { Card, Pill, StatCard, SectionTitle, Btn, Trend, Eyebrow, ToggleChip, Collapsible, Tabs } from "../components/ui/primitives.jsx";
-import AiCoachPanel from "../components/AiCoachPanel.jsx";
-import GameRecapCard from "../components/GameRecapCard.jsx";
+import AiBilanCard from "../components/AiBilanCard.jsx";
 import CorrectionsPanel from "../components/coach/CorrectionsPanel.jsx";
 import MapHeatmap from "../components/coach/MapHeatmap.jsx";
-import { computeAgg, mostFrequentRole } from "../lib/stats.js";
+import { computeAgg } from "../lib/stats.js";
 import { buildCoachRecap, MIN_COMPARISON_GAMES } from "../lib/coachRecap.js";
-import { representativeGames } from "../lib/gameModel.js";
-import { evaluateCorrection, CORRECTION_STATUS_LABEL } from "../lib/corrections.js";
-import { summarizeDeathPatterns } from "../lib/deathPatterns.js";
-import { buildWeeklyReportPrompt } from "../lib/weeklyReport.js";
-import { matchupsFor, MIN_MATCHUP_GAMES } from "../lib/matchups.js";
-import { roleBenchmark } from "../constants/ranks.js";
-import { gameDate } from "../lib/format.js";
-import { rankLabel } from "../lib/rank.js";
 import { round1, round2 } from "../lib/format.js";
-
-const ACCOUNT_ANALYSIS_WINDOW = 20;
 
 const PRESETS = [
   { label: "Dernière game", take: 1 },
@@ -35,93 +24,6 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
   const [recap, setRecap] = useState("");
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState("bilans");
-
-  /** Le bilan de compte compare toujours les N dernières games au reste du profil —
-   * indépendant de la sélection manuelle ci-dessous, qui sert au recap à coller/copier.
-   * Games marquées non représentatives (remake, int, smurf adverse) écartées des deux
-   * côtés de la comparaison par défaut — voir Paramètres > Statistiques. */
-  const buildAccountPrompt = () => {
-    const repSorted = representativeGames(sorted, !!data.settings.includeExcludedGames);
-    const recentIds = new Set(repSorted.slice(-ACCOUNT_ANALYSIS_WINDOW).map((g) => g.id));
-    const base = buildCoachRecap({ data, sorted: repSorted, selectedIds: recentIds }).split("=== QUESTION AU COACH IA ===")[0];
-
-    // L'ancien "Point de focus" est désormais un correctif sans cible chiffrée comme un
-    // autre (voir lib/corrections.js) — il apparaît naturellement ici, plus besoin d'un
-    // bloc séparé qui aurait fini par le mentionner deux fois.
-    const activeCorrections = (data.corrections || [])
-      .map((c) => evaluateCorrection(c, sorted, data.settings))
-      .filter((c) => c.status !== "todo");
-    const correctionsBlock = activeCorrections.length
-      ? `\n=== CORRECTIFS / FOCUS SUIVIS ===\n${activeCorrections
-          .map(
-            (c) =>
-              `- ${c.title} (${c.def?.label}${c.targetValue != null ? `, cible ${c.def?.invert ? "≤" : "≥"} ${c.targetValue}` : ""}) : ${CORRECTION_STATUS_LABEL[c.derivedStatus]}${c.currentValue != null ? ` — actuel ${c.currentValue.toFixed(c.def.decimals)} sur ${c.gamesCount} game(s)` : ""}${c.derivedStatus === "regression" ? " — ATTENTION, retombé après avoir été corrigé" : ""}`
-          )
-          .join("\n")}\n`
-      : "";
-
-    const deathPattern = summarizeDeathPatterns(repSorted.slice(-ACCOUNT_ANALYSIS_WINDOW));
-    const deathPatternBlock = deathPattern
-      ? `\n=== PATTERN DE MORTS DÉTECTÉ (${deathPattern.total} morts, ${ACCOUNT_ANALYSIS_WINDOW} dernières games) ===\n${[
-          deathPattern.phase && `${deathPattern.phase.sharePct}% des morts arrivent en ${deathPattern.phase.label}.`,
-          deathPattern.zone && `${deathPattern.zone.sharePct}% des morts arrivent ${deathPattern.zone.label} (approximation de position).`,
-          deathPattern.context && `${deathPattern.context.sharePct}% des morts arrivent ${deathPattern.context.label}.`,
-        ]
-          .filter(Boolean)
-          .join("\n")}\n`
-      : "";
-
-    // Mêmes trois fenêtres que le Dashboard (Toi maintenant vs toi avant) — donne à l'IA
-    // les chiffres exacts plutôt que de lui faire deviner une tendance depuis le texte.
-    const recentWindow = repSorted.slice(-ACCOUNT_ANALYSIS_WINDOW);
-    const role = mostFrequentRole(recentWindow) || "Mid";
-    const bench = roleBenchmark(currentRank.tier, role);
-    const a5 = computeAgg(repSorted.slice(-5));
-    const a20 = computeAgg(recentWindow);
-    const aSeason = computeAgg(repSorted);
-    const fmt = (n, d = 1) => (Number.isFinite(n) ? n.toFixed(d) : "?");
-    const comparisonBlock = recentWindow.length
-      ? `\n=== COMPARAISON À TOI-MÊME (rôle dominant : ${role}, repère ${rankLabel(currentRank.tier, currentRank.div)}) ===\n` +
-        `CS/min — 5 dernières ${fmt(a5.csmin)}, 20 dernières ${fmt(a20.csmin)}, saison ${fmt(aSeason.csmin)}, repère ${fmt(bench.csmin)}.\n` +
-        `Score de vision/min — 5 dernières ${fmt(a5.visionMin, 2)}, 20 dernières ${fmt(a20.visionMin, 2)}, saison ${fmt(aSeason.visionMin, 2)}, repère ${fmt(bench.visionmin, 2)}.\n` +
-        `KDA — 5 dernières ${fmt(a5.kda, 2)}, 20 dernières ${fmt(a20.kda, 2)}, saison ${fmt(aSeason.kda, 2)}, repère ${fmt(bench.kda, 2)}.\n` +
-        `Deaths/game — 5 dernières ${fmt(a5.deaths)}, 20 dernières ${fmt(a20.deaths)}, saison ${fmt(aSeason.deaths)}, repère ${fmt(bench.deaths)}.\n`
-      : "";
-
-    // Matchups déjà rencontrés sur le champion le plus joué récemment — seulement ceux avec
-    // un échantillon suffisant (voir lib/matchups.js), jamais un winrate cité sur 1-2 games.
-    const topChampion = recentWindow.length
-      ? Object.entries(recentWindow.reduce((acc, g) => ((acc[g.champion] = (acc[g.champion] || 0) + 1), acc), {})).sort((a, b) => b[1] - a[1])[0]?.[0]
-      : null;
-    const reliableMatchups = topChampion ? matchupsFor(repSorted, topChampion).filter((m) => !m.lowSample) : [];
-    const matchupsBlock = reliableMatchups.length
-      ? `\n=== MATCHUPS RÉCURRENTS SUR ${topChampion?.toUpperCase()} (min. ${MIN_MATCHUP_GAMES} games) ===\n${reliableMatchups
-          .map((m) => `- vs ${m.opponent} : ${m.games} game(s), ${Math.round(m.wr)}% WR, KDA ${m.kda.toFixed(2)}.`)
-          .join("\n")}\n`
-      : "";
-
-    const demande = focus
-      ? `Commente en priorité ma progression sur ce focus précis (${focus.label}) — est-ce que ça s'améliore vraiment, qu'est-ce qui coince encore, faut-il continuer dessus ou en changer. Complète avec 2 points forts et 1 autre point faible si pertinent, mais le focus passe avant.`
-      : `Fais un bilan complet de mon compte, pas juste de la sélection ci-dessus : 3 points forts, les 3 points faibles qui me coûtent le plus de LP en ce moment (par ordre de priorité), et une seule action concrète à appliquer dès ma prochaine game.`;
-    const correctionsNote = activeCorrections.some((c) => c.derivedStatus === "regression")
-      ? " Signale en premier toute régression listée ci-dessus — c'est plus urgent qu'un nouveau point faible."
-      : "";
-
-    return `${base}${correctionsBlock}${deathPatternBlock}${comparisonBlock}${matchupsBlock}\n=== DEMANDE ===\n${demande}${correctionsNote} Rang actuel : ${rankLabel(currentRank.tier, currentRank.div)} — objectif : progresser le plus vite possible.`;
-  };
-
-  // Gate simple sur le bouton du rapport hebdo — la vraie condition (au moins une game
-  // représentative des 7 derniers jours) est recalculée par buildWeeklyReportPrompt lui-
-  // même à chaque clic ; ceci ne sert qu'à désactiver le bouton avant.
-  const hasWeekGames = useMemo(() => {
-    const now = Date.now();
-    return sorted.some((g) => !g.excluded && now - gameDate(g).getTime() <= 7 * 86400000);
-  }, [sorted]);
-  const buildWeeklyPrompt = () => {
-    const prompt = buildWeeklyReportPrompt(data, sorted, currentRank);
-    if (!prompt) throw new Error("Aucune game cette semaine — rien à rapporter.");
-    return prompt;
-  };
 
   const selectedGames = useMemo(() => sorted.filter((g) => selected.has(g.id)), [sorted, selected]);
   const restGames = useMemo(() => sorted.filter((g) => !selected.has(g.id)), [sorted, selected]);
@@ -179,38 +81,7 @@ export default function CoachPage({ data, sorted, currentRank, addCorrection, up
 
       {tab === "bilans" && (
       <div className="reveal">
-      <GameRecapCard data={data} sorted={sorted} />
-
-      <Card className="p-5 mb-5">
-        <Eyebrow style={{ marginBottom: 6 }}>Bilan de compte</Eyebrow>
-        <p style={{ fontSize: 12.5, color: "var(--dim)", marginBottom: 14 }}>
-          Génère un prompt façon coach coréen — direct, sans complaisance — sur tes {ACCOUNT_ANALYSIS_WINDOW} dernières
-          games vs le reste de ton profil : 3 points forts, 3 points faibles priorisés, une action concrète. Colle-le
-          ensuite dans Claude, ChatGPT ou l'IA de ton choix.
-        </p>
-        <AiCoachPanel
-          buildPrompt={buildAccountPrompt}
-          buttonLabel="Générer mon bilan de compte"
-          resultTitle="Prompt du bilan de compte"
-          disabled={sorted.length < 3}
-          disabledReason="Ajoute au moins 3 games trackées pour un bilan qui a du sens."
-        />
-      </Card>
-
-      <Card className="p-5 mb-5">
-        <Eyebrow style={{ marginBottom: 6 }}>Rapport hebdomadaire</Eyebrow>
-        <p style={{ fontSize: 12.5, color: "var(--dim)", marginBottom: 14 }}>
-          Assemble ce que le Dashboard sait déjà (alertes, priorités, correctifs, chiffres clés de la semaine vs la
-          précédente) en un résumé 30 secondes + un plan de travail limité à 1-2 priorités pour la semaine prochaine.
-        </p>
-        <AiCoachPanel
-          buildPrompt={buildWeeklyPrompt}
-          buttonLabel="Générer le rapport de la semaine"
-          resultTitle="Rapport hebdomadaire"
-          disabled={!hasWeekGames}
-          disabledReason="Aucune game trackée cette semaine — rien à rapporter."
-        />
-      </Card>
+      <AiBilanCard data={data} sorted={sorted} currentRank={currentRank} />
       </div>
       )}
 
