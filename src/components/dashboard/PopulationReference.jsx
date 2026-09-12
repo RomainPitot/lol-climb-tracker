@@ -5,11 +5,15 @@ import { round1, round2 } from "../../lib/format.js";
 const RECENT_WINDOW = 5;
 const MID_WINDOW = 20;
 
+// `benchKey` : roleBenchmark() (constants/ranks.js) nomme la vision "visionmin" (minuscule),
+// alors que computeAgg() (lib/stats.js) la nomme "visionMin" — sans cette distinction,
+// bench["visionMin"] est toujours undefined et le repère de rôle affiché pour la vision est
+// silencieusement 0 (bug corrigé ici, voir aussi lib/rankLevel.js qui a le même besoin).
 const ROWS = [
-  { key: "csmin", label: "CS/min", round: round1, invert: false },
-  { key: "visionMin", label: "Score de vision/min", round: round1, invert: false },
-  { key: "kda", label: "KDA", round: round2, invert: false },
-  { key: "deaths", label: "Deaths/game", round: round1, invert: true },
+  { key: "csmin", benchKey: "csmin", label: "CS/min", round: round1, invert: false },
+  { key: "visionMin", benchKey: "visionmin", label: "Score de vision/min", round: round1, invert: false },
+  { key: "kda", benchKey: "kda", label: "KDA", round: round2, invert: false },
+  { key: "deaths", benchKey: "deaths", label: "Deaths/game", round: round1, invert: true },
 ];
 
 /**
@@ -71,7 +75,7 @@ export default function PopulationReference({ repSorted, bench }) {
                 </td>
                 {bench && (
                   <td className="tnum" style={{ padding: "6px 8px", textAlign: "right", color: "var(--gold)" }}>
-                    {r.round(bench[r.key])}
+                    {r.round(bench[r.benchKey])}
                   </td>
                 )}
               </tr>

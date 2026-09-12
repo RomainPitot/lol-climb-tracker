@@ -9,6 +9,7 @@ import ProgressionDetails from "../components/dashboard/ProgressionDetails.jsx";
 import GamesHistory from "../components/dashboard/GamesHistory.jsx";
 import FocusTracker from "../components/dashboard/FocusTracker.jsx";
 import PopulationReference from "../components/dashboard/PopulationReference.jsx";
+import RankLadderComparison from "../components/dashboard/RankLadderComparison.jsx";
 import CoachBriefing from "../components/dashboard/CoachBriefing.jsx";
 import RoleStatsPanel from "../components/dashboard/RoleStatsPanel.jsx";
 import { PERIODS } from "../constants/game.js";
@@ -195,6 +196,7 @@ export default function Dashboard({ data, sorted, currentRank, addGame, deleteGa
         <FocusTracker data={data} sorted={sorted} addCorrection={addCorrection} deleteCorrection={deleteCorrection} />
         <RoleStatsPanel data={data} sorted={sorted} currentRank={currentRank} />
         <PopulationReference repSorted={repSorted} bench={bench} />
+        <RankLadderComparison repSorted={repSorted} role={dominantRole} />
       </Section>
 
       <Collapsible
