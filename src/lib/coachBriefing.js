@@ -86,7 +86,12 @@ export function buildCoachBriefing(data, sorted, currentRank) {
       // qu'un texte brut "voir Learn" que le joueur devait retrouver lui-même.
       learnArticle: w.learnArticle || null,
       // Mini-courbe de tendance (voir autoCoach.js) — null si pas assez de games récentes.
+      // label/decimals/target : pour la version dépliée de cette courbe (voir
+      // CoachBriefing.jsx) — label du graphe + valeurs affichées avec la bonne précision.
       sparkline: w.sparkline || null,
+      label: w.label,
+      decimals: w.decimals,
+      target: w.target,
     });
   }
 

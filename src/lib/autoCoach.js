@@ -166,6 +166,7 @@ function compareToRole(agg, bench, deathPattern, recentGames, winLossDiffs) {
 
       weaknesses.push({
         key: m.key,
+        label: m.label,
         current: m.current,
         target: m.target,
         decimals: m.decimals,

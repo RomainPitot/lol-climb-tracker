@@ -192,9 +192,11 @@ export default function CoachBriefing({ data, sorted, currentRank, onSelectGame,
  * un texte plus grand ; les autres restent une liste compacte et discrète. Même contenu
  * (verdict + bouton "Suivre ce point"), juste un poids visuel différent selon le rang. */
 function ToFixItem({ item, rank, primary, tracked, onTrack, openLearnArticle }) {
+  const [expanded, setExpanded] = useState(false);
   const toneColor = item.tone === "loss" ? "var(--loss)" : "var(--gold)";
   const badgeBg = item.tone === "loss" ? "rgba(255,92,92,0.14)" : "rgba(212,175,55,0.14)";
   const learnArticle = item.learnArticle;
+  const hasSparkline = item.sparkline && item.sparkline.length >= 3;
 
   const track = (item.trackable?.metricId || learnArticle) && (
     <div style={{ marginTop: 6, display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -219,77 +221,104 @@ function ToFixItem({ item, rank, primary, tracked, onTrack, openLearnArticle }) 
     </div>
   );
 
+  const toggle = hasSparkline && (
+    <button
+      onClick={() => setExpanded((e) => !e)}
+      aria-expanded={expanded}
+      aria-label={expanded ? "Réduire la courbe d'évolution" : "Déplier la courbe d'évolution"}
+      title={expanded ? "Réduire la courbe" : "Voir la courbe en grand"}
+      className="hoverable"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: 2,
+        flexShrink: 0,
+        borderRadius: "var(--radius-sm)",
+      }}
+    >
+      <Sparkline points={item.sparkline} color={toneColor} />
+      <ChevronDown size={12} color="var(--dim)" style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
+    </button>
+  );
+
   if (primary) {
     return (
       <div
         style={{
-          display: "flex",
-          gap: "var(--sp-3)",
-          alignItems: "flex-start",
           padding: "var(--sp-3) var(--sp-4)",
           borderRadius: "var(--radius-md)",
           background: item.tone === "loss" ? "rgba(255,92,92,0.08)" : "rgba(212,175,55,0.08)",
           border: `1px solid ${item.tone === "loss" ? "rgba(255,92,92,0.3)" : "rgba(212,175,55,0.3)"}`,
         }}
       >
-        <span
-          className="tnum"
-          style={{
-            flexShrink: 0,
-            width: 26,
-            height: 26,
-            borderRadius: "50%",
-            background: badgeBg,
-            color: toneColor,
-            fontSize: "var(--fs-sm)",
-            fontWeight: 700,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: 1,
-          }}
-        >
-          1
-        </span>
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span className="prose" style={{ fontSize: "var(--fs-base)", fontWeight: 600, color: "var(--text)" }}>
-            {item.text}
+        <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "flex-start" }}>
+          <span
+            className="tnum"
+            style={{
+              flexShrink: 0,
+              width: 26,
+              height: 26,
+              borderRadius: "50%",
+              background: badgeBg,
+              color: toneColor,
+              fontSize: "var(--fs-sm)",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 1,
+            }}
+          >
+            1
           </span>
-          {track}
-        </span>
-        <Sparkline points={item.sparkline} color={toneColor} />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span className="prose" style={{ fontSize: "var(--fs-base)", fontWeight: 600, color: "var(--text)" }}>
+              {item.text}
+            </span>
+            {track}
+          </span>
+          {toggle}
+        </div>
+        {expanded && <ExpandedTrend item={item} color={toneColor} />}
       </div>
     );
   }
 
   return (
-    <li style={{ display: "flex", gap: "var(--sp-3)", alignItems: "flex-start" }}>
-      <span
-        className="tnum"
-        style={{
-          flexShrink: 0,
-          width: 18,
-          height: 18,
-          borderRadius: "50%",
-          background: badgeBg,
-          color: toneColor,
-          fontSize: "10px",
-          fontWeight: 700,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginTop: 2,
-        }}
-      >
-        {rank}
-      </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span className="prose" style={{ fontSize: "var(--fs-sm)", color: "var(--dim)" }}>
-          {item.text}
+    <li style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "flex-start" }}>
+        <span
+          className="tnum"
+          style={{
+            flexShrink: 0,
+            width: 18,
+            height: 18,
+            borderRadius: "50%",
+            background: badgeBg,
+            color: toneColor,
+            fontSize: "10px",
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 2,
+          }}
+        >
+          {rank}
         </span>
-        {track}
-      </span>
-      <Sparkline points={item.sparkline} color={toneColor} />
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span className="prose" style={{ fontSize: "var(--fs-sm)", color: "var(--dim)" }}>
+            {item.text}
+          </span>
+          {track}
+        </span>
+        {toggle}
+      </div>
+      {expanded && <ExpandedTrend item={item} color={toneColor} />}
     </li>
   );
 }
@@ -315,5 +344,70 @@ function Sparkline({ points, color }) {
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ flexShrink: 0, marginTop: 4 }} aria-hidden="true">
       <path d={path} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.85} />
     </svg>
+  );
+}
+
+/** Version dépliée du Sparkline ci-dessus — même courbe (même données, aucun recalcul),
+ * juste assez grande pour vraiment se lire : ligne de cible en pointillés quand elle existe
+ * (voir autoCoach.js target), valeur actuelle mise en avant. SVG à la main plutôt que
+ * recharts : ce bloc vit dans CoachBriefing, chargé dès l'ouverture du Dashboard (contrairement
+ * à FocusTracker/LpProgressChart, en lazy() — voir Dashboard.jsx) — pas la peine d'y réintroduire
+ * le poids de la lib pour un second graphe simple. */
+function ExpandedTrend({ item, color }) {
+  const points = item.sparkline;
+  if (!points || points.length < 3) return null;
+
+  const w = 320;
+  const h = 84;
+  const decimals = item.decimals ?? 1;
+  const target = item.target;
+  const current = points[points.length - 1];
+
+  let min = Math.min(...points);
+  let max = Math.max(...points);
+  if (target != null) {
+    min = Math.min(min, target);
+    max = Math.max(max, target);
+  }
+  if (min === max) {
+    min -= 1;
+    max += 1;
+  }
+  const range = max - min;
+  const yFor = (v) => h - ((v - min) / range) * h;
+  const stepX = w / (points.length - 1);
+  const path = points.map((v, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(1)} ${yFor(v).toFixed(1)}`).join(" ");
+
+  return (
+    <div className="fade-in" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: "var(--fs-xs)", color: "var(--dim)", marginBottom: 4, flexWrap: "wrap", gap: 6 }}>
+        <span>{item.label || "Évolution"} — {points.length} dernières games</span>
+        <span className="tnum">
+          actuel <strong style={{ color: "var(--text)" }}>{current.toFixed(decimals)}</strong>
+          {target != null && (
+            <>
+              {" "}
+              · cible <strong style={{ color: "var(--gold)" }}>{target.toFixed(decimals)}</strong>
+            </>
+          )}
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={84} preserveAspectRatio="none" style={{ display: "block" }}>
+        {target != null && (
+          <line
+            x1={0}
+            x2={w}
+            y1={yFor(target)}
+            y2={yFor(target)}
+            stroke="var(--gold)"
+            strokeWidth="1"
+            strokeDasharray="4 3"
+            opacity={0.6}
+          />
+        )}
+        <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={w} cy={yFor(current)} r={3} fill={color} />
+      </svg>
+    </div>
   );
 }
