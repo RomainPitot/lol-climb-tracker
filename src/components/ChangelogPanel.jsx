@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Sparkles } from "lucide-react";
 import { IconBtn } from "./ui/primitives.jsx";
 import { CHANGELOG } from "../constants/changelog.js";
@@ -15,7 +16,14 @@ export default function ChangelogPanel({ onClose }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  // Le bouton "Nouveautés" (la cloche) vit dans le bas de la sidebar (Sidebar.jsx), qui a
+  // `overflow-y: auto` pour pouvoir défiler ses propres liens sur un petit écran — sans
+  // portail, ce panneau `position: fixed` reste un DESCENDANT de cette sidebar dans le DOM,
+  // et un ancêtre avec `overflow` non "visible" REDÉCOUPE (clip) tout son contenu à sa
+  // propre boîte, y compris les descendants fixed — le panneau se retrouvait écrasé dans la
+  // largeur de la sidebar plutôt que centré sur tout l'écran. createPortal fait sortir le
+  // rendu de cet arbre DOM (vers <body>) tout en gardant le state/les events React normaux.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -78,6 +86,7 @@ export default function ChangelogPanel({ onClose }) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
